@@ -1,140 +1,100 @@
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from starlette.websockets import WebSocketState  # <-- This is the missing import
 import uvicorn
-import json
-import random
 
 app = FastAPI()
 
-# Store player data (username, connection, votes, etc.)
 players = []
 game_started = False
-votes = {}
 
-@app.get("/")
-async def get_html():
-    return HTMLResponse(content=open("index.html").read(), status_code=200)
+# This is just an example function for handling a game round
+async def play_blackjack(player_name: str, websocket: WebSocket):
+    # Example of playing a round of blackjack
+    print(f"Starting Blackjack game for {player_name}...")
+    # Add game logic here
+    await websocket.send_text(f"Game started for {player_name}!")
+    # Simulate game logic and send messages during game play
+    await websocket.send_text(f"Good luck, {player_name}!")
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    global game_started
-    player_id = None
-    player_name = None
-    player_vote = False
-    await websocket.accept()
-
-    try:
-        # Wait for player to send their username
-        while True:
-            data = await websocket.receive_text()
-            if player_name is None and len(players) < 4:
-                # Lock in the player's username
-                if data not in [p['name'] for p in players]:
-                    player_name = data
-                    player_id = len(players) + 1
-                    players.append({"id": player_id, "name": player_name, "websocket": websocket})
-                    await websocket.send_text(f"Welcome Player {player_id}! Your username is {player_name}.")
-                    await update_players()
-                    break
-                else:
-                    await websocket.send_text("Username already taken, please choose another one.")
-
-        # Handle the game state and player communication
-        while True:
-            if game_started:
-                await play_blackjack(player_name, websocket)
-
-            # Receive a vote to start the game
-            data = await websocket.receive_text()
-            if data == "vote_start":
-                votes[player_name] = True
-                await websocket.send_text("Your vote has been registered.")
-                await check_votes()
-
-            await asyncio.sleep(1)
-
-    except WebSocketDisconnect:
-        if player_name:
-            # Remove player upon disconnect
-            players[:] = [p for p in players if p['name'] != player_name]
-            votes.pop(player_name, None)
-            await update_players()
-            print(f"Player {player_name} disconnected.")
-            await check_votes()
-
-# Function to update the list of players to all connected clients
-async def update_players():
-    global game_started
-    player_names = [player["name"] for player in players]
-    for player in players:
-        await player["websocket"].send_text(json.dumps({"players": player_names, "votes": votes}))
-
-    if len(players) >= 2 and len(votes) >= 2 and not game_started:
-        await start_game()
-
-# Function to handle the vote system
+# Function to check if all players have voted to start
 async def check_votes():
     global game_started
-    if len(votes) >= 2:
-        if all(vote == True for vote in votes.values()):
-            await start_game()
+    if all(player['voted'] for player in players):
+        game_started = True
+        await start_game()
 
-# Start the game when the condition is met
+# Function to start the game
 async def start_game():
     global game_started
-    game_started = True
-    for player in players:
-        await player["websocket"].send_text("The game is starting!")
-
-    # Handle Blackjack gameplay here after game starts
-    await play_blackjack()
-
-# Blackjack logic (simplified)
-async def play_blackjack(player_name, websocket):
-    # Initial game setup
-    deck = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11] * 4
-    random.shuffle(deck)
-    
-    player_hand = [deck.pop(), deck.pop()]
-    dealer_hand = [deck.pop(), deck.pop()]
-    
-    # Send initial hands
-    await websocket.send_text(f"Your hand: {player_hand}, Dealer's hand: {dealer_hand[0]}")
-
-    # Player's turn
-    while sum(player_hand) < 21:
-        # Wait for the player to choose "hit" or "stand"
-        action = await websocket.receive_text()
-        if action == "hit":
-            player_hand.append(deck.pop())
-            await websocket.send_text(f"Your hand: {player_hand}")
-        elif action == "stand":
-            break
-
-    # Dealer's turn
-    while sum(dealer_hand) < 17:
-        dealer_hand.append(deck.pop())
-
-    # Game result
-    player_total = sum(player_hand)
-    dealer_total = sum(dealer_hand)
-
-    if player_total > 21:
-        result = "You busted! Dealer wins!"
-    elif dealer_total > 21:
-        result = "Dealer busted! You win!"
-    elif player_total > dealer_total:
-        result = "You win!"
-    elif player_total < dealer_total:
-        result = "Dealer wins!"
+    if game_started:
+        for player in players:
+            if player["websocket"].client_state == WebSocketState.CONNECTED:
+                await player["websocket"].send_text("The game is starting!")
+                await play_blackjack(player["name"], player["websocket"])
+            else:
+                print(f"Player {player['name']} is no longer connected.")
     else:
-        result = "It's a tie!"
+        print("Game has not started yet!")
 
-    await websocket.send_text(f"Game Over! {result}")
-    game_started = False
-    await update_players()
+# WebSocket endpoint for connecting players
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    player_name = await websocket.receive_text()  # Receive the player name
+    player = {"name": player_name, "websocket": websocket, "voted": False}
 
+    players.append(player)
+    
+    try:
+        # Loop to receive votes or other messages from players
+        while True:
+            data = await websocket.receive_text()
+            
+            if data == "vote_start":  # Example vote to start the game
+                player["voted"] = True
+                await websocket.send_text(f"{player_name} voted to start!")
+                await check_votes()
+
+    except WebSocketDisconnect:
+        print(f"Player {player_name} disconnected.")
+        players.remove(player)  # Remove disconnected player
+
+    except Exception as e:
+        print(f"Error: {e}")
+    
+    finally:
+        await websocket.close()
+
+# Simple HTML page to connect to WebSocket (for testing purposes)
+@app.get("/")
+async def get():
+    html_content = """
+    <html>
+        <body>
+            <h1>Welcome to Blackjack!</h1>
+            <input id="username" type="text" placeholder="Enter your name">
+            <button onclick="connect()">Connect</button>
+            <script>
+                let ws;
+                function connect() {
+                    const name = document.getElementById("username").value;
+                    ws = new WebSocket("ws://127.0.0.1:8000/ws");
+                    ws.onopen = () => {
+                        console.log("Connected to the server");
+                        ws.send(name);  // Send player name to server
+                    };
+                    ws.onmessage = (message) => {
+                        console.log("Message from server:", message.data);
+                    };
+                }
+            </script>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+# Run the application
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
