@@ -1,44 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jack Black Game</title>
-</head>
-<body>
-    <h1>Welcome to Jack Black Game</h1>
-    <input type="text" id="username" placeholder="Enter username" />
-    <button onclick="joinGame()">Join Game</button>
-    <div id="players"></div>
-    <div id="game-status"></div>
-    <button onclick="voteStart()">Vote to Start</button>
-    
-    <script>
-        const socket = new WebSocket("ws://192.168.60.40:8000/ws");
+<html>
+    <body>
+        <h1>Welcome to Blackjack!</h1>
+        <input id="username" type="text" placeholder="Enter your name">
+        <button onclick="connect()">Connect</button>
+        <button id="voteButton" style="display: none;" onclick="voteToStart()">Vote to Start Game</button>
+        <div id="gameMessage"></div>
 
-        
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.players) {
-                const playersList = data.players.join(', ');
-                document.getElementById("players").textContent = "Players: " + playersList;
-            } else {
-                document.getElementById("game-status").textContent = event.data;
+        <script>
+            let ws;
+            let playerName = "";
+            
+            function connect() {
+                playerName = document.getElementById("username").value;
+                if (!playerName) {
+                    alert("Please enter a name.");
+                    return;
+                }
+
+                // Update WebSocket URL if hosted publicly
+                // ws = new WebSocket("ws://YOUR_PUBLIC_IP:8000/ws");
+                ws = new WebSocket("ws://127.0.0.1:8000/ws"); // Use this for local testing
+                
+                ws.onopen = () => {
+                    console.log("Connected to the server");
+                    ws.send(playerName);  // Send player name to server when connected
+                    document.getElementById("voteButton").style.display = "inline-block"; // Show vote button
+                };
+
+                ws.onmessage = (message) => {
+                    console.log("Message from server:", message.data);
+                    document.getElementById("gameMessage").innerText = message.data;
+                };
             }
-        };
 
-        function joinGame() {
-            const username = document.getElementById("username").value;
-            if (username) {
-                socket.send(username);
-            } else {
-                alert("Please enter a username.");
+            function voteToStart() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send("vote_start");  // Send vote to start the game
+                    console.log("Voted to start the game.");
+                }
             }
-        }
-
-        function voteStart() {
-            socket.send("vote_start");
-        }
-    </script>
-</body>
+        </script>
+    </body>
 </html>
