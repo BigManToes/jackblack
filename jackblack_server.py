@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from starlette.websockets import WebSocketState  # <-- This is the missing import
+from starlette.websockets import WebSocketState
 import uvicorn
 
 app = FastAPI()
@@ -9,14 +9,10 @@ app = FastAPI()
 players = []
 game_started = False
 
-# This is just an example function for handling a game round
+# Function to play the blackjack game (can be expanded later)
 async def play_blackjack(player_name: str, websocket: WebSocket):
-    # Example of playing a round of blackjack
     print(f"Starting Blackjack game for {player_name}...")
-    # Add game logic here
     await websocket.send_text(f"Game started for {player_name}!")
-    # Simulate game logic and send messages during game play
-    await websocket.send_text(f"Good luck, {player_name}!")
 
 # Function to check if all players have voted to start
 async def check_votes():
@@ -76,18 +72,40 @@ async def get():
             <h1>Welcome to Blackjack!</h1>
             <input id="username" type="text" placeholder="Enter your name">
             <button onclick="connect()">Connect</button>
+            <button id="voteButton" style="display: none;" onclick="voteToStart()">Vote to Start Game</button>
+            <div id="gameMessage"></div>
             <script>
                 let ws;
+                let playerName = "";
+                
                 function connect() {
-                    const name = document.getElementById("username").value;
-                    ws = new WebSocket("ws://127.0.0.1:8000/ws");
+                    playerName = document.getElementById("username").value;
+                    if (!playerName) {
+                        alert("Please enter a name.");
+                        return;
+                    }
+
+                    ws = new WebSocket("ws://127.0.0.1:8000/ws"); // Use this for local testing
+                    // Update WebSocket URL if hosted publicly
+                    // ws = new WebSocket("ws://YOUR_PUBLIC_IP:8000/ws");
+
                     ws.onopen = () => {
                         console.log("Connected to the server");
-                        ws.send(name);  // Send player name to server
+                        ws.send(playerName);  // Send player name to server when connected
+                        document.getElementById("voteButton").style.display = "inline-block"; // Show vote button
                     };
+
                     ws.onmessage = (message) => {
                         console.log("Message from server:", message.data);
+                        document.getElementById("gameMessage").innerText = message.data;
                     };
+                }
+
+                function voteToStart() {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send("vote_start");  // Send vote to start the game
+                        console.log("Voted to start the game.");
+                    }
                 }
             </script>
         </body>
