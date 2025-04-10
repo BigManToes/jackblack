@@ -14,7 +14,8 @@
     <button onclick="voteStart()">Vote to Start</button>
     
     <script>
-        const socket = new WebSocket("ws://127.0.0.1:8000/ws");
+        const socket = new WebSocket("ws://192.168.60.40:8000/ws");
+
         
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
