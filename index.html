@@ -3,62 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jack Black Game</title>
+    <title>Single-Player Blackjack</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #f39c12;
+        }
+        .button-container {
+            margin: 20px;
+        }
+        button {
+            padding: 15px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            background-color: #27ae60;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #2ecc71;
+        }
+        #gameMessage {
+            margin-top: 30px;
+            font-size: 1.5em;
+            color: #f39c12;
+        }
+        #playerCards, #dealerCards {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .card {
+            width: 70px;
+            height: 100px;
+            margin: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            color: #2c3e50;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the Jack Black Game!</h1>
-    <input type="text" id="playerName" placeholder="Enter your name">
-    <button id="startGameButton">Start Game</button>
 
-    <div id="gameMessage"></div>
+    <h1>Welcome to Single-Player Blackjack!</h1>
+
+    <div id="gameMessage">Click "Start Game" to begin</div>
+
+    <div id="playerCards"></div>
+    <div id="dealerCards"></div>
+
+    <div class="button-container">
+        <button id="startButton" onclick="startGame()">Start Game</button>
+        <button id="hitButton" onclick="hit()" style="display: none;">Hit</button>
+        <button id="standButton" onclick="stand()" style="display: none;">Stand</button>
+    </div>
 
     <script>
-        let websocketUrl;
+        let playerCards = [];
+        let dealerCards = [];
+        let playerScore = 0;
+        let dealerScore = 0;
+        let gameStarted = false;
 
-        // Dynamically choose WebSocket URL based on environment
-        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-            websocketUrl = "ws://127.0.0.1:8000/ws";  // For local development
-        } else {
-            websocketUrl = "wss://jackblack-gamma.vercel.app/ws";  // For production (deployed frontend)
+        async function startGame() {
+            const response = await fetch("/start_game");
+            const gameState = await response.json();
+
+            playerCards = gameState.player_cards;
+            dealerCards = gameState.dealer_cards;
+            playerScore = gameState.player_score;
+            dealerScore = gameState.dealer_score;
+
+            updateGame();
+            document.getElementById("hitButton").style.display = "inline-block";
+            document.getElementById("standButton").style.display = "inline-block";
+            document.getElementById("startButton").style.display = "none";
         }
 
-        const ws = new WebSocket(websocketUrl);
+        async function hit() {
+            const response = await fetch("/hit");
+            const gameState = await response.json();
 
-        ws.onopen = () => {
-            console.log("Connected to WebSocket server:", websocketUrl);
+            playerCards = gameState.player_cards;
+            playerScore = gameState.player_score;
 
-            // Send player name when the connection opens
-            const playerName = document.getElementById("playerName").value;
-            if (playerName) {
-                ws.send(playerName);  // Send player name to the backend
-            }
-        };
+            updateGame();
+        }
 
-        ws.onmessage = (message) => {
-            console.log("Received message:", message.data);
-            if (message.data === "The game is starting!") {
-                // Logic to display the game start UI (update UI when the game starts)
-                document.getElementById("gameMessage").textContent = "The game is starting!";
-            }
-        };
+        async function stand() {
+            const response = await fetch("/stand");
+            const gameState = await response.json();
 
-        ws.onerror = (error) => {
-            console.error("WebSocket error:", error);
-        };
+            dealerCards = gameState.dealer_cards;
+            dealerScore = gameState.dealer_score;
 
-        ws.onclose = () => {
-            console.log("WebSocket connection closed.");
-        };
+            updateGame();
+        }
 
-        // When the user clicks "Start Game", send the 'start_game' message to the server
-        document.getElementById("startGameButton").addEventListener("click", () => {
-            const playerName = document.getElementById("playerName").value;
-            if (playerName) {
-                ws.send("start_game");  // Send 'start_game' to the backend to start the game
-            } else {
-                alert("Please enter your name first!");
-            }
-        });
+        function updateGame() {
+            document.getElementById("gameMessage").innerText = `Player Score: ${playerScore} | Dealer Score: ${dealerScore}`;
+            displayCards();
+        }
+
+        function displayCards() {
+            const playerCardsDiv = document.getElementById("playerCards");
+            const dealerCardsDiv = document.getElementById("dealerCards");
+
+            playerCardsDiv.innerHTML = "";
+            dealerCardsDiv.innerHTML = "";
+
+            playerCards.forEach(card => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card";
+                cardDiv.innerText = card.value + card.suit;
+                playerCardsDiv.appendChild(cardDiv);
+            });
+
+            dealerCards.forEach(card => {
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card";
+                cardDiv.innerText = card.value + card.suit;
+                dealerCardsDiv.appendChild(cardDiv);
+            });
+        }
     </script>
+
 </body>
 </html>
