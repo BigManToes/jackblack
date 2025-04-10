@@ -1,44 +1,64 @@
-<html>
-    <body>
-        <h1>Welcome to Blackjack!</h1>
-        <input id="username" type="text" placeholder="Enter your name">
-        <button onclick="connect()">Connect</button>
-        <button id="voteButton" style="display: none;" onclick="voteToStart()">Vote to Start Game</button>
-        <div id="gameMessage"></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jack Black Game</title>
+</head>
+<body>
+    <h1>Welcome to the Jack Black Game!</h1>
+    <input type="text" id="playerName" placeholder="Enter your name">
+    <button id="startGameButton">Start Game</button>
 
-        <script>
-            let ws;
-            let playerName = "";
-            
-            function connect() {
-                playerName = document.getElementById("username").value;
-                if (!playerName) {
-                    alert("Please enter a name.");
-                    return;
-                }
+    <div id="gameMessage"></div>
 
-                // Update WebSocket URL if hosted publicly
-                // ws = new WebSocket("ws://YOUR_PUBLIC_IP:8000/ws");
-                ws = new WebSocket("ws://127.0.0.1:8000/ws"); // Use this for local testing
-                
-                ws.onopen = () => {
-                    console.log("Connected to the server");
-                    ws.send(playerName);  // Send player name to server when connected
-                    document.getElementById("voteButton").style.display = "inline-block"; // Show vote button
-                };
+    <script>
+        let websocketUrl;
 
-                ws.onmessage = (message) => {
-                    console.log("Message from server:", message.data);
-                    document.getElementById("gameMessage").innerText = message.data;
-                };
+        // Dynamically choose WebSocket URL based on environment
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+            websocketUrl = "ws://127.0.0.1:8000/ws";  // For local development
+        } else {
+            websocketUrl = "wss://jackblack-gamma.vercel.app/ws";  // For production (deployed frontend)
+        }
+
+        const ws = new WebSocket(websocketUrl);
+
+        ws.onopen = () => {
+            console.log("Connected to WebSocket server:", websocketUrl);
+
+            // Send player name when the connection opens
+            const playerName = document.getElementById("playerName").value;
+            if (playerName) {
+                ws.send(playerName);  // Send player name to the backend
             }
+        };
 
-            function voteToStart() {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send("vote_start");  // Send vote to start the game
-                    console.log("Voted to start the game.");
-                }
+        ws.onmessage = (message) => {
+            console.log("Received message:", message.data);
+            if (message.data === "The game is starting!") {
+                // Logic to display the game start UI (update UI when the game starts)
+                document.getElementById("gameMessage").textContent = "The game is starting!";
             }
-        </script>
-    </body>
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        ws.onclose = () => {
+            console.log("WebSocket connection closed.");
+        };
+
+        // When the user clicks "Start Game", send the 'start_game' message to the server
+        document.getElementById("startGameButton").addEventListener("click", () => {
+            const playerName = document.getElementById("playerName").value;
+            if (playerName) {
+                ws.send("start_game");  // Send 'start_game' to the backend to start the game
+            } else {
+                alert("Please enter your name first!");
+            }
+        });
+    </script>
+</body>
 </html>
