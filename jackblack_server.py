@@ -31,7 +31,7 @@ async def get():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Single Player Blackjack</title>
+        <title>Single Player JackBlack</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -58,7 +58,7 @@ async def get():
     </head>
     <body>
     
-    <h1>Welcome to Single-Player Blackjack</h1>
+    <h1>Welcome to Single-Player JackBlack</h1>
     <p>Press Start to begin playing!</p>
     
     <button onclick="startGame()">Start Game</button>
