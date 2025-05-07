@@ -18,11 +18,17 @@
     .card {
       display: inline-block;
       margin: 10px;
-      padding: 10px 15px;
+      padding: 30px 40px;
       background-color: #f0f0f0;
-      border-radius: 10px;
+      border-radius: 16px;
       color: black;
-      font-size: 18px;
+      font-size: 36px;
+      font-weight: bold;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      border: 2px solid #ccc;
+      min-width: 60px;
+      min-height: 80px;
+      user-select: none;
     }
     button {
       padding: 10px 20px;
@@ -63,209 +69,271 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
-<script>
-  // Firebase configuration (your original API keys)
-  const firebaseConfig = {
-    apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
-    authDomain: "jackblack-789f5.firebaseapp.com",
-    databaseURL: "https://jackblack-789f5-default-rtdb.firebaseio.com",
-    projectId: "jackblack-789f5",
-    storageBucket: "jackblack-789f5.firebasestorage.app",
-    messagingSenderId: "14557094808",
-    appId: "1:14557094808:web:252134996948616d95c1ed",
-    measurementId: "G-89GFJPNWKH"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  let roomId = "";
-  let playerId = "player" + Math.floor(Math.random() * 1000);
-  let isPlayerTurn = false;
-
-  function joinRoom() {
-    roomId = document.getElementById("room-id").value.trim();
-    if (!roomId) return alert("Enter room ID!");
-
-    const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-    playerRef.set({ joined: Date.now(), vote: false });
-    playerRef.onDisconnect().remove();
-
-    document.getElementById("controls").style.display = "block";
-    document.getElementById("vote-button").style.display = "inline-block"; // Show the vote button
-    listenForUpdates();
-  }
-
-  function listenForUpdates() {
-    db.ref(`rooms/${roomId}/game`).on('value', snap => {
-      const game = snap.val();
-      if (!game) return;
-
-      const playerHand = game.playerHands?.[playerId] || [];
-      const dealerHand = game.dealerHand || [];
-      isPlayerTurn = game.turn === playerId && !game.over;
-
-      updateCards("player-cards", playerHand);
-      updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
-      document.getElementById("game-message").innerText = game.message || "";
-
-      document.getElementById("controls").style.display = isPlayerTurn ? "block" : "none";
-    });
-
-    db.ref(`rooms/${roomId}/players`).on('value', snap => {
-      const players = snap.val() || {};
-      const playerList = Object.keys(players).map(pid => {
-        return `${pid} (${players[pid].vote ? "Voted" : "Not voted"})`;
-      }).join(", ");
-      document.getElementById("player-info").innerText = `Players: ${playerList}`;
-
-      // Voting logic: only the player with the lowest playerId starts the game
-      const playerIds = Object.keys(players);
-      const playerVotes = Object.values(players).filter(p => p.vote).length;
-      document.getElementById("players-voting").innerText = `${playerVotes} out of 2 voted to start.`;
-
-      if (playerIds.length === 2 && playerVotes === 2) {
-        // Only the player with the lowest playerId starts the game
-        const sortedIds = playerIds.slice().sort();
-        if (playerId === sortedIds[0]) {
-          startGame(playerIds);
-        }
-      }
-    });
-  }
-
-  function startGame(playerIds) {
-    const suits = ['♠', '♣', '♦', '♥'];
-    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-    let deck = [];
-    for (let s of suits) for (let v of values) deck.push({ v, s });
-    deck = deck.sort(() => Math.random() - 0.5);
-
-    // Randomly select first player
-    const shuffledPlayers = playerIds.slice().sort(() => Math.random() - 0.5);
-    const firstPlayer = shuffledPlayers[0];
-    const secondPlayer = shuffledPlayers[1];
-
-    const gameState = {
-      deck,
-      playerHands: {},
-      dealerHand: [],
-      turn: firstPlayer, // Random player starts
-      message: "Game started!",
-      players: {} // for voting display
+  <script>
+    // Firebase configuration (your original API keys)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
+      authDomain: "jackblack-789f5.firebaseapp.com",
+      databaseURL: "https://jackblack-789f5-default-rtdb.firebaseio.com",
+      projectId: "jackblack-789f5",
+      storageBucket: "jackblack-789f5.firebasestorage.app",
+      messagingSenderId: "14557094808",
+      appId: "1:14557094808:web:252134996948616d95c1ed",
+      measurementId: "G-89GFJPNWKH"
     };
 
-    for (let pid of playerIds) {
-      gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let roomId = "";
+    let playerId = "player" + Math.floor(Math.random() * 1000);
+    let isPlayerTurn = false;
+
+    function joinRoom() {
+      roomId = document.getElementById("room-id").value.trim();
+      if (!roomId) return alert("Enter room ID!");
+
+      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
+      playerRef.set({ joined: Date.now(), vote: false });
+      playerRef.onDisconnect().remove();
+
+      document.getElementById("controls").style.display = "block";
+      document.getElementById("vote-button").style.display = "inline-block";
+      listenForUpdates();
     }
-    gameState.dealerHand = [deck.pop(), deck.pop()];
 
-    // Save which players are in the game for voting display
-    for (let pid of playerIds) {
-      gameState.players[pid] = { vote: true };
+    function listenForUpdates() {
+      db.ref(`rooms/${roomId}/game`).on('value', snap => {
+        const game = snap.val();
+        if (!game) return;
+
+        const playerHand = game.playerHands?.[playerId] || [];
+        const dealerHand = game.dealerHand || [];
+        isPlayerTurn = game.turn === playerId && !game.over;
+
+        updateCards("player-cards", playerHand);
+
+        // Show dealer's first card as hidden if game not over and dealer's turn hasn't started
+        let showDealerHand = dealerHand;
+        if (!game.over && game.turn !== "dealer") {
+          showDealerHand = dealerHand.map((c, i) => i === 0 ? { v: "??", s: "?" } : c);
+        }
+        updateCards("dealer-cards", showDealerHand);
+
+        document.getElementById("game-message").innerText = game.message || "";
+        document.getElementById("controls").style.display = isPlayerTurn ? "block" : "none";
+      });
+
+      db.ref(`rooms/${roomId}/players`).on('value', snap => {
+        const players = snap.val() || {};
+        const playerList = Object.keys(players).map(pid => {
+          return `${pid} (${players[pid].vote ? "Voted" : "Not voted"})`;
+        }).join(", ");
+        document.getElementById("player-info").innerText = `Players: ${playerList}`;
+
+        // Voting logic: only the player with the lowest playerId starts the game
+        const playerIds = Object.keys(players);
+        const playerVotes = Object.values(players).filter(p => p.vote).length;
+        document.getElementById("players-voting").innerText = `${playerVotes} out of 2 voted to start.`;
+
+        if (playerIds.length === 2 && playerVotes === 2) {
+          // Only the player with the lowest playerId starts the game
+          const sortedIds = playerIds.slice().sort();
+          if (playerId === sortedIds[0]) {
+            startGame(playerIds);
+          }
+        }
+      });
     }
 
-    db.ref(`rooms/${roomId}/game`).set(gameState);
+    function startGame(playerIds) {
+      const suits = ['♠', '♣', '♦', '♥'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      let deck = [];
+      for (let s of suits) for (let v of values) deck.push({ v, s });
+      deck = deck.sort(() => Math.random() - 0.5);
 
-    // Hide the vote button after voting
-    document.getElementById("vote-button").style.display = "none";
-  }
+      // Always select the player with the lowest playerId to start
+      const sortedIds = playerIds.slice().sort();
+      const firstPlayer = sortedIds[0];
 
-  function voteToStart() {
-    db.ref(`rooms/${roomId}/players/${playerId}`).update({
-      vote: true
-    });
-    document.getElementById("vote-button").style.display = "none"; // Hide the vote button after voting
-  }
+      const gameState = {
+        deck,
+        playerHands: {},
+        dealerHand: [],
+        turn: firstPlayer,
+        message: "Game started!",
+        players: {},
+        stood: {},
+        busted: {},
+        over: false
+      };
 
-  function updateCards(id, cards) {
-    const div = document.getElementById(id);
-    div.innerHTML = "";
-    cards.forEach(card => {
-      const el = document.createElement("div");
-      el.className = "card";
-      el.innerText = `${card.v} ${card.s}`;
-      div.appendChild(el);
-    });
-  }
+      for (let pid of playerIds) {
+        gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+      }
+      gameState.dealerHand = [deck.pop(), deck.pop()];
 
-  function hit() {
-    db.ref(`rooms/${roomId}/game`).once('value', snap => {
-      const game = snap.val();
-      if (game.turn !== playerId || game.over) return;
+      for (let pid of playerIds) {
+        gameState.players[pid] = { vote: true };
+      }
 
-      const deck = game.deck;
-      const newCard = deck.pop();
-      game.playerHands[playerId].push(newCard);
+      db.ref(`rooms/${roomId}/game`).set(gameState);
+      document.getElementById("vote-button").style.display = "none";
+    }
 
-      const score = calcScore(game.playerHands[playerId]);
-      game.message = `${playerId} hits. Score: ${score}`;
-      if (score > 21) {
-        game.message = `${playerId} busted!`;
-        // Move to next player's turn or end game
+    function voteToStart() {
+      db.ref(`rooms/${roomId}/players/${playerId}`).update({
+        vote: true
+      });
+      document.getElementById("vote-button").style.display = "none";
+    }
+
+    function updateCards(id, cards) {
+      const div = document.getElementById(id);
+      div.innerHTML = "";
+      cards.forEach(card => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerText = `${card.v} ${card.s}`;
+        div.appendChild(el);
+      });
+    }
+
+    function hit() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (game.turn !== playerId || game.over) return;
+
+        const deck = game.deck;
+        const newCard = deck.pop();
+        game.playerHands[playerId].push(newCard);
+
+        const score = calcScore(game.playerHands[playerId]);
+        game.message = `${playerId} hits. Score: ${score}`;
+        if (score > 21) {
+          game.message = `${playerId} busted!`;
+          game.busted = game.busted || {};
+          game.busted[playerId] = true;
+          // Move to next player's turn or dealer
+          const nextPlayer = getNextPlayer(game, playerId);
+          if (nextPlayer) {
+            game.turn = nextPlayer;
+          } else {
+            game.turn = "dealer";
+            game.message += " Dealer's turn!";
+          }
+        }
+        game.deck = deck;
+        db.ref(`rooms/${roomId}/game`).set(game);
+
+        // If dealer's turn, let him play
+        if (game.turn === "dealer") {
+          setTimeout(() => dealerPlay(), 500);
+        }
+      });
+    }
+
+    function stand() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (game.turn !== playerId || game.over) return;
+
+        game.message = `${playerId} stands.`;
+        game.stood = game.stood || {};
+        game.stood[playerId] = true;
+
+        // Move to next player's turn or dealer
         const nextPlayer = getNextPlayer(game, playerId);
         if (nextPlayer) {
           game.turn = nextPlayer;
         } else {
-          game.turn = null;
-          game.over = true;
-          game.message += " Game over!";
+          game.turn = "dealer";
+          game.message += " Dealer's turn!";
+        }
+        db.ref(`rooms/${roomId}/game`).set(game);
+
+        // If dealer's turn, let him play
+        if (game.turn === "dealer") {
+          setTimeout(() => dealerPlay(), 500);
+        }
+      });
+    }
+
+    function getNextPlayer(game, currentId) {
+      const playerIds = Object.keys(game.playerHands);
+      if (playerIds.length < 2) return null;
+      const idx = playerIds.indexOf(currentId);
+      for (let i = 1; i < playerIds.length; i++) {
+        const nextIdx = (idx + i) % playerIds.length;
+        const nextId = playerIds[nextIdx];
+        if (
+          !(game.busted && game.busted[nextId]) &&
+          !(game.stood && game.stood[nextId])
+        ) {
+          return nextId;
         }
       }
-      game.deck = deck;
-      db.ref(`rooms/${roomId}/game`).set(game);
-    });
-  }
+      return null;
+    }
 
-  function stand() {
-    db.ref(`rooms/${roomId}/game`).once('value', snap => {
-      const game = snap.val();
-      if (game.turn !== playerId || game.over) return;
+    function dealerPlay() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (!game || game.over) return;
 
-      game.message = `${playerId} stands.`;
-      // Move to next player's turn or end game
-      const nextPlayer = getNextPlayer(game, playerId);
-      if (nextPlayer) {
-        game.turn = nextPlayer;
-      } else {
-        game.turn = null;
+        let dealerHand = game.dealerHand || [];
+        let deck = game.deck || [];
+        let dealerScore = calcScore(dealerHand);
+
+        // Dealer hits until 17 or more
+        while (dealerScore < 17) {
+          const newCard = deck.pop();
+          dealerHand.push(newCard);
+          dealerScore = calcScore(dealerHand);
+        }
+
+        game.dealerHand = dealerHand;
+        game.deck = deck;
         game.over = true;
-        game.message += " Game over!";
-      }
-      db.ref(`rooms/${roomId}/game`).set(game);
-    });
-  }
 
-  function getNextPlayer(game, currentId) {
-    // Get all player IDs in the order they joined
-    const playerIds = Object.keys(game.playerHands);
-    if (playerIds.length < 2) return null;
-    const idx = playerIds.indexOf(currentId);
-    // Only two players, so just switch to the other
-    if (playerIds.length === 2) {
-      return playerIds[(idx + 1) % 2];
-    }
-    // For more than 2 players, find the next one who hasn't busted
-    for (let i = 1; i < playerIds.length; i++) {
-      const nextIdx = (idx + i) % playerIds.length;
-      const nextId = playerIds[nextIdx];
-      if (calcScore(game.playerHands[nextId]) <= 21) {
-        return nextId;
-      }
-    }
-    return null;
-  }
+        // Determine winners
+        game.message = determineWinners(game);
 
-  function calcScore(hand) {
-    let score = 0, aces = 0;
-    hand.forEach(c => {
-      if (['J','Q','K'].includes(c.v)) score += 10;
-      else if (c.v === 'A') { score += 11; aces++; }
-      else score += parseInt(c.v);
-    });
-    while (score > 21 && aces--) score -= 10;
-    return score;
-  }
-</script>
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
+
+    function determineWinners(game) {
+      const dealerScore = calcScore(game.dealerHand);
+      let msg = `Dealer's score: ${dealerScore}. `;
+      for (const pid in game.playerHands) {
+        const playerScore = calcScore(game.playerHands[pid]);
+        if (game.busted && game.busted[pid]) {
+          msg += `${pid} busted. `;
+        } else if (dealerScore > 21) {
+          msg += `${pid} wins! Dealer busted. `;
+        } else if (playerScore > dealerScore) {
+          msg += `${pid} wins! `;
+        } else if (playerScore < dealerScore) {
+          msg += `${pid} loses. `;
+        } else {
+          msg += `${pid} pushes (tie). `;
+        }
+      }
+      return msg;
+    }
+
+    function calcScore(hand) {
+      let score = 0, aces = 0;
+      hand.forEach(c => {
+        if (['J','Q','K'].includes(c.v)) score += 10;
+        else if (c.v === 'A') { score += 11; aces++; }
+        else score += parseInt(c.v);
+      });
+      while (score > 21 && aces--) score -= 10;
+      return score;
+    }
+  </script>
 </body>
 </html>
