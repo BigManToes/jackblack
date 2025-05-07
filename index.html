@@ -15,6 +15,12 @@
     #game-message {
       margin-top: 20px;
     }
+    #turn-indicator {
+      margin-top: 10px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #ffd700;
+    }
     .card {
       display: inline-block;
       margin: 10px;
@@ -57,6 +63,7 @@
   <input id="room-id" placeholder="Enter Room ID" />
   <button onclick="joinRoom()">Join Room</button>
   <button onclick="voteToStart()" id="vote-button" style="display:none;">Vote to Start</button>
+  <div id="turn-indicator"></div>
   <div id="controls" style="display:none;">
     <button onclick="hit()">Hit</button>
     <button onclick="stand()">Stand</button>
@@ -122,6 +129,17 @@
 
         document.getElementById("game-message").innerText = game.message || "";
         document.getElementById("controls").style.display = isPlayerTurn ? "block" : "none";
+
+        // Turn indicator
+        let turnText = "";
+        if (game.over) {
+          turnText = "Game Over";
+        } else if (game.turn === "dealer") {
+          turnText = "It's the dealer's turn!";
+        } else if (game.turn) {
+          turnText = `It's ${game.turn}'s turn!`;
+        }
+        document.getElementById("turn-indicator").innerText = turnText;
       });
 
       db.ref(`rooms/${roomId}/players`).on('value', snap => {
@@ -153,28 +171,28 @@
       for (let s of suits) for (let v of values) deck.push({ v, s });
       deck = deck.sort(() => Math.random() - 0.5);
 
-      // Always select the player with the lowest playerId to start
-      const sortedIds = playerIds.slice().sort();
-      const firstPlayer = sortedIds[0];
+      // Randomize player order
+      const shuffledIds = playerIds.slice().sort(() => Math.random() - 0.5);
 
       const gameState = {
         deck,
         playerHands: {},
         dealerHand: [],
-        turn: firstPlayer,
+        turn: shuffledIds[0],
         message: "Game started!",
         players: {},
         stood: {},
         busted: {},
-        over: false
+        over: false,
+        playerOrder: shuffledIds
       };
 
-      for (let pid of playerIds) {
+      for (let pid of shuffledIds) {
         gameState.playerHands[pid] = [deck.pop(), deck.pop()];
       }
       gameState.dealerHand = [deck.pop(), deck.pop()];
 
-      for (let pid of playerIds) {
+      for (let pid of shuffledIds) {
         gameState.players[pid] = { vote: true };
       }
 
@@ -205,13 +223,21 @@
         const game = snap.val();
         if (game.turn !== playerId || game.over) return;
 
+        // If player already stood or busted, do nothing
+        if ((game.stood && game.stood[playerId]) || (game.busted && game.busted[playerId])) return;
+
         const deck = game.deck;
         const newCard = deck.pop();
         game.playerHands[playerId].push(newCard);
 
         const score = calcScore(game.playerHands[playerId]);
         game.message = `${playerId} hits. Score: ${score}`;
-        if (score > 21) {
+
+        if (score === 21) {
+          game.message = `${playerId} hits 21! Instant win!`;
+          game.over = true;
+          game.winner = playerId;
+        } else if (score > 21) {
           game.message = `${playerId} busted!`;
           game.busted = game.busted || {};
           game.busted[playerId] = true;
@@ -227,8 +253,12 @@
         game.deck = deck;
         db.ref(`rooms/${roomId}/game`).set(game);
 
+        // If instant win, no dealer turn
+        if (game.over && game.winner) {
+          db.ref(`rooms/${roomId}/game`).set(game);
+        }
         // If dealer's turn, let him play
-        if (game.turn === "dealer") {
+        else if (game.turn === "dealer") {
           setTimeout(() => dealerPlay(), 500);
         }
       });
@@ -238,6 +268,9 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         if (game.turn !== playerId || game.over) return;
+
+        // If player already stood or busted, do nothing
+        if ((game.stood && game.stood[playerId]) || (game.busted && game.busted[playerId])) return;
 
         game.message = `${playerId} stands.`;
         game.stood = game.stood || {};
@@ -261,15 +294,15 @@
     }
 
     function getNextPlayer(game, currentId) {
-      const playerIds = Object.keys(game.playerHands);
-      if (playerIds.length < 2) return null;
+      const playerIds = game.playerOrder || Object.keys(game.playerHands);
       const idx = playerIds.indexOf(currentId);
       for (let i = 1; i < playerIds.length; i++) {
         const nextIdx = (idx + i) % playerIds.length;
         const nextId = playerIds[nextIdx];
         if (
           !(game.busted && game.busted[nextId]) &&
-          !(game.stood && game.stood[nextId])
+          !(game.stood && game.stood[nextId]) &&
+          calcScore(game.playerHands[nextId]) < 21
         ) {
           return nextId;
         }
@@ -281,6 +314,13 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         if (!game || game.over) return;
+
+        // If someone already won by 21, skip dealer
+        if (game.winner) {
+          game.over = true;
+          db.ref(`rooms/${roomId}/game`).set(game);
+          return;
+        }
 
         let dealerHand = game.dealerHand || [];
         let deck = game.deck || [];
@@ -305,9 +345,12 @@
     }
 
     function determineWinners(game) {
+      if (game.winner) {
+        return `${game.winner} wins instantly with 21!`;
+      }
       const dealerScore = calcScore(game.dealerHand);
       let msg = `Dealer's score: ${dealerScore}. `;
-      for (const pid in game.playerHands) {
+      for (const pid of game.playerOrder || Object.keys(game.playerHands)) {
         const playerScore = calcScore(game.playerHands[pid]);
         if (game.busted && game.busted[pid]) {
           msg += `${pid} busted. `;
