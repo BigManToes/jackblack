@@ -30,7 +30,7 @@
       margin: 10px;
       cursor: pointer;
     }
-    #player-cards {
+    #dealer-cards, #player-cards {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -48,14 +48,15 @@
   <p>Join a room to play blackjack in real-time!</p>
   <input id="room-id" placeholder="Enter Room ID" />
   <button onclick="joinRoom()">Join Room</button>
+  <p id="players-count">Players: 0/2</p>
+  <p id="vote-status">Waiting for players to vote to start.</p>
+
   <div id="controls" style="display:none;">
-    <p id="start-status"></p>
-    <button onclick="voteToStart()" id="start-game-button">Vote to Start</button>
+    <button onclick="startGame()">Start Game</button>
     <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
     <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
   </div>
   <div id="player-cards"></div>
-  <div id="other-player-cards"></div>
   <div id="game-message"></div>
 
   <!-- Firebase scripts -->
@@ -63,7 +64,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
   <script>
-    // Firebase config
+    // REPLACE with your Firebase config:
     const firebaseConfig = {
       apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
       authDomain: "jackblack-789f5.firebaseapp.com",
@@ -81,8 +82,6 @@
     let playerId = "player" + Math.floor(Math.random() * 1000);
     let isPlayerTurn = false;
     let gameStarted = false;
-    let playerVoted = false;
-    let opponentId = "";  // Variable to hold the other player's ID
 
     function joinRoom() {
       roomId = document.getElementById("room-id").value.trim();
@@ -92,58 +91,23 @@
       playerRef.set({ joined: Date.now(), votedToStart: false });
       playerRef.onDisconnect().remove();
 
-      document.getElementById("controls").style.display = "block";
       listenForUpdates();
     }
 
     function listenForUpdates() {
-      db.ref(`rooms/${roomId}`).on('value', snap => {
-        const room = snap.val();
-        if (!room) return;
+      db.ref(`rooms/${roomId}/players`).on('value', snap => {
+        const players = snap.val();
+        const playerCount = Object.keys(players || {}).length;
+        document.getElementById("players-count").innerText = `Players: ${playerCount}/2`;
 
-        const players = room.players;
-        const game = room.game || {};
+        // Update vote status and start game once both players vote
+        const votedCount = Object.values(players).filter(player => player.votedToStart).length;
+        document.getElementById("vote-status").innerText = `${votedCount} out of 2 voted to start.`;
 
-        // Display who is in the room
-        document.getElementById("start-status").innerText = `Players: ${Object.keys(players).length}/2`;
-
-        // Set opponent's ID
-        opponentId = Object.keys(players).find(id => id !== playerId);
-
-        // Check if both players voted to start
-        playerVoted = players[playerId]?.votedToStart || false;
-        if (players['player1']?.votedToStart && players['player2']?.votedToStart) {
-          document.getElementById("start-game-button").style.display = "none";
-          if (!gameStarted && !game.turn) {
-            startGame(); // Start game once both voted
-          }
-        }
-
-        // Turn-based system
-        isPlayerTurn = game.turn === playerId;
-        if (gameStarted) {
-          updateCards("player-cards", game.playerHands?.[playerId] || []);
-          updateCards("other-player-cards", game.playerHands?.[opponentId] || [], true);  // Hide opponent's cards
-          document.getElementById("game-message").innerText = game.message || "";
-          document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
-          document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
-          document.getElementById("game-message").innerText = `${game.turn === playerId ? 'Your' : 'Opponent\'s'} turn`;
-        } else {
-          document.getElementById("game-message").innerText = "Waiting for both players to vote to start.";
-        }
-
-        // Display the winner and reset the game
-        if (game.over) {
-          const winner = game.winner ? game.winner : "It's a tie!";
-          document.getElementById("game-message").innerText = `Game Over! ${winner} wins!`;
-          resetGame();
+        if (votedCount === 2 && !gameStarted) {
+          startGame();
         }
       });
-    }
-
-    function voteToStart() {
-      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-      playerRef.update({ votedToStart: true });
     }
 
     function startGame() {
@@ -157,8 +121,9 @@
       const gameState = {
         deck,
         playerHands: {},
-        turn: 'player1',  // Player 1 starts first
-        message: "Game started! Player 1's turn"
+        dealerHand: [],
+        turn: "player1", // Player 1 always starts
+        message: "Game started!"
       };
 
       // Deal 2 cards to each player
@@ -167,7 +132,47 @@
         for (let pid in players) {
           gameState.playerHands[pid] = [deck.pop(), deck.pop()];
         }
+        gameState.dealerHand = [deck.pop(), deck.pop()];
         db.ref(`rooms/${roomId}/game`).set(gameState);
+        document.getElementById("controls").style.display = "block";
+      });
+    }
+
+    function updateUI() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (!game) return;
+
+        const playerHand = game.playerHands?.[playerId] || [];
+        const dealerHand = game.dealerHand || [];
+        isPlayerTurn = game.turn === playerId;
+
+        // Show cards only for the current player
+        updateCards("player-cards", playerHand);
+        updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
+        document.getElementById("game-message").innerText = game.message || "";
+
+        // Show turn status
+        if (game.turn === playerId) {
+          document.getElementById("game-message").innerText = "Your turn!";
+        } else {
+          document.getElementById("game-message").innerText = "Waiting for the other player...";
+        }
+
+        // Show hit and stand buttons only if it's player's turn
+        document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
+        document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
+      });
+    }
+
+    function updateCards(id, cards) {
+      const div = document.getElementById(id);
+      div.innerHTML = "";
+      cards.forEach(card => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerText = `${card.v} ${card.s}`;
+        div.appendChild(el);
       });
     }
 
@@ -180,17 +185,16 @@
         const newCard = deck.pop();
         game.playerHands[playerId].push(newCard);
         const score = calcScore(game.playerHands[playerId]);
-
         game.message = `${playerId} hits. Score: ${score}`;
+
         if (score > 21) {
           game.message = `${playerId} busted!`;
           game.turn = null;
           game.over = true;
-          game.winner = opponentId;  // Opponent wins if player busts
         }
-
         game.deck = deck;
         db.ref(`rooms/${roomId}/game`).set(game);
+        updateUI();
       });
     }
 
@@ -198,53 +202,22 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         game.message = `${playerId} stands.`;
-        game.turn = game.turn === 'player1' ? 'player2' : 'player1'; // Switch turn
+        game.turn = null; // Game over or next player's turn
+        game.over = true;
         db.ref(`rooms/${roomId}/game`).set(game);
-      });
-    }
-
-    function updateCards(id, cards, hideCards = false) {
-      const div = document.getElementById(id);
-      div.innerHTML = "";
-      cards.forEach(card => {
-        const el = document.createElement("div");
-        el.className = "card";
-        el.innerText = hideCards ? "??" : `${card.v} ${card.s}`;
-        div.appendChild(el);
+        updateUI();
       });
     }
 
     function calcScore(hand) {
-      let score = 0;
-      let aces = 0;
-      hand.forEach(card => {
-        if (card.v === 'A') {
-          score += 11;
-          aces++;
-        } else if (['K', 'Q', 'J'].includes(card.v)) {
-          score += 10;
-        } else {
-          score += parseInt(card.v);
-        }
+      let score = 0, aces = 0;
+      hand.forEach(c => {
+        if (['J', 'Q', 'K'].includes(c.v)) score += 10;
+        else if (c.v === 'A') { score += 11; aces++; }
+        else score += parseInt(c.v);
       });
-
-      while (score > 21 && aces > 0) {
-        score -= 10;
-        aces--;
-      }
-
+      while (score > 21 && aces--) score -= 10;
       return score;
-    }
-
-    function resetGame() {
-      // Reset game state
-      gameStarted = false;
-      db.ref(`rooms/${roomId}`).update({ game: null });
-      db.ref(`rooms/${roomId}/players`).once('value', snap => {
-        snap.forEach(player => {
-          player.ref.update({ votedToStart: false });
-        });
-      });
     }
   </script>
 </body>
