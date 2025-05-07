@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JackBlack</title>
+  <title>JackBlack Multiplayer</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,6 +14,13 @@
     }
     #game-message {
       margin-top: 20px;
+      font-size: 20px;
+    }
+    #winner-message {
+      margin-top: 10px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffd700;
     }
     #turn-indicator {
       margin-top: 10px;
@@ -71,6 +78,7 @@
   <div id="player-cards"></div>
   <div id="dealer-cards"></div>
   <div id="game-message"></div>
+  <div id="winner-message"></div>
 
   <!-- Firebase scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
@@ -128,6 +136,7 @@
         updateCards("dealer-cards", showDealerHand);
 
         document.getElementById("game-message").innerText = game.message || "";
+        document.getElementById("winner-message").innerText = game.winnerMessage || "";
         document.getElementById("controls").style.display = isPlayerTurn ? "block" : "none";
 
         // Turn indicator
@@ -180,6 +189,7 @@
         dealerHand: [],
         turn: shuffledIds[0],
         message: "Game started!",
+        winnerMessage: "",
         players: {},
         stood: {},
         busted: {},
@@ -189,11 +199,24 @@
 
       for (let pid of shuffledIds) {
         gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+        
+        // Check for initial blackjack
+        const score = calcScore(gameState.playerHands[pid]);
+        if (score === 21) {
+          gameState.message = `${pid} has blackjack (21)!`;
+          gameState.winnerMessage = `🏆 ${pid} WINS WITH BLACKJACK! 🏆`;
+          gameState.winner = pid;
+          gameState.over = true;
+        }
       }
-      gameState.dealerHand = [deck.pop(), deck.pop()];
-
-      for (let pid of shuffledIds) {
-        gameState.players[pid] = { vote: true };
+      
+      // Only deal dealer cards if no player has blackjack
+      if (!gameState.over) {
+        gameState.dealerHand = [deck.pop(), deck.pop()];
+        
+        for (let pid of shuffledIds) {
+          gameState.players[pid] = { vote: true };
+        }
       }
 
       db.ref(`rooms/${roomId}/game`).set(gameState);
@@ -241,6 +264,18 @@
           game.message = `${playerId} hits 21!`;
           game.stood = game.stood || {};
           game.stood[playerId] = true;
+          
+          // Check if 21 is an instant win
+          const allBustedExceptCurrent = Object.keys(game.playerHands)
+            .filter(pid => pid !== playerId)
+            .every(pid => (game.busted && game.busted[pid]) || 
+                           (game.playerHands[pid] && calcScore(game.playerHands[pid]) < 21));
+                           
+          if (allBustedExceptCurrent) {
+            game.winnerMessage = `🏆 ${playerId} WINS WITH 21! 🏆`;
+            game.over = true;
+            game.winner = playerId;
+          }
         } else {
           game.message = `${playerId} hits. Score: ${score}`;
         }
@@ -254,7 +289,9 @@
           calcScore(game.playerHands[pid]) === 21
         );
         
-        if (allDone) {
+        if (game.over) {
+          db.ref(`rooms/${roomId}/game`).set(game);
+        } else if (allDone) {
           game.turn = "dealer";
           game.message += " Dealer's turn!";
           db.ref(`rooms/${roomId}/game`).set(game);
@@ -340,58 +377,74 @@
         game.deck = deck;
         game.over = true;
 
-        // Determine winners
-        game.message = determineWinners(game);
+        // Get game results
+        const results = determineWinner(game);
+        game.message = results.message;
+        game.winnerMessage = results.winnerMessage;
+        game.winner = results.winner;
 
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
 
-    function determineWinners(game) {
+    function determineWinner(game) {
       const dealerScore = calcScore(game.dealerHand);
       let dealerBusted = dealerScore > 21;
       
-      let msg = `Dealer's score: ${dealerScore}${dealerBusted ? " (BUSTED)" : ""}. Results: `;
+      let message = `Dealer's score: ${dealerScore}${dealerBusted ? " (BUSTED)" : ""}. `;
+      let winnerMessage = "";
+      let winner = null;
       
-      // First list all busted players
-      const bustedPlayers = [];
-      const winners = [];
-      const losers = [];
-      const ties = [];
-      
+      // First check if anyone hit 21 exactly
       for (const pid of game.playerOrder || Object.keys(game.playerHands)) {
-        const playerScore = calcScore(game.playerHands[pid]);
+        const score = calcScore(game.playerHands[pid]);
+        if (score === 21 && !(game.busted && game.busted[pid])) {
+          winner = pid;
+          winnerMessage = `🏆 ${pid} WINS WITH 21! 🏆`;
+          break;
+        }
+      }
+      
+      // If no one hit 21, find highest score that's not busted
+      if (!winner) {
+        let highestScore = dealerBusted ? 0 : dealerScore;
+        let highestPlayer = dealerBusted ? null : "dealer";
         
-        if (game.busted && game.busted[pid]) {
-          bustedPlayers.push(`${pid} (BUSTED with ${playerScore})`);
-        } else if (dealerBusted) {
-          winners.push(`${pid} (${playerScore})`);
-        } else if (playerScore > dealerScore) {
-          winners.push(`${pid} (${playerScore})`);
-        } else if (playerScore < dealerScore) {
-          losers.push(`${pid} (${playerScore})`);
+        for (const pid of game.playerOrder || Object.keys(game.playerHands)) {
+          const score = calcScore(game.playerHands[pid]);
+          if (score <= 21 && score > highestScore && !(game.busted && game.busted[pid])) {
+            highestScore = score;
+            highestPlayer = pid;
+          }
+        }
+        
+        if (highestPlayer && highestPlayer !== "dealer") {
+          winner = highestPlayer;
+          winnerMessage = `🏆 ${highestPlayer} WINS WITH ${highestScore}! 🏆`;
+        } else if (highestPlayer === "dealer") {
+          message += "Dealer wins!";
         } else {
-          ties.push(`${pid} (${playerScore})`);
+          message += "Everyone busted! No winner.";
+        }
+      }
+      
+      // List busted players
+      const bustedPlayers = [];
+      for (const pid of game.playerOrder || Object.keys(game.playerHands)) {
+        if (game.busted && game.busted[pid]) {
+          bustedPlayers.push(`${pid}`);
         }
       }
       
       if (bustedPlayers.length > 0) {
-        msg += `BUSTED: ${bustedPlayers.join(", ")}. `;
+        message += `BUSTED: ${bustedPlayers.join(", ")}. `;
       }
       
-      if (winners.length > 0) {
-        msg += `WINNERS: ${winners.join(", ")}. `;
-      }
-      
-      if (losers.length > 0) {
-        msg += `LOSERS: ${losers.join(", ")}. `;
-      }
-      
-      if (ties.length > 0) {
-        msg += `TIES: ${ties.join(", ")}. `;
-      }
-      
-      return msg;
+      return {
+        message,
+        winnerMessage,
+        winner
+      };
     }
 
     function calcScore(hand) {
