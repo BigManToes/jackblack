@@ -169,11 +169,15 @@
         db.ref(`rooms/${roomId}/game`).set(gameState);
       });
 
+      // Reset the vote state and disable further voting
       db.ref(`rooms/${roomId}/players`).update({
         vote: false  // Reset vote to false after game starts
       });
 
-      document.getElementById("vote-button").style.display = "none"; // Hide vote button after game starts
+      // Hide the vote button after the game starts
+      document.getElementById("vote-button").style.display = "none";
+
+      listenForGameUpdates();  // Start listening for game updates
     }
 
     function updateCards(id, cards) {
