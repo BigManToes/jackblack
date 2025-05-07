@@ -138,14 +138,17 @@
         deck,
         playerHands: {},
         dealerHand: [],
-        turn: playerId,
+        turn: "player1", // Player 1 starts
         message: "Game started!"
       };
 
       db.ref(`rooms/${roomId}/players`).once('value', snap => {
         const players = snap.val();
+        let count = 1;
         for (let pid in players) {
           gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+          if (count === 1) gameState.turn = pid; // Player 1 starts
+          count++;
         }
         gameState.dealerHand = [deck.pop(), deck.pop()];
         db.ref(`rooms/${roomId}/game`).set(gameState);
@@ -170,16 +173,19 @@
     function hit() {
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
-        if (game.turn !== playerId) return;
+        if (game.turn !== playerId || game.over) return;
+
         const deck = game.deck;
         const newCard = deck.pop();
         game.playerHands[playerId].push(newCard);
+
         const score = calcScore(game.playerHands[playerId]);
         game.message = `${playerId} hits. Score: ${score}`;
         if (score > 21) {
           game.message = `${playerId} busted!`;
           game.turn = null;
           game.over = true;
+          game.winner = game.turn === "player1" ? "player2" : "player1";
         }
         game.deck = deck;
         db.ref(`rooms/${roomId}/game`).set(game);
@@ -189,9 +195,10 @@
     function stand() {
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
+        if (game.turn !== playerId || game.over) return;
+
         game.message = `${playerId} stands.`;
-        game.turn = null; // or pass to next player if more than 2
-        game.over = true;
+        game.turn = game.turn === "player1" ? "player2" : "player1"; // Switch turns
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
