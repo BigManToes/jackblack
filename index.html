@@ -57,7 +57,6 @@
 
   <div id="controls" style="display:none;">
     <button id="vote-button" onclick="voteToStart()">Vote to Start</button>
-    <button id="start-game-button" onclick="startGame()" style="display:none;">Start Game</button>
     <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
     <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
   </div>
@@ -117,7 +116,7 @@
 
         if (votes === totalPlayers) {
           document.getElementById("vote-button").style.display = "none";
-          document.getElementById("start-game-button").style.display = "inline-block";
+          startGame();
         }
       });
     }
