@@ -30,7 +30,7 @@
       margin: 10px;
       cursor: pointer;
     }
-    #dealer-cards, #player-cards {
+    #player-cards {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -50,12 +50,12 @@
   <button onclick="joinRoom()">Join Room</button>
   <div id="controls" style="display:none;">
     <p id="start-status"></p>
-    <button onclick="startGame()">Start Game</button>
+    <button onclick="voteToStart()" id="start-game-button">Vote to Start</button>
     <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
     <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
   </div>
   <div id="player-cards"></div>
-  <div id="dealer-cards"></div>
+  <div id="other-player-cards"></div>
   <div id="game-message"></div>
 
   <!-- Firebase scripts -->
@@ -63,7 +63,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
   <script>
-    // REPLACE with your Firebase config:
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
       authDomain: "jackblack-789f5.firebaseapp.com",
@@ -80,75 +80,88 @@
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
     let isPlayerTurn = false;
-    let gameState = null;
+    let gameStarted = false;
+    let playerVoted = false;
+    let opponentId = "";  // Variable to hold the other player's ID
 
     function joinRoom() {
       roomId = document.getElementById("room-id").value.trim();
       if (!roomId) return alert("Enter room ID!");
 
       const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-      playerRef.set({ joined: Date.now() });
+      playerRef.set({ joined: Date.now(), votedToStart: false });
       playerRef.onDisconnect().remove();
 
       document.getElementById("controls").style.display = "block";
       listenForUpdates();
     }
 
+    function listenForUpdates() {
+      db.ref(`rooms/${roomId}`).on('value', snap => {
+        const room = snap.val();
+        if (!room) return;
+
+        const players = room.players;
+        const game = room.game || {};
+
+        // Display who is in the room
+        document.getElementById("start-status").innerText = `Players: ${Object.keys(players).length}/2`;
+
+        // Set opponent's ID
+        opponentId = Object.keys(players).find(id => id !== playerId);
+
+        // Check if both players voted to start
+        playerVoted = players[playerId]?.votedToStart || false;
+        if (players['player1']?.votedToStart && players['player2']?.votedToStart) {
+          document.getElementById("start-game-button").style.display = "none";
+          if (!gameStarted && !game.turn) {
+            startGame(); // Start game once both voted
+          }
+        }
+
+        // Turn-based system
+        isPlayerTurn = game.turn === playerId;
+
+        // Update game state
+        if (gameStarted) {
+          updateCards("player-cards", game.playerHands?.[playerId] || []);
+          updateCards("other-player-cards", game.playerHands?.[opponentId] || [], true);
+          document.getElementById("game-message").innerText = game.message || "";
+          document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
+          document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
+        } else {
+          document.getElementById("game-message").innerText = "Waiting for both players to vote to start.";
+        }
+      });
+    }
+
+    function voteToStart() {
+      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
+      playerRef.update({ votedToStart: true });
+    }
+
     function startGame() {
+      gameStarted = true;
       const suits = ['♠', '♣', '♦', '♥'];
       const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
       let deck = [];
       for (let s of suits) for (let v of values) deck.push({ v, s });
       deck = deck.sort(() => Math.random() - 0.5);
 
-      gameState = {
+      const gameState = {
         deck,
         playerHands: {},
-        dealerHand: [],
-        turn: "player1",  // Player 1 always starts
-        startVotes: 0,
-        message: "Game started!"
+        turn: 'player1',  // Player 1 starts first
+        message: "Game started! Player 1's turn"
       };
 
+      // Deal 2 cards to each player
       db.ref(`rooms/${roomId}/players`).once('value', snap => {
         const players = snap.val();
         for (let pid in players) {
           gameState.playerHands[pid] = [deck.pop(), deck.pop()];
         }
-        gameState.dealerHand = [deck.pop(), deck.pop()];
         db.ref(`rooms/${roomId}/game`).set(gameState);
-      });
-    }
-
-    function listenForUpdates() {
-      db.ref(`rooms/${roomId}/game`).on('value', snap => {
-        const game = snap.val();
-        if (!game) return;
-
-        const playerHand = game.playerHands?.[playerId] || [];
-        const dealerHand = game.dealerHand || [];
-        isPlayerTurn = game.turn === playerId;
-
-        updateCards("player-cards", playerHand);
-        updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
-        document.getElementById("game-message").innerText = game.message || "";
-
-        document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
-        document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
-
-        // Update start button and vote count
-        document.getElementById("start-status").innerText = `${game.startVotes} out of 2 players voted to start`;
-      });
-    }
-
-    function updateCards(id, cards) {
-      const div = document.getElementById(id);
-      div.innerHTML = "";
-      cards.forEach(card => {
-        const el = document.createElement("div");
-        el.className = "card";
-        el.innerText = `${card.v} ${card.s}`;
-        div.appendChild(el);
       });
     }
 
@@ -156,16 +169,19 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         if (game.turn !== playerId) return;
+
         const deck = game.deck;
         const newCard = deck.pop();
         game.playerHands[playerId].push(newCard);
         const score = calcScore(game.playerHands[playerId]);
+
         game.message = `${playerId} hits. Score: ${score}`;
         if (score > 21) {
           game.message = `${playerId} busted!`;
           game.turn = null;
           game.over = true;
         }
+
         game.deck = deck;
         db.ref(`rooms/${roomId}/game`).set(game);
       });
@@ -175,8 +191,19 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         game.message = `${playerId} stands.`;
-        game.turn = game.turn === "player1" ? "player2" : "player1"; // Switch turns
+        game.turn = game.turn === 'player1' ? 'player2' : 'player1'; // Switch turn
         db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
+
+    function updateCards(id, cards, hideCards = false) {
+      const div = document.getElementById(id);
+      div.innerHTML = "";
+      cards.forEach(card => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerText = hideCards ? `${card.v} ${card.s}` : "??"; // Hide the other player's cards
+        div.appendChild(el);
       });
     }
 
