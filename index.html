@@ -49,6 +49,7 @@
   <input id="room-id" placeholder="Enter Room ID" />
   <button onclick="joinRoom()">Join Room</button>
   <div id="controls" style="display:none;">
+    <p id="start-status"></p>
     <button onclick="startGame()">Start Game</button>
     <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
     <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
@@ -79,6 +80,7 @@
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
     let isPlayerTurn = false;
+    let playersReady = 0;
 
     function joinRoom() {
       roomId = document.getElementById("room-id").value.trim();
@@ -93,29 +95,31 @@
     }
 
     function startGame() {
-      const suits = ['♠', '♣', '♦', '♥'];
-      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-      let deck = [];
-      for (let s of suits) for (let v of values) deck.push({ v, s });
-      deck = deck.sort(() => Math.random() - 0.5);
+      // Update the players' ready status
+      db.ref(`rooms/${roomId}/players/${playerId}`).update({ ready: true });
 
-      const gameState = {
-        deck,
-        playerHands: {},
-        dealerHand: [],
-        turn: playerId,
-        message: "Game started!"
-      };
-
-      // Deal 2 to each player
+      // Check if both players are ready to start
       db.ref(`rooms/${roomId}/players`).once('value', snap => {
         const players = snap.val();
-        for (let pid in players) {
-          gameState.playerHands[pid] = [deck.pop(), deck.pop()];
-        }
-        gameState.dealerHand = [deck.pop(), deck.pop()];
-        db.ref(`rooms/${roomId}/game`).set(gameState);
+        playersReady = Object.values(players).filter(player => player.ready).length;
+        updateStartButtonStatus();
       });
+    }
+
+    function updateStartButtonStatus() {
+      const status = `${playersReady} out of 2 players ready to start.`;
+      document.getElementById("start-status").innerText = status;
+
+      // If both players are ready, allow the game to start
+      if (playersReady === 2) {
+        db.ref(`rooms/${roomId}/game`).set({
+          gameStarted: true,
+          turn: playerId
+        });
+        document.getElementById("start-status").innerText = "Game Started!";
+        document.getElementById("hit-button").style.display = "inline-block";
+        document.getElementById("stand-button").style.display = "inline-block";
+      }
     }
 
     function listenForUpdates() {
@@ -123,16 +127,18 @@
         const game = snap.val();
         if (!game) return;
 
-        const playerHand = game.playerHands?.[playerId] || [];
-        const dealerHand = game.dealerHand || [];
-        isPlayerTurn = game.turn === playerId;
+        if (game.gameStarted) {
+          const playerHand = game.playerHands?.[playerId] || [];
+          const dealerHand = game.dealerHand || [];
+          isPlayerTurn = game.turn === playerId;
 
-        updateCards("player-cards", playerHand);
-        updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
-        document.getElementById("game-message").innerText = game.message || "";
+          updateCards("player-cards", playerHand);
+          updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
+          document.getElementById("game-message").innerText = game.message || "";
 
-        document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
-        document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
+          document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
+          document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
+        }
       });
     }
 
