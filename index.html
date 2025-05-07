@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JackBlack Multiplayer</title>
+  <title>JackBlack</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -149,12 +149,12 @@
         }).join(", ");
         document.getElementById("player-info").innerText = `Players: ${playerList}`;
 
-        // Voting logic: only the player with the lowest playerId starts the game
+        // Voting logic for any number of players (not just 2)
         const playerIds = Object.keys(players);
         const playerVotes = Object.values(players).filter(p => p.vote).length;
-        document.getElementById("players-voting").innerText = `${playerVotes} out of 2 voted to start.`;
+        document.getElementById("players-voting").innerText = `${playerVotes} out of ${playerIds.length} voted to start.`;
 
-        if (playerIds.length === 2 && playerVotes === 2) {
+        if (playerIds.length >= 2 && playerVotes === playerIds.length) {
           // Only the player with the lowest playerId starts the game
           const sortedIds = playerIds.slice().sort();
           if (playerId === sortedIds[0]) {
@@ -231,28 +231,30 @@
         game.playerHands[playerId].push(newCard);
 
         const score = calcScore(game.playerHands[playerId]);
-        game.message = `${playerId} hits. Score: ${score}`;
-
-        if (score === 21) {
-          game.message = `${playerId} hits 21! Instant win!`;
-          game.over = true;
-          game.winner = playerId;
-        } else if (score > 21) {
-          game.message = `${playerId} busted!`;
+        
+        // Check for bust immediately and announce it
+        if (score > 21) {
+          game.message = `${playerId} BUSTED with ${score}!`;
           game.busted = game.busted || {};
           game.busted[playerId] = true;
+        } else if (score === 21) {
+          game.message = `${playerId} hits 21!`;
+          game.stood = game.stood || {};
+          game.stood[playerId] = true;
+        } else {
+          game.message = `${playerId} hits. Score: ${score}`;
         }
+
+        game.deck = deck;
 
         // Check if all players are done
         const allDone = Object.keys(game.playerHands).every(pid =>
           (game.stood && game.stood[pid]) ||
           (game.busted && game.busted[pid]) ||
-          calcScore(game.playerHands[pid]) >= 21
+          calcScore(game.playerHands[pid]) === 21
         );
-        if (game.over && game.winner) {
-          // If instant win, no dealer turn
-          db.ref(`rooms/${roomId}/game`).set(game);
-        } else if (allDone) {
+        
+        if (allDone) {
           game.turn = "dealer";
           game.message += " Dealer's turn!";
           db.ref(`rooms/${roomId}/game`).set(game);
@@ -262,7 +264,6 @@
           if (nextPlayer) {
             game.turn = nextPlayer;
           }
-          game.deck = deck;
           db.ref(`rooms/${roomId}/game`).set(game);
         }
       });
@@ -284,8 +285,9 @@
         const allDone = Object.keys(game.playerHands).every(pid =>
           (game.stood && game.stood[pid]) ||
           (game.busted && game.busted[pid]) ||
-          calcScore(game.playerHands[pid]) >= 21
+          calcScore(game.playerHands[pid]) === 21
         );
+        
         if (allDone) {
           game.turn = "dealer";
           game.message += " Dealer's turn!";
@@ -323,13 +325,6 @@
         const game = snap.val();
         if (!game || game.over) return;
 
-        // If someone already won by 21, skip dealer
-        if (game.winner) {
-          game.over = true;
-          db.ref(`rooms/${roomId}/game`).set(game);
-          return;
-        }
-
         let dealerHand = game.dealerHand || [];
         let deck = game.deck || [];
         let dealerScore = calcScore(dealerHand);
@@ -353,25 +348,49 @@
     }
 
     function determineWinners(game) {
-      if (game.winner) {
-        return `${game.winner} wins instantly with 21!`;
-      }
       const dealerScore = calcScore(game.dealerHand);
-      let msg = `Dealer's score: ${dealerScore}. `;
+      let dealerBusted = dealerScore > 21;
+      
+      let msg = `Dealer's score: ${dealerScore}${dealerBusted ? " (BUSTED)" : ""}. Results: `;
+      
+      // First list all busted players
+      const bustedPlayers = [];
+      const winners = [];
+      const losers = [];
+      const ties = [];
+      
       for (const pid of game.playerOrder || Object.keys(game.playerHands)) {
         const playerScore = calcScore(game.playerHands[pid]);
+        
         if (game.busted && game.busted[pid]) {
-          msg += `${pid} busted. `;
-        } else if (dealerScore > 21) {
-          msg += `${pid} wins! Dealer busted. `;
+          bustedPlayers.push(`${pid} (BUSTED with ${playerScore})`);
+        } else if (dealerBusted) {
+          winners.push(`${pid} (${playerScore})`);
         } else if (playerScore > dealerScore) {
-          msg += `${pid} wins! `;
+          winners.push(`${pid} (${playerScore})`);
         } else if (playerScore < dealerScore) {
-          msg += `${pid} loses. `;
+          losers.push(`${pid} (${playerScore})`);
         } else {
-          msg += `${pid} pushes (tie). `;
+          ties.push(`${pid} (${playerScore})`);
         }
       }
+      
+      if (bustedPlayers.length > 0) {
+        msg += `BUSTED: ${bustedPlayers.join(", ")}. `;
+      }
+      
+      if (winners.length > 0) {
+        msg += `WINNERS: ${winners.join(", ")}. `;
+      }
+      
+      if (losers.length > 0) {
+        msg += `LOSERS: ${losers.join(", ")}. `;
+      }
+      
+      if (ties.length > 0) {
+        msg += `TIES: ${ties.join(", ")}. `;
+      }
+      
       return msg;
     }
 
