@@ -159,6 +159,7 @@
         gameState.dealerHand = [deck.pop(), deck.pop()];
         db.ref(`rooms/${roomId}/game`).set(gameState);
         document.getElementById("controls").style.display = "block";
+        updateUI();
       });
     }
 
