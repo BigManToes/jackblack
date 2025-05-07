@@ -241,25 +241,29 @@
           game.message = `${playerId} busted!`;
           game.busted = game.busted || {};
           game.busted[playerId] = true;
-          // Move to next player's turn or dealer
+        }
+
+        // Check if all players are done
+        const allDone = Object.keys(game.playerHands).every(pid =>
+          (game.stood && game.stood[pid]) ||
+          (game.busted && game.busted[pid]) ||
+          calcScore(game.playerHands[pid]) >= 21
+        );
+        if (game.over && game.winner) {
+          // If instant win, no dealer turn
+          db.ref(`rooms/${roomId}/game`).set(game);
+        } else if (allDone) {
+          game.turn = "dealer";
+          game.message += " Dealer's turn!";
+          db.ref(`rooms/${roomId}/game`).set(game);
+          setTimeout(() => dealerPlay(), 500);
+        } else {
           const nextPlayer = getNextPlayer(game, playerId);
           if (nextPlayer) {
             game.turn = nextPlayer;
-          } else {
-            game.turn = "dealer";
-            game.message += " Dealer's turn!";
           }
-        }
-        game.deck = deck;
-        db.ref(`rooms/${roomId}/game`).set(game);
-
-        // If instant win, no dealer turn
-        if (game.over && game.winner) {
+          game.deck = deck;
           db.ref(`rooms/${roomId}/game`).set(game);
-        }
-        // If dealer's turn, let him play
-        else if (game.turn === "dealer") {
-          setTimeout(() => dealerPlay(), 500);
         }
       });
     }
@@ -276,19 +280,23 @@
         game.stood = game.stood || {};
         game.stood[playerId] = true;
 
-        // Move to next player's turn or dealer
-        const nextPlayer = getNextPlayer(game, playerId);
-        if (nextPlayer) {
-          game.turn = nextPlayer;
-        } else {
+        // Check if all players are done
+        const allDone = Object.keys(game.playerHands).every(pid =>
+          (game.stood && game.stood[pid]) ||
+          (game.busted && game.busted[pid]) ||
+          calcScore(game.playerHands[pid]) >= 21
+        );
+        if (allDone) {
           game.turn = "dealer";
           game.message += " Dealer's turn!";
-        }
-        db.ref(`rooms/${roomId}/game`).set(game);
-
-        // If dealer's turn, let him play
-        if (game.turn === "dealer") {
+          db.ref(`rooms/${roomId}/game`).set(game);
           setTimeout(() => dealerPlay(), 500);
+        } else {
+          const nextPlayer = getNextPlayer(game, playerId);
+          if (nextPlayer) {
+            game.turn = nextPlayer;
+          }
+          db.ref(`rooms/${roomId}/game`).set(game);
         }
       });
     }
