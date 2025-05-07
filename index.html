@@ -52,7 +52,7 @@
   <p id="vote-status">Waiting for players to vote to start.</p>
 
   <div id="controls" style="display:none;">
-    <button onclick="voteToStart()">Vote to Start</button>
+    <button id="vote-button" onclick="voteToStart()">Vote to Start</button>
     <button onclick="startGame()" style="display:none;">Start Game</button>
     <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
     <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
@@ -120,6 +120,13 @@
         // Update vote status
         const votedCount = Object.values(players).filter(player => player.votedToStart).length;
         document.getElementById("vote-status").innerText = `${votedCount} out of 2 voted to start.`;
+
+        // Make sure the vote button appears for the current player
+        if (players[playerId] && !players[playerId].votedToStart) {
+          document.getElementById("vote-button").style.display = "inline-block";
+        } else {
+          document.getElementById("vote-button").style.display = "none";
+        }
 
         if (votedCount === 2 && !gameStarted) {
           startGame();
@@ -219,8 +226,8 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         game.message = `${playerId} stands.`;
-        game.turn = null; // Game over or next player's turn
-        game.over = true;
+        game.turn = game.turn === playerId ? (playerId === 'player1' ? 'player2' : 'player1') : playerId; // Switch turn
+        game.over = false;
         db.ref(`rooms/${roomId}/game`).set(game);
         updateUI();
       });
@@ -229,7 +236,7 @@
     function calcScore(hand) {
       let score = 0, aces = 0;
       hand.forEach(c => {
-        if (['J', 'Q', 'K'].includes(c.v)) score += 10;
+        if (['J','Q','K'].includes(c.v)) score += 10;
         else if (c.v === 'A') { score += 11; aces++; }
         else score += parseInt(c.v);
       });
