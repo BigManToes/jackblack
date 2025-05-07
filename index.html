@@ -87,17 +87,29 @@
     let isPlayerTurn = false;
     let playerVote = false;
     let totalVotes = 0;
+    let maxPlayers = 2;
 
     function joinRoom() {
       roomId = document.getElementById("room-id").value.trim();
       if (!roomId) return alert("Enter room ID!");
-      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-      playerRef.set({ joined: Date.now(), vote: false });
-      playerRef.onDisconnect().remove();
+      const roomRef = db.ref(`rooms/${roomId}`);
+      
+      // Ensure no more than maxPlayers can join
+      roomRef.once('value', snap => {
+        const roomData = snap.val();
+        if (roomData && roomData.players && Object.keys(roomData.players).length >= maxPlayers) {
+          alert("Room is full! Cannot join.");
+          return;
+        }
+        
+        const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
+        playerRef.set({ joined: Date.now(), vote: false });
+        playerRef.onDisconnect().remove();
 
-      document.getElementById("player-info").innerText = `You are ${playerId}`;
-      document.getElementById("controls").style.display = "block";
-      listenForUpdates();
+        document.getElementById("player-info").innerText = `You are ${playerId}`;
+        document.getElementById("controls").style.display = "block";
+        listenForUpdates();
+      });
     }
 
     function listenForUpdates() {
@@ -114,7 +126,7 @@
 
         document.getElementById("game-message").innerText = `${votes} out of ${totalPlayers} voted to start.`;
 
-        if (votes === 2) { // Start the game when both players have voted
+        if (votes === maxPlayers) { // Start the game when both players have voted
           startGame();
         }
       });
