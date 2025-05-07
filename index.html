@@ -84,6 +84,7 @@
 
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
+    let isPlayerTurn = false;
     let playerVote = false;
     let totalVotes = 0;
     let maxPlayers = 2;
@@ -118,19 +119,14 @@
 
         let votes = 0;
         let totalPlayers = 0;
-
-        // Iterate through the players and count how many have joined and voted
         for (let pid in players) {
-          if (players[pid].joined) { // Only count players who have joined
-            totalPlayers++;
-            if (players[pid].vote) votes++; // Count how many have voted
-          }
+          totalPlayers++;
+          if (players[pid].vote) votes++;
         }
 
         document.getElementById("game-message").innerText = `${votes} out of ${totalPlayers} voted to start.`;
 
-        // Start the game when both players have voted
-        if (votes === maxPlayers) {
+        if (votes === maxPlayers) { // Start the game when both players have voted
           startGame();
         }
       });
@@ -140,7 +136,6 @@
       const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
       playerRef.update({ vote: true });
       playerVote = true;
-      document.getElementById("vote-button").disabled = true; // Disable button after vote
     }
 
     function startGame() {
@@ -169,15 +164,11 @@
         db.ref(`rooms/${roomId}/game`).set(gameState);
       });
 
-      // Reset the vote state and disable further voting
       db.ref(`rooms/${roomId}/players`).update({
         vote: false  // Reset vote to false after game starts
       });
 
-      // Hide the vote button after the game starts
-      document.getElementById("vote-button").style.display = "none";
-
-      listenForGameUpdates();  // Start listening for game updates
+      document.getElementById("vote-button").style.display = "none"; // Hide vote button after game starts
     }
 
     function updateCards(id, cards) {
@@ -198,7 +189,7 @@
 
         const playerHand = game.playerHands?.[playerId] || [];
         const dealerHand = game.dealerHand || [];
-        const isPlayerTurn = game.turn === playerId;
+        isPlayerTurn = game.turn === playerId;
 
         updateCards("player-cards", playerHand);
         updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
