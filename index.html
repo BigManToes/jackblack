@@ -215,7 +215,7 @@
       el.playersVoting.innerText = `${votesCount}/${playerIds.length} voted to start.`;
       
       // Start game if everyone has voted
-      if (playerIds.length >= 2 && votesCount === playerIds.length) {
+      if (playerIds.length >= 1 && votesCount === playerIds.length) {
         const sortedIds = [...playerIds].sort();
         if (playerId === sortedIds[0]) startGame(playerIds);
       }
