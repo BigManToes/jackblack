@@ -257,8 +257,8 @@
         // Check for initial blackjack
         const score = calcScore(gameState.playerHands[pid]);
         if (score === 21) {
-          gameState.message = `${pid} has blackjack (21)!`;
-          gameState.winnerMessage = `🏆 ${pid} WINS WITH BLACKJACK! 🏆`;
+          gameState.message = `${pid} has jackblack (21)!`;
+          gameState.winnerMessage = `🏆 ${pid} WINS WITH JACKBLACK! 🏆`;
           gameState.winner = pid;
           gameState.over = true;
         }
@@ -346,10 +346,10 @@
         if (game.over) {
           db.ref(`rooms/${roomId}/game`).set(game);
         } else if (allDone) {
-          game.turn = "dealer";
-          game.message += " Dealer's turn!";
+          game.turn = "";
+          game.message += " 's turn!";
           db.ref(`rooms/${roomId}/game`).set(game);
-          setTimeout(() => dealerPlay(), 500);
+          setTimeout(() => Play(), 500);
         } else {
           const nextPlayer = getNextPlayer(game, playerId);
           if (nextPlayer) {
@@ -380,10 +380,10 @@
         );
         
         if (allDone) {
-          game.turn = "dealer";
-          game.message += " Dealer's turn!";
+          game.turn = "";
+          game.message += " 's turn!";
           db.ref(`rooms/${roomId}/game`).set(game);
-          setTimeout(() => dealerPlay(), 500);
+          setTimeout(() => Play(), 500);
         } else {
           const nextPlayer = getNextPlayer(game, playerId);
           if (nextPlayer) {
@@ -411,23 +411,23 @@
       return null;
     }
 
-    function dealerPlay() {
+    function Play() {
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         if (!game || game.over) return;
 
-        let dealerHand = game.dealerHand || [];
+        let Hand = game.Hand || [];
         let deck = game.deck || [];
-        let dealerScore = calcScore(dealerHand);
+        let Score = calcScore(Hand);
 
-        // Dealer hits until 17 or more
-        while (dealerScore < 17) {
+        //  hits until 17 or more
+        while (Score < 17) {
           const newCard = deck.pop();
-          dealerHand.push(newCard);
-          dealerScore = calcScore(dealerHand);
+          Hand.push(newCard);
+          Score = calcScore(Hand);
         }
 
-        game.dealerHand = dealerHand;
+        game.Hand = Hand;
         game.deck = deck;
         game.over = true;
 
@@ -442,10 +442,10 @@
     }
 
     function determineWinner(game) {
-      const dealerScore = calcScore(game.dealerHand);
-      let dealerBusted = dealerScore > 21;
+      const Score = calcScore(game.Hand);
+      let Busted = Score > 21;
       
-      let message = `Dealer: ${dealerScore}${dealerBusted ? " (BUSTED)" : ""}. `;
+      let message = `: ${Score}${Busted ? " (BUSTED)" : ""}. `;
       let winnerMessage = "";
       let winner = null;
       
@@ -461,7 +461,7 @@
       
       // If no one hit 21, find highest score that's not busted
       if (!winner) {
-        let highestScore = dealerBusted ? 0 : dealerScore;
+        let highestScore = Busted ? 0 : dealerScore;
         let highestPlayer = dealerBusted ? null : "dealer";
         
         for (const pid of game.playerOrder || Object.keys(game.playerHands)) {
