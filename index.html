@@ -121,16 +121,22 @@
 
         // Turn-based system
         isPlayerTurn = game.turn === playerId;
-
-        // Update game state
         if (gameStarted) {
           updateCards("player-cards", game.playerHands?.[playerId] || []);
-          updateCards("other-player-cards", game.playerHands?.[opponentId] || [], true);
+          updateCards("other-player-cards", game.playerHands?.[opponentId] || [], true);  // Hide opponent's cards
           document.getElementById("game-message").innerText = game.message || "";
           document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
           document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
+          document.getElementById("game-message").innerText = `${game.turn === playerId ? 'Your' : 'Opponent\'s'} turn`;
         } else {
           document.getElementById("game-message").innerText = "Waiting for both players to vote to start.";
+        }
+
+        // Display the winner and reset the game
+        if (game.over) {
+          const winner = game.winner ? game.winner : "It's a tie!";
+          document.getElementById("game-message").innerText = `Game Over! ${winner} wins!`;
+          resetGame();
         }
       });
     }
@@ -180,6 +186,7 @@
           game.message = `${playerId} busted!`;
           game.turn = null;
           game.over = true;
+          game.winner = opponentId;  // Opponent wins if player busts
         }
 
         game.deck = deck;
@@ -202,21 +209,4 @@
       cards.forEach(card => {
         const el = document.createElement("div");
         el.className = "card";
-        el.innerText = hideCards ? `${card.v} ${card.s}` : "??"; // Hide the other player's cards
-        div.appendChild(el);
-      });
-    }
-
-    function calcScore(hand) {
-      let score = 0, aces = 0;
-      hand.forEach(c => {
-        if (['J','Q','K'].includes(c.v)) score += 10;
-        else if (c.v === 'A') { score += 11; aces++; }
-        else score += parseInt(c.v);
-      });
-      while (score > 21 && aces--) score -= 10;
-      return score;
-    }
-  </script>
-</body>
-</html>
+        el.innerText = hideCards ? "??" : `${card.v} ${
