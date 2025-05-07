@@ -84,7 +84,6 @@
 
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
-    let isPlayerTurn = false;
     let playerVote = false;
     let totalVotes = 0;
     let maxPlayers = 2;
@@ -131,7 +130,7 @@
         document.getElementById("game-message").innerText = `${votes} out of ${totalPlayers} voted to start.`;
 
         // Start the game when both players have voted
-        if (votes === totalPlayers && totalPlayers === maxPlayers) {
+        if (votes === maxPlayers) {
           startGame();
         }
       });
@@ -141,6 +140,7 @@
       const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
       playerRef.update({ vote: true });
       playerVote = true;
+      document.getElementById("vote-button").disabled = true; // Disable button after vote
     }
 
     function startGame() {
@@ -194,7 +194,7 @@
 
         const playerHand = game.playerHands?.[playerId] || [];
         const dealerHand = game.dealerHand || [];
-        isPlayerTurn = game.turn === playerId;
+        const isPlayerTurn = game.turn === playerId;
 
         updateCards("player-cards", playerHand);
         updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
