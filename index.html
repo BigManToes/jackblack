@@ -9,170 +9,122 @@
       font-family: Arial, sans-serif;
       background-color: #1e1e1e;
       color: white;
-      margin: 0;
-      padding: 0;
+      text-align: center;
+      padding: 50px;
     }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #333;
-      padding: 20px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-    #player-info {
-      font-size: 18px;
-    }
-    main {
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #controls {
-      margin: 20px 0;
-    }
-    button {
-      padding: 15px 30px;
-      font-size: 18px;
-      margin: 10px;
-      cursor: pointer;
-    }
-    #player-cards, #dealer-cards {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
+    #game-message {
+      margin-top: 20px;
     }
     .card {
       display: inline-block;
       margin: 10px;
-      padding: 20px 25px;
+      padding: 10px 15px;
       background-color: #f0f0f0;
       border-radius: 10px;
       color: black;
-      font-size: 24px;
+      font-size: 18px;
     }
-    #game-message {
-      margin-top: 30px;
-      font-size: 20px;
-      text-align: center;
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    #dealer-cards, #player-cards {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
     }
     input {
       padding: 10px;
       font-size: 16px;
-      margin-right: 10px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>JackBlack Multiplayer</h1>
-    <div id="player-info"></div>
-  </header>
-  <main>
-    <p>Join a room to play blackjack in real-time!</p>
-    <div>
-      <input id="room-id" placeholder="Enter Room ID" />
-      <button id="join-room-button" onclick="joinRoom()">Join Room</button>
-    </div>
-
-    <div id="controls" style="display:none;">
-      <button id="vote-button" onclick="voteToStart()">Vote to Start</button>
-      <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
-      <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
-    </div>
-
-    <div>
-      <h2>Your Cards</h2>
-      <div id="player-cards"></div>
-    </div>
-    <div>
-      <h2>Dealer's Cards</h2>
-      <div id="dealer-cards"></div>
-    </div>
-    <div id="game-message"></div>
-  </main>
+  <h1>JackBlack Multiplayer</h1>
+  <p>Join a room to play blackjack in real-time!</p>
+  <div id="player-info"></div>
+  <div id="players-voting"></div>
+  <input id="room-id" placeholder="Enter Room ID" />
+  <button onclick="joinRoom()">Join Room</button>
+  <div id="controls" style="display:none;">
+    <button onclick="hit()">Hit</button>
+    <button onclick="stand()">Stand</button>
+  </div>
+  <div id="player-cards"></div>
+  <div id="dealer-cards"></div>
+  <div id="game-message"></div>
 
   <!-- Firebase scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
   <script>
+    // Firebase configuration (your original API keys)
     const firebaseConfig = {
-     apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
-
-  authDomain: "jackblack-789f5.firebaseapp.com",
-
-  databaseURL: "https://jackblack-789f5-default-rtdb.firebaseio.com",
-
-  projectId: "jackblack-789f5",
-
-  storageBucket: "jackblack-789f5.firebasestorage.app",
-
-  messagingSenderId: "14557094808",
-
-  appId: "1:14557094808:web:252134996948616d95c1ed",
-
+      apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
+      authDomain: "jackblack-789f5.firebaseapp.com",
+      databaseURL: "https://jackblack-789f5-default-rtdb.firebaseio.com",
+      projectId: "jackblack-789f5",
+      storageBucket: "jackblack-789f5.firebasestorage.app",
+      messagingSenderId: "14557094808",
+      appId: "1:14557094808:web:252134996948616d95c1ed",
+      measurementId: "G-89GFJPNWKH"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
     let isPlayerTurn = false;
-    let maxPlayers = 2;
 
     function joinRoom() {
       roomId = document.getElementById("room-id").value.trim();
       if (!roomId) return alert("Enter room ID!");
-      const roomRef = db.ref(`rooms/${roomId}`);
 
-      roomRef.once('value', snap => {
-        const roomData = snap.val();
-        if (roomData && roomData.players && Object.keys(roomData.players).length >= maxPlayers) {
-          alert("Room is full! Cannot join.");
-          return;
-        }
+      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
+      playerRef.set({ joined: Date.now(), vote: false });
+      playerRef.onDisconnect().remove();
 
-        const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-        playerRef.set({ joined: Date.now(), vote: false });
-        playerRef.onDisconnect().remove();
-
-        document.getElementById("player-info").innerText = `You are ${playerId}`;
-        document.getElementById("controls").style.display = "block";
-        listenForUpdates();
-        listenForGameUpdates();
-      });
+      document.getElementById("controls").style.display = "block";
+      listenForUpdates();
     }
 
     function listenForUpdates() {
-      db.ref(`rooms/${roomId}/players`).on('value', snap => {
-        const players = snap.val();
-        if (!players) return;
+      db.ref(`rooms/${roomId}/game`).on('value', snap => {
+        const game = snap.val();
+        if (!game) return;
 
-        let votes = 0;
-        let totalPlayers = 0;
-        for (let pid in players) {
-          totalPlayers++;
-          if (players[pid].vote) votes++;
-        }
+        const playerHand = game.playerHands?.[playerId] || [];
+        const dealerHand = game.dealerHand || [];
+        isPlayerTurn = game.turn === playerId;
 
-        document.getElementById("game-message").innerText = `${votes} out of ${totalPlayers} voted to start.`;
+        updateCards("player-cards", playerHand);
+        updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
+        document.getElementById("game-message").innerText = game.message || "";
 
-        if (votes === maxPlayers) {
+        document.getElementById("controls").style.display = isPlayerTurn ? "block" : "none";
+
+        const players = game.players || {};
+        const playerVotes = Object.values(players).filter(p => p.vote).length;
+        document.getElementById("players-voting").innerText = `${playerVotes} out of 2 voted to start.`;
+
+        if (playerVotes === 2) {
           startGame();
         }
       });
-    }
 
-    function voteToStart() {
-      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-      playerRef.update({ vote: true });
+      db.ref(`rooms/${roomId}/players`).on('value', snap => {
+        const players = snap.val();
+        const playerList = Object.keys(players).map(pid => {
+          return `${pid} (${players[pid].vote ? "Voted" : "Not voted"})`;
+        }).join(", ");
+        document.getElementById("player-info").innerText = `Players: ${playerList}`;
+      });
     }
 
     function startGame() {
@@ -185,32 +137,23 @@
       const gameState = {
         deck,
         playerHands: {},
-        dealerHand: [deck.pop(), deck.pop()],
-        turn: null,
-        message: "Game started!",
-        over: false,
-        playerStand: {}
+        dealerHand: [],
+        turn: playerId,
+        message: "Game started!"
       };
 
       db.ref(`rooms/${roomId}/players`).once('value', snap => {
         const players = snap.val();
-        const playerIds = Object.keys(players);
-        if (playerIds.length < maxPlayers) return;
-
-        gameState.turn = playerIds[0]; // Player 1 starts
-        for (let pid of playerIds) {
+        for (let pid in players) {
           gameState.playerHands[pid] = [deck.pop(), deck.pop()];
-          gameState.playerStand[pid] = false;
         }
-
+        gameState.dealerHand = [deck.pop(), deck.pop()];
         db.ref(`rooms/${roomId}/game`).set(gameState);
-        // Reset votes
-        for (let pid of playerIds) {
-          db.ref(`rooms/${roomId}/players/${pid}`).update({ vote: false });
-        }
       });
 
-      document.getElementById("vote-button").style.display = "none";
+      db.ref(`rooms/${roomId}/players`).update({
+        [`${playerId}/vote`]: true
+      });
     }
 
     function updateCards(id, cards) {
@@ -224,65 +167,21 @@
       });
     }
 
-    function listenForGameUpdates() {
-      db.ref(`rooms/${roomId}/game`).on('value', snap => {
-        const game = snap.val();
-        if (!game) return;
-
-        const playerHand = game.playerHands?.[playerId] || [];
-        const dealerHand = game.dealerHand || [];
-        isPlayerTurn = game.turn === playerId;
-
-        updateCards("player-cards", playerHand);
-        updateCards("dealer-cards", game.over ? dealerHand : [dealerHand[0], { v: "??", s: "?" }]);
-        document.getElementById("game-message").innerText = game.message || "";
-
-        if (isPlayerTurn && !game.over) {
-          document.getElementById("hit-button").style.display = "inline-block";
-          document.getElementById("stand-button").style.display = "inline-block";
-        } else {
-          document.getElementById("hit-button").style.display = "none";
-          document.getElementById("stand-button").style.display = "none";
-        }
-
-        if (game.over) {
-          document.getElementById("vote-button").style.display = "inline-block";
-        }
-      });
-    }
-
     function hit() {
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
-       
-::contentReference[oaicite:0]{index=0}
- 
-    function hit() {
-      db.ref(`rooms/${roomId}/game`).once('value', snap => {
-        const game = snap.val();
-        if (!game || game.over || game.turn !== playerId) return;
-
+        if (game.turn !== playerId) return;
         const deck = game.deck;
-        const card = deck.pop();
-        const hand = game.playerHands[playerId];
-        hand.push(card);
-
-        const total = calculateHandValue(hand);
-        let message = `${playerId} hits.`;
-
-        if (total > 21) {
+        const newCard = deck.pop();
+        game.playerHands[playerId].push(newCard);
+        const score = calcScore(game.playerHands[playerId]);
+        game.message = `${playerId} hits. Score: ${score}`;
+        if (score > 21) {
+          game.message = `${playerId} busted!`;
+          game.turn = null;
           game.over = true;
-          message = `${playerId} busts!`;
         }
-
         game.deck = deck;
-        game.playerHands[playerId] = hand;
-        game.message = message;
-
-        if (game.over) {
-          game.message += ` ${getOtherPlayerId(game)} wins!`;
-        }
-
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
@@ -290,61 +189,22 @@
     function stand() {
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
-        if (!game || game.over || game.turn !== playerId) return;
-
-        game.playerStand[playerId] = true;
-        let message = `${playerId} stands.`;
-
-        const otherPlayerId = getOtherPlayerId(game);
-
-        if (game.playerStand[otherPlayerId]) {
-          // Both players have stood; determine winner
-          const playerTotal = calculateHandValue(game.playerHands[playerId]);
-          const otherTotal = calculateHandValue(game.playerHands[otherPlayerId]);
-
-          game.over = true;
-          if (playerTotal > otherTotal) {
-            message = `${playerId} wins!`;
-          } else if (playerTotal < otherTotal) {
-            message = `${otherPlayerId} wins!`;
-          } else {
-            message = "It's a tie!";
-          }
-        } else {
-          // Switch turn to the other player
-          game.turn = otherPlayerId;
-        }
-
-        game.message = message;
+        game.message = `${playerId} stands.`;
+        game.turn = null; // or pass to next player if more than 2
+        game.over = true;
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
 
-    function calculateHandValue(hand) {
-      let total = 0;
-      let aces = 0;
-
-      hand.forEach(card => {
-        if (['J', 'Q', 'K'].includes(card.v)) {
-          total += 10;
-        } else if (card.v === 'A') {
-          total += 11;
-          aces += 1;
-        } else {
-          total += parseInt(card.v);
-        }
+    function calcScore(hand) {
+      let score = 0, aces = 0;
+      hand.forEach(c => {
+        if (['J','Q','K'].includes(c.v)) score += 10;
+        else if (c.v === 'A') { score += 11; aces++; }
+        else score += parseInt(c.v);
       });
-
-      while (total > 21 && aces > 0) {
-        total -= 10;
-        aces -= 1;
-      }
-
-      return total;
-    }
-
-    function getOtherPlayerId(game) {
-      return Object.keys(game.playerHands).find(pid => pid !== playerId);
+      while (score > 21 && aces--) score -= 10;
+      return score;
     }
   </script>
 </body>
