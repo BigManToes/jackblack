@@ -53,7 +53,7 @@
 
   <div id="controls" style="display:none;">
     <button id="vote-button" onclick="voteToStart()">Vote to Start</button>
-    <button onclick="startGame()" style="display:none;">Start Game</button>
+    <button id="start-button" onclick="startGame()" style="display:none;">Start Game</button>
     <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
     <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
   </div>
@@ -81,7 +81,6 @@
 
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
-    let isPlayerTurn = false;
     let gameStarted = false;
 
     function joinRoom() {
@@ -105,8 +104,9 @@
         const votedCount = Object.values(players).filter(player => player.votedToStart).length;
         document.getElementById("vote-status").innerText = `${votedCount} out of 2 voted to start.`;
 
+        // Show the Start Game button if both players voted
         if (votedCount === 2 && !gameStarted) {
-          startGame();
+          document.getElementById("start-button").style.display = "inline-block";
         }
       });
     }
@@ -126,10 +126,6 @@
           document.getElementById("vote-button").style.display = "inline-block";
         } else {
           document.getElementById("vote-button").style.display = "none";
-        }
-
-        if (votedCount === 2 && !gameStarted) {
-          startGame();
         }
       });
     }
@@ -170,7 +166,7 @@
 
         const playerHand = game.playerHands?.[playerId] || [];
         const dealerHand = game.dealerHand || [];
-        isPlayerTurn = game.turn === playerId;
+        const isPlayerTurn = game.turn === playerId;
 
         // Show cards only for the current player
         updateCards("player-cards", playerHand);
