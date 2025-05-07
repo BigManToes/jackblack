@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JackBlack - Blackjack Game</title>
+  <title>JackBlack Multiplayer</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,17 +17,17 @@
     }
     .card {
       display: inline-block;
-      margin: 20px;
-      padding: 20px;
+      margin: 10px;
+      padding: 10px 15px;
       background-color: #f0f0f0;
       border-radius: 10px;
       color: black;
-      font-size: 20px;
-    }
-    #start-button, #hit-button, #stand-button {
-      padding: 10px 20px;
       font-size: 18px;
-      margin: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
       cursor: pointer;
     }
     #dealer-cards, #player-cards {
@@ -35,126 +35,156 @@
       justify-content: center;
       align-items: center;
       margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-
-  <h1>Welcome to JackBlack!</h1>
-  <p>Your goal is to get as close to 21 as possible without going over!</p>
-
-  <button id="start-button" onclick="startGame()">Start Game</button>
-  <button id="hit-button" onclick="hit()" style="display: none;">Hit</button>
-  <button id="stand-button" onclick="stand()" style="display: none;">Stand</button>
-
+  <h1>JackBlack Multiplayer</h1>
+  <p>Join a room to play blackjack in real-time!</p>
+  <input id="room-id" placeholder="Enter Room ID" />
+  <button onclick="joinRoom()">Join Room</button>
+  <div id="controls" style="display:none;">
+    <button onclick="startGame()">Start Game</button>
+    <button id="hit-button" onclick="hit()" style="display:none;">Hit</button>
+    <button id="stand-button" onclick="stand()" style="display:none;">Stand</button>
+  </div>
   <div id="player-cards"></div>
   <div id="dealer-cards"></div>
   <div id="game-message"></div>
 
-  <!-- Vercel Analytics Script -->
-  <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Firebase scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
   <script>
-    let playerHand = [], dealerHand = [], deck = [];
-    let playerScore = 0, dealerScore = 0, gameStarted = false;
+    // REPLACE with your Firebase config:
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-    function initializeDeck() {
-      deck = [];
-      const suits = ['♠', '♣', '♦', '♥'];
-      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-      for (let suit of suits) {
-        for (let value of values) {
-          deck.push({ value, suit });
-        }
-      }
-      deck = deck.sort(() => Math.random() - 0.5);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let roomId = "";
+    let playerId = "player" + Math.floor(Math.random() * 1000);
+    let isPlayerTurn = false;
+
+    function joinRoom() {
+      roomId = document.getElementById("room-id").value.trim();
+      if (!roomId) return alert("Enter room ID!");
+
+      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
+      playerRef.set({ joined: Date.now() });
+      playerRef.onDisconnect().remove();
+
+      document.getElementById("controls").style.display = "block";
+      listenForUpdates();
     }
 
     function startGame() {
-      gameStarted = true;
-      playerHand = [];
-      dealerHand = [];
-      playerScore = 0;
-      dealerScore = 0;
-      document.getElementById("game-message").innerText = "Game Started!";
-      document.getElementById("start-button").style.display = "none";
-      document.getElementById("hit-button").style.display = "inline-block";
-      document.getElementById("stand-button").style.display = "inline-block";
-      initializeDeck();
-      dealCards();
+      const suits = ['♠', '♣', '♦', '♥'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      let deck = [];
+      for (let s of suits) for (let v of values) deck.push({ v, s });
+      deck = deck.sort(() => Math.random() - 0.5);
+
+      const gameState = {
+        deck,
+        playerHands: {},
+        dealerHand: [],
+        turn: playerId,
+        message: "Game started!"
+      };
+
+      // Deal 2 to each player
+      db.ref(`rooms/${roomId}/players`).once('value', snap => {
+        const players = snap.val();
+        for (let pid in players) {
+          gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+        }
+        gameState.dealerHand = [deck.pop(), deck.pop()];
+        db.ref(`rooms/${roomId}/game`).set(gameState);
+      });
     }
 
-    function dealCards() {
-      playerHand.push(deck.pop());
-      playerHand.push(deck.pop());
-      dealerHand.push(deck.pop());
-      dealerHand.push(deck.pop());
-      updateUI();
+    function listenForUpdates() {
+      db.ref(`rooms/${roomId}/game`).on('value', snap => {
+        const game = snap.val();
+        if (!game) return;
+
+        const playerHand = game.playerHands?.[playerId] || [];
+        const dealerHand = game.dealerHand || [];
+        isPlayerTurn = game.turn === playerId;
+
+        updateCards("player-cards", playerHand);
+        updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
+        document.getElementById("game-message").innerText = game.message || "";
+
+        document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
+        document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
+      });
     }
 
-    function updateUI() {
-      const playerCardsDiv = document.getElementById("player-cards");
-      const dealerCardsDiv = document.getElementById("dealer-cards");
-      playerCardsDiv.innerHTML = "";
-      dealerCardsDiv.innerHTML = "";
-
-      playerHand.forEach(card => {
-        const cardEl = document.createElement("div");
-        cardEl.classList.add("card");
-        cardEl.innerText = `${card.value} ${card.suit}`;
-        playerCardsDiv.appendChild(cardEl);
+    function updateCards(id, cards) {
+      const div = document.getElementById(id);
+      div.innerHTML = "";
+      cards.forEach(card => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerText = `${card.v} ${card.s}`;
+        div.appendChild(el);
       });
-
-      dealerHand.forEach((card, i) => {
-        const cardEl = document.createElement("div");
-        cardEl.classList.add("card");
-        cardEl.innerText = (i === 0) ? "??" : `${card.value} ${card.suit}`;
-        if (i === 0) cardEl.style.backgroundColor = "#666";
-        dealerCardsDiv.appendChild(cardEl);
-      });
-
-      playerScore = calculateScore(playerHand);
-      dealerScore = calculateScore(dealerHand);
-      document.getElementById("game-message").innerText = `Player: ${playerScore} | Dealer: ?`;
-    }
-
-    function calculateScore(hand) {
-      let score = 0, aces = 0;
-      hand.forEach(card => {
-        if (['J', 'Q', 'K'].includes(card.value)) score += 10;
-        else if (card.value === 'A') { score += 11; aces++; }
-        else score += parseInt(card.value);
-      });
-      while (score > 21 && aces--) score -= 10;
-      return score;
     }
 
     function hit() {
-      if (!gameStarted) return;
-      playerHand.push(deck.pop());
-      updateUI();
-      if (playerScore > 21) endGame("You busted! Dealer wins.");
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (game.turn !== playerId) return;
+        const deck = game.deck;
+        const newCard = deck.pop();
+        game.playerHands[playerId].push(newCard);
+        const score = calcScore(game.playerHands[playerId]);
+        game.message = `${playerId} hits. Score: ${score}`;
+        if (score > 21) {
+          game.message = `${playerId} busted!`;
+          game.turn = null;
+          game.over = true;
+        }
+        game.deck = deck;
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
     }
 
     function stand() {
-      while (dealerScore < 17) {
-        dealerHand.push(deck.pop());
-        dealerScore = calculateScore(dealerHand);
-        updateUI();
-      }
-
-      if (dealerScore > 21) endGame("Dealer busted! You win.");
-      else if (playerScore > dealerScore) endGame("You win!");
-      else if (playerScore < dealerScore) endGame("Dealer wins!");
-      else endGame("It's a tie!");
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        game.message = `${playerId} stands.`;
+        game.turn = null; // or pass to next player if more than 2
+        game.over = true;
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
     }
 
-    function endGame(msg) {
-      document.getElementById("game-message").innerText = msg;
-      gameStarted = false;
-      document.getElementById("hit-button").style.display = "none";
-      document.getElementById("stand-button").style.display = "none";
-      document.getElementById("start-button").style.display = "inline-block";
+    function calcScore(hand) {
+      let score = 0, aces = 0;
+      hand.forEach(c => {
+        if (['J','Q','K'].includes(c.v)) score += 10;
+        else if (c.v === 'A') { score += 11; aces++; }
+        else score += parseInt(c.v);
+      });
+      while (score > 21 && aces--) score -= 10;
+      return score;
     }
   </script>
 </body>
