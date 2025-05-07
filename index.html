@@ -119,9 +119,13 @@
 
         let votes = 0;
         let totalPlayers = 0;
+
+        // Iterate through the players and count how many have joined and voted
         for (let pid in players) {
-          totalPlayers++;
-          if (players[pid].vote) votes++;
+          if (players[pid].joined) { // Only count players who have joined
+            totalPlayers++;
+            if (players[pid].vote) votes++; // Count how many have voted
+          }
         }
 
         document.getElementById("game-message").innerText = `${votes} out of ${totalPlayers} voted to start.`;
