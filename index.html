@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JackBlack Multiplayer</title>
+  <title>JackBlack</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -108,7 +108,6 @@
     <div id="winner-message"></div>
   </div>
 
-  <!-- Firebase scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
@@ -177,9 +176,21 @@
         ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "??", s: "?" }))]
         : dealerHand);
       
-      // Update messages and controls
+      // Update messages
       el.gameMsg.innerText = game.message || "";
-      el.winnerMsg.innerText = game.winnerMessage || "";
+      
+      // Update winner message - customize for current player
+      if (game.winner === playerId) {
+        const score = calcScore(game.playerHands[playerId]);
+        el.winnerMsg.innerText = `🏆 YOU WON WITH ${score}! 🏆`;
+      } else if (game.winner && game.winner !== "dealer") {
+        const score = game.playerHands[game.winner] ? calcScore(game.playerHands[game.winner]) : "";
+        el.winnerMsg.innerText = `🏆 ${game.winner} WON WITH ${score}! 🏆`;
+      } else {
+        el.winnerMsg.innerText = game.winnerMessage || "";
+      }
+      
+      // Update controls visibility
       el.controls.style.display = game.turn === playerId && !game.over ? "block" : "none";
       
       // Update turn indicator
@@ -242,7 +253,7 @@
         // Check for blackjack
         if (calcScore(gameState.playerHands[pid]) === 21) {
           gameState.message = `${pid} has blackjack (21)!`;
-          gameState.winnerMessage = `🏆 ${pid} WINS WITH BLACKJACK! 🏆`;
+          gameState.winnerMessage = `${pid} WON WITH BLACKJACK!`;
           gameState.winner = pid;
           gameState.over = true;
         }
@@ -367,10 +378,9 @@
         const dealerBusted = dealerScore > 21;
         game.over = true;
         
-        // Find winner
+        // Find winner - only one winner allowed
         let winner = dealerBusted ? null : "dealer";
         let highestScore = dealerBusted ? 0 : dealerScore;
-        let winnerMessage = "";
         
         // Go through all players and find who has the highest valid score
         for (const pid of game.playerOrder) {
@@ -385,24 +395,19 @@
           }
         }
         
-        // Set winner message
+        // Set winner message - will be customized for each player in updateGameState
         if (winner === "dealer") {
-          winnerMessage = `Dealer wins with ${dealerScore}!`;
+          game.winnerMessage = `Dealer wins with ${dealerScore}!`;
         } else if (winner) {
-          winnerMessage = `🏆 ${winner} WINS WITH ${highestScore}! 🏆`;
-          // Personalize for current player
-          if (winner === playerId) {
-            winnerMessage = `🏆 YOU WIN WITH ${highestScore}! 🏆`;
-          }
+          game.winnerMessage = `${winner} WON WITH ${highestScore}!`;
         } else {
-          winnerMessage = "Everyone busted! No winner.";
+          game.winnerMessage = "Everyone busted! No winner.";
         }
         
         // Set final game status
         game.message = dealerBusted 
           ? `Dealer BUSTED with ${dealerScore}!` 
           : `Dealer has ${dealerScore}.`;
-        game.winnerMessage = winnerMessage;
         game.winner = winner;
         
         // Save final game state
