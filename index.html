@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JackBlack</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JackBlack Multiplayer</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,18 +14,8 @@
       max-width: 1200px;
       margin: 0 auto;
     }
-    h1 {
-      margin-top: 0;
-      margin-bottom: 5px;
-    }
-    #game-message, #players-voting, #player-info {
-      margin-top: 5px;
-      font-size: 14px;
-    }
-    #game-message {
-      font-size: 18px;
-      margin-top: 10px;
-    }
+    h1 { margin: 0 0 5px; }
+    #game-message { margin-top: 10px; font-size: 18px; }
     #winner-message {
       margin-top: 5px;
       font-size: 28px;
@@ -61,7 +51,6 @@
       border: 2px solid #ccc;
       min-width: 40px;
       min-height: 60px;
-      user-select: none;
     }
     button {
       padding: 8px 15px;
@@ -76,19 +65,10 @@
       margin: 10px 0;
       flex-wrap: wrap;
     }
-    input {
-      padding: 8px;
-      font-size: 14px;
-    }
-    .game-area {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .card-section {
-      font-weight: bold;
-      margin-top: 5px;
-    }
+    input { padding: 8px; font-size: 14px; }
+    .game-area { display: flex; flex-direction: column; gap: 5px; }
+    .card-title { font-weight: bold; margin-top: 5px; }
+    #player-info, #players-voting { font-size: 14px; margin: 5px 0; }
   </style>
 </head>
 <body>
@@ -102,25 +82,25 @@
     <div id="players-voting"></div>
     
     <div style="margin: 5px 0;">
-      <input id="room-id" placeholder="Enter Room ID" style="width: 150px;" />
-      <button id="join-btn" onclick="joinRoom()">Join Room</button>
+      <input id="room-id" placeholder="Enter Room ID" style="width: 150px;">
+      <button onclick="joinRoom()">Join Room</button>
       <button id="vote-button" onclick="voteToStart()" style="display:none;">Vote to Start</button>
     </div>
     
     <div id="turn-indicator"></div>
     
     <div id="controls" style="display:none;">
-      <button id="hit-btn" onclick="hit()">Hit</button>
-      <button id="stand-btn" onclick="stand()">Stand</button>
+      <button onclick="hit()">Hit</button>
+      <button onclick="stand()">Stand</button>
     </div>
     
     <div>
-      <div class="card-section">Your Cards:</div>
+      <div class="card-title">Your Cards:</div>
       <div id="player-cards"></div>
     </div>
     
     <div>
-      <div class="card-section">Dealer Cards:</div>
+      <div class="card-title">Dealer Cards:</div>
       <div id="dealer-cards"></div>
     </div>
     
@@ -133,7 +113,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
   <script>
-    // Initialize app variables
+    // Initialize Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
       authDomain: "jackblack-789f5.firebaseapp.com",
@@ -144,129 +124,104 @@
       appId: "1:14557094808:web:252134996948616d95c1ed",
       measurementId: "G-89GFJPNWKH"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    // Cache DOM elements
-    const elements = {
-      playerIdDisplay: document.getElementById("player-id-display"),
-      controls: document.getElementById("controls"),
-      voteButton: document.getElementById("vote-button"),
-      playerInfo: document.getElementById("player-info"),
-      playersVoting: document.getElementById("players-voting"),
-      turnIndicator: document.getElementById("turn-indicator"),
-      gameMessage: document.getElementById("game-message"),
-      winnerMessage: document.getElementById("winner-message"),
-      playerCards: document.getElementById("player-cards"),
-      dealerCards: document.getElementById("dealer-cards"),
-      roomId: document.getElementById("room-id")
-    };
 
-    // Game state
+    // Game state variables
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
-    
-    // Set initial player ID
-    elements.playerIdDisplay.textContent = `You are: ${playerId}`;
+    document.getElementById("player-id-display").textContent = `You are: ${playerId}`;
 
-    // Game constants
-    const CARD_SUITS = ['♠', '♣', '♦', '♥'];
-    const CARD_VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-    const DEALER_MIN = 17;
-    
+    // DOM elements
+    const el = {
+      playerCards: document.getElementById("player-cards"),
+      dealerCards: document.getElementById("dealer-cards"),
+      gameMsg: document.getElementById("game-message"),
+      winnerMsg: document.getElementById("winner-message"),
+      turnIndicator: document.getElementById("turn-indicator"),
+      controls: document.getElementById("controls"),
+      voteBtn: document.getElementById("vote-button"),
+      playerInfo: document.getElementById("player-info"),
+      playersVoting: document.getElementById("players-voting"),
+      playerIdDisplay: document.getElementById("player-id-display"),
+      roomIdInput: document.getElementById("room-id")
+    };
+
     function joinRoom() {
-      roomId = elements.roomId.value.trim();
+      roomId = el.roomIdInput.value.trim();
       if (!roomId) return alert("Enter room ID!");
 
       const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
       playerRef.set({ joined: Date.now(), vote: false });
       playerRef.onDisconnect().remove();
 
-      elements.controls.style.display = "block";
-      elements.voteButton.style.display = "inline-block";
-      elements.playerIdDisplay.textContent = `You: ${playerId} (Room: ${roomId})`;
-      listenForUpdates();
+      el.controls.style.display = "block";
+      el.voteBtn.style.display = "inline-block";
+      el.playerIdDisplay.textContent = `You: ${playerId} (Room: ${roomId})`;
+      
+      // Listen for game updates
+      db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
+      db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
     }
 
-    function listenForUpdates() {
-      db.ref(`rooms/${roomId}/game`).on('value', handleGameUpdate);
-      db.ref(`rooms/${roomId}/players`).on('value', handlePlayersUpdate);
-    }
-
-    function handleGameUpdate(snap) {
+    function updateGameState(snap) {
       const game = snap.val();
       if (!game) return;
 
       const playerHand = game.playerHands?.[playerId] || [];
       const dealerHand = game.dealerHand || [];
-      const isPlayerTurn = game.turn === playerId && !game.over;
-
-      updateCards(elements.playerCards, playerHand);
-
-      // Show dealer's first card and hide others if game not over and dealer's turn hasn't started
-      const showDealerHand = (!game.over && game.turn !== "dealer") 
+      
+      // Update cards display
+      updateCards(el.playerCards, playerHand);
+      updateCards(el.dealerCards, !game.over && game.turn !== "dealer" 
         ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "??", s: "?" }))]
-        : dealerHand;
+        : dealerHand);
       
-      updateCards(elements.dealerCards, showDealerHand);
+      // Update messages and controls
+      el.gameMsg.innerText = game.message || "";
+      el.winnerMsg.innerText = game.winnerMessage || "";
+      el.controls.style.display = game.turn === playerId && !game.over ? "block" : "none";
       
-      elements.gameMessage.innerText = game.message || "";
-      elements.winnerMessage.innerText = game.winnerMessage || "";
-      elements.controls.style.display = isPlayerTurn ? "block" : "none";
-
-      // Turn indicator
-      if (game.over) {
-        elements.turnIndicator.innerText = "Game Over";
-      } else if (game.turn === "dealer") {
-        elements.turnIndicator.innerText = "Dealer's Turn";
-      } else if (game.turn) {
-        elements.turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${game.turn}'s turn`;
-      } else {
-        elements.turnIndicator.innerText = "";
+      // Update turn indicator
+      if (game.over) el.turnIndicator.innerText = "Game Over";
+      else if (game.turn === "dealer") el.turnIndicator.innerText = "Dealer's Turn";
+      else if (game.turn) {
+        el.turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${game.turn}'s turn`;
       }
     }
 
-    function handlePlayersUpdate(snap) {
+    function updatePlayers(snap) {
       const players = snap.val() || {};
       const playerIds = Object.keys(players);
       
-      // Build player list with vote status
-      const playerList = playerIds.map(pid => {
-        const isCurrentPlayer = pid === playerId;
-        const voteStatus = players[pid].vote ? "✓" : "✗";
-        return `${isCurrentPlayer ? "YOU" : ""} ${isCurrentPlayer ? "" : pid} [${voteStatus}]`;
-      }).join(", ");
+      // Update player list
+      el.playerInfo.innerText = "Players: " + playerIds.map(pid => 
+        `${pid === playerId ? "YOU" : pid} [${players[pid].vote ? "✓" : "✗"}]`
+      ).join(", ");
       
-      elements.playerInfo.innerText = `Players: ${playerList}`;
-
-      // Voting stats
+      // Update voting status
       const votesCount = Object.values(players).filter(p => p.vote).length;
-      elements.playersVoting.innerText = `${votesCount}/${playerIds.length} voted to start.`;
-
-      // Start game when everyone has voted
+      el.playersVoting.innerText = `${votesCount}/${playerIds.length} voted to start.`;
+      
+      // Start game if everyone has voted
       if (playerIds.length >= 2 && votesCount === playerIds.length) {
-        const sortedIds = playerIds.slice().sort();
-        if (playerId === sortedIds[0]) {
-          startGame(playerIds);
-        }
+        const sortedIds = [...playerIds].sort();
+        if (playerId === sortedIds[0]) startGame(playerIds);
       }
     }
 
     function startGame(playerIds) {
       // Create and shuffle deck
+      const suits = ['♠', '♣', '♦', '♥'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
       let deck = [];
-      for (let s of CARD_SUITS) {
-        for (let v of CARD_VALUES) {
-          deck.push({ v, s });
-        }
-      }
-      shuffleDeck(deck);
+      for (let s of suits) for (let v of values) deck.push({ v, s });
+      deck.sort(() => Math.random() - 0.5);
 
       // Randomize player order
-      const shuffledIds = shuffleArray([...playerIds]);
-
-      // Create initial game state
+      const shuffledIds = [...playerIds].sort(() => Math.random() - 0.5);
+      
+      // Initialize game state
       const gameState = {
         deck,
         playerHands: {},
@@ -274,20 +229,18 @@
         turn: shuffledIds[0],
         message: "Game started!",
         winnerMessage: "",
-        players: {},
         stood: {},
         busted: {},
         over: false,
         playerOrder: shuffledIds
       };
 
-      // Deal cards to players and check for blackjacks
+      // Deal cards to players
       for (let pid of shuffledIds) {
         gameState.playerHands[pid] = [deck.pop(), deck.pop()];
-        gameState.players[pid] = { vote: true };
         
-        const score = calcScore(gameState.playerHands[pid]);
-        if (score === 21) {
+        // Check for blackjack
+        if (calcScore(gameState.playerHands[pid]) === 21) {
           gameState.message = `${pid} has blackjack (21)!`;
           gameState.winnerMessage = `🏆 ${pid} WINS WITH BLACKJACK! 🏆`;
           gameState.winner = pid;
@@ -295,23 +248,22 @@
         }
       }
 
-      // Save game state to database
       db.ref(`rooms/${roomId}/game`).set(gameState);
-      elements.voteButton.style.display = "none";
+      el.voteBtn.style.display = "none";
     }
 
     function voteToStart() {
       db.ref(`rooms/${roomId}/players/${playerId}`).update({ vote: true });
-      elements.voteButton.style.display = "none";
+      el.voteBtn.style.display = "none";
     }
 
     function updateCards(container, cards) {
       container.innerHTML = "";
       cards.forEach(card => {
-        const el = document.createElement("div");
-        el.className = "card";
-        el.innerText = `${card.v} ${card.s}`;
-        container.appendChild(el);
+        const cardEl = document.createElement("div");
+        cardEl.className = "card";
+        cardEl.innerText = `${card.v} ${card.s}`;
+        container.appendChild(cardEl);
       });
     }
 
@@ -319,20 +271,19 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         if (game.turn !== playerId || game.over) return;
-        if ((game.stood && game.stood[playerId]) || (game.busted && game.busted[playerId])) return;
+        if (game.stood?.[playerId] || game.busted?.[playerId]) return;
 
-        // Draw a card and add to player's hand
-        const deck = game.deck;
-        const newCard = deck.pop();
+        // Draw a card
+        const newCard = game.deck.pop();
         game.playerHands[playerId].push(newCard);
-
+        
         const score = calcScore(game.playerHands[playerId]);
         
         // Handle bust or 21
         if (score > 21) {
-          game.message = `${playerId} BUSTED with ${score}!`;
           game.busted = game.busted || {};
           game.busted[playerId] = true;
+          game.message = `${playerId} BUSTED with ${score}!`;
         } else if (score === 21) {
           game.message = `${playerId} hits 21!`;
           game.stood = game.stood || {};
@@ -341,16 +292,8 @@
           game.message = `${playerId} hits. Score: ${score}`;
         }
 
-        game.deck = deck;
-
-        // Check if all players are done
-        if (checkAllPlayersDone(game)) {
-          moveToDealer(game);
-        } else {
-          moveToNextPlayer(game, playerId);
-        }
-        
-        // Save game state
+        // Move to next player or dealer
+        nextTurn(game);
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
@@ -359,64 +302,44 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         if (game.turn !== playerId || game.over) return;
-        if ((game.stood && game.stood[playerId]) || (game.busted && game.busted[playerId])) return;
-
+        
         // Mark player as stood
-        game.message = `${playerId} stands.`;
         game.stood = game.stood || {};
         game.stood[playerId] = true;
-
-        // Check if all players are done
-        if (checkAllPlayersDone(game)) {
-          moveToDealer(game);
-        } else {
-          moveToNextPlayer(game, playerId);
-        }
+        game.message = `${playerId} stands.`;
         
-        // Save game state
+        // Move to next player or dealer
+        nextTurn(game);
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
 
-    function checkAllPlayersDone(game) {
-      return Object.keys(game.playerHands).every(pid =>
-        (game.stood && game.stood[pid]) ||
-        (game.busted && game.busted[pid]) ||
-        calcScore(game.playerHands[pid]) === 21
-      );
-    }
-
-    function moveToDealer(game) {
-      game.turn = "dealer";
-      game.message += " Dealer's turn!";
-      setTimeout(() => dealerPlay(), 1000);
-    }
-
-    function moveToNextPlayer(game, currentId) {
-      const nextPlayer = getNextPlayer(game, currentId);
-      if (nextPlayer) {
-        game.turn = nextPlayer;
-      }
-    }
-
-    function getNextPlayer(game, currentId) {
-      const playerIds = game.playerOrder || Object.keys(game.playerHands);
-      const idx = playerIds.indexOf(currentId);
-      
-      for (let i = 1; i < playerIds.length; i++) {
-        const nextIdx = (idx + i) % playerIds.length;
-        const nextId = playerIds[nextIdx];
+    function nextTurn(game) {
+      if (allPlayersDone(game)) {
+        game.turn = "dealer";
+        game.message += " Dealer's turn!";
+        // Give a delay before dealer plays
+        setTimeout(() => dealerPlay(), 1000);
+      } else {
+        // Find next active player
+        const playerIds = game.playerOrder;
+        const currentIdx = playerIds.indexOf(game.turn);
         
-        // Skip players who are busted, stood, or have 21
-        if (
-          !(game.busted && game.busted[nextId]) &&
-          !(game.stood && game.stood[nextId]) &&
-          calcScore(game.playerHands[nextId]) < 21
-        ) {
-          return nextId;
+        for (let i = 1; i <= playerIds.length; i++) {
+          const nextId = playerIds[(currentIdx + i) % playerIds.length];
+          if (!game.stood?.[nextId] && !game.busted?.[nextId] && 
+              calcScore(game.playerHands[nextId]) < 21) {
+            game.turn = nextId;
+            return;
+          }
         }
       }
-      return null;
+    }
+
+    function allPlayersDone(game) {
+      return Object.keys(game.playerHands).every(pid => 
+        game.stood?.[pid] || game.busted?.[pid] || calcScore(game.playerHands[pid]) === 21
+      );
     }
 
     function dealerPlay() {
@@ -424,144 +347,79 @@
         const game = snap.val();
         if (!game || game.over || game.turn !== "dealer") return;
 
-        let dealerHand = game.dealerHand || [];
-        let deck = game.deck || [];
-        
-        // Check if all players busted - dealer automatically wins
-        const allPlayersBusted = Object.keys(game.playerHands).every(pid => 
-          game.busted && game.busted[pid]);
-          
-        if (allPlayersBusted) {
-          game.message = "All players busted! Dealer wins.";
-          game.winnerMessage = "Dealer wins!";
+        // Check if all players busted
+        if (Object.keys(game.playerHands).every(pid => game.busted?.[pid])) {
+          game.winnerMessage = "Dealer wins - all players busted!";
           game.over = true;
+          game.winner = "dealer";
           db.ref(`rooms/${roomId}/game`).set(game);
           return;
         }
 
-        // Dealer hits until 17 or more
-        let dealerScore = calcScore(dealerHand);
-        while (dealerScore < DEALER_MIN) {
-          dealerHand.push(deck.pop());
-          dealerScore = calcScore(dealerHand);
+        // Dealer draws until 17 or higher
+        let dealerScore = calcScore(game.dealerHand);
+        while (dealerScore < 17) {
+          game.dealerHand.push(game.deck.pop());
+          dealerScore = calcScore(game.dealerHand);
         }
 
-        game.dealerHand = dealerHand;
-        game.deck = deck;
+        // Determine the winner
+        const dealerBusted = dealerScore > 21;
         game.over = true;
-
-        // Determine winner
-        const results = determineWinner(game);
-        game.message = "Dealer has " + dealerScore + results.message;
-        game.winnerMessage = results.winnerMessage;
-        game.winner = results.winner;
-
+        
+        // Find winner
+        let winner = dealerBusted ? null : "dealer";
+        let highestScore = dealerBusted ? 0 : dealerScore;
+        let winnerMessage = "";
+        
+        // Go through all players and find who has the highest valid score
+        for (const pid of game.playerOrder) {
+          if (game.busted?.[pid]) continue;
+          
+          const playerScore = calcScore(game.playerHands[pid]);
+          
+          // Player beats dealer if their score is higher than dealer or dealer busted
+          if (playerScore <= 21 && (playerScore > highestScore || dealerBusted)) {
+            winner = pid;
+            highestScore = playerScore;
+          }
+        }
+        
+        // Set winner message
+        if (winner === "dealer") {
+          winnerMessage = `Dealer wins with ${dealerScore}!`;
+        } else if (winner) {
+          winnerMessage = `🏆 ${winner} WINS WITH ${highestScore}! 🏆`;
+          // Personalize for current player
+          if (winner === playerId) {
+            winnerMessage = `🏆 YOU WIN WITH ${highestScore}! 🏆`;
+          }
+        } else {
+          winnerMessage = "Everyone busted! No winner.";
+        }
+        
+        // Set final game status
+        game.message = dealerBusted 
+          ? `Dealer BUSTED with ${dealerScore}!` 
+          : `Dealer has ${dealerScore}.`;
+        game.winnerMessage = winnerMessage;
+        game.winner = winner;
+        
+        // Save final game state
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
 
-    function determineWinner(game) {
-      const dealerScore = calcScore(game.dealerHand);
-      const dealerBusted = dealerScore > 21;
-      
-      let message = dealerBusted ? " (BUSTED)!" : ".";
-      let winnerMessage = "";
-      let winner = null;
-      
-      // If dealer busted, all non-busted players win
-      if (dealerBusted) {
-        const winners = Object.keys(game.playerHands).filter(pid => 
-          !(game.busted && game.busted[pid])
-        );
-        
-        if (winners.length > 0) {
-          if (winners.length === 1) {
-            winner = winners[0];
-            winnerMessage = `🏆 ${winner} WINS! Dealer busted. 🏆`;
-          } else {
-            winnerMessage = `Winners: ${winners.join(", ")}. Dealer busted.`;
-          }
-        } else {
-          message += " Everyone busted! No winner.";
-        }
-      } else {
-        // Dealer didn't bust, compare scores
-        const results = [];
-        let bestPlayer = null;
-        let bestScore = dealerScore;
-        
-        for (const pid of game.playerOrder || Object.keys(game.playerHands)) {
-          if (game.busted && game.busted[pid]) continue;
-          
-          const playerScore = calcScore(game.playerHands[pid]);
-          
-          if (playerScore > dealerScore && playerScore <= 21) {
-            if (playerScore > bestScore) {
-              bestScore = playerScore;
-              bestPlayer = pid;
-            }
-            results.push(`${pid} wins with ${playerScore}`);
-          } else if (playerScore === dealerScore) {
-            results.push(`${pid} tied with dealer (${playerScore})`);
-          } else {
-            results.push(`${pid} lost with ${playerScore}`);
-          }
-        }
-        
-        if (bestPlayer) {
-          winner = bestPlayer;
-          winnerMessage = `🏆 ${bestPlayer} WINS WITH ${bestScore}! 🏆`;
-        } else if (results.some(r => r.includes("tied"))) {
-          winnerMessage = "Tied with dealer!";
-        } else {
-          winnerMessage = "Dealer wins!";
-        }
-        
-        message += " " + results.join(". ");
-      }
-      
-      // Highlight if current player is the winner
-      if (winner === playerId) {
-        winnerMessage = `🏆 YOU (${playerId}) WIN! 🏆`;
-      }
-      
-      return { message, winnerMessage, winner };
-    }
-
-    // Utility functions
     function calcScore(hand) {
       let score = 0, aces = 0;
-      
-      for (const card of hand) {
-        if (['J', 'Q', 'K'].includes(card.v)) {
-          score += 10;
-        } else if (card.v === 'A') {
-          score += 11;
-          aces++;
-        } else {
-          score += parseInt(card.v);
-        }
-      }
-      
-      // Adjust aces if needed
-      while (score > 21 && aces > 0) {
-        score -= 10;
-        aces--;
-      }
-      
+      hand.forEach(c => {
+        if (['J','Q','K'].includes(c.v)) score += 10;
+        else if (c.v === 'A') { score += 11; aces++; }
+        else score += parseInt(c.v);
+      });
+      // Adjust aces if needed (count as 1 instead of 11)
+      while (score > 21 && aces--) score -= 10;
       return score;
-    }
-    
-    function shuffleDeck(deck) {
-      for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
-      }
-      return deck;
-    }
-    
-    function shuffleArray(array) {
-      return [...array].sort(() => Math.random() - 0.5);
     }
   </script>
 </body>
