@@ -1,147 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Single-Player JackBlack</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 50px;
-            margin: 0;
-        }
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            color: #f39c12;
-        }
-        .button-container {
-            margin: 20px;
-        }
-        button {
-            padding: 15px 25px;
-            font-size: 1.2em;
-            border: none;
-            border-radius: 5px;
-            background-color: #27ae60;
-            color: white;
-            cursor: pointer;
-            margin: 10px;
-        }
-        button:hover {
-            background-color: #2ecc71;
-        }
-        #gameMessage {
-            margin-top: 30px;
-            font-size: 1.5em;
-            color: #f39c12;
-        }
-        #playerCards, #dealerCards {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .card {
-            width: 70px;
-            height: 100px;
-            margin: 10px;
-            background-color: #ecf0f1;
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5em;
-            color: #2c3e50;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JackBlack - Blackjack Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+    #game-message {
+      margin-top: 20px;
+    }
+    .card {
+      display: inline-block;
+      margin: 20px;
+      padding: 20px;
+      background-color: #f0f0f0;
+      border-radius: 10px;
+      color: black;
+      font-size: 20px;
+    }
+    #start-button, #hit-button, #stand-button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 20px;
+      cursor: pointer;
+    }
+    #dealer-cards, #player-cards {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Welcome to Single-Player JackBlack</h1>
+  <h1>Welcome to JackBlack!</h1>
+  <p>Your goal is to get as close to 21 as possible without going over!</p>
 
-    <div id="gameMessage">Click "Start Game" to begin</div>
+  <button id="start-button" onclick="startGame()">Start Game</button>
+  <button id="hit-button" onclick="hit()" style="display: none;">Hit</button>
+  <button id="stand-button" onclick="stand()" style="display: none;">Stand</button>
 
-    <div id="playerCards"></div>
-    <div id="dealerCards"></div>
+  <div id="player-cards"></div>
+  <div id="dealer-cards"></div>
+  <div id="game-message"></div>
 
-    <div class="button-container">
-        <button id="startButton" onclick="startGame()">Start Game</button>
-        <button id="hitButton" onclick="hit()" style="display: none;">Hit</button>
-        <button id="standButton" onclick="stand()" style="display: none;">Stand</button>
-    </div>
+  <!-- Vercel Analytics Script -->
+  <script defer src="/_vercel/insights/script.js"></script>
 
-    <script>
-        let playerCards = [];
-        let dealerCards = [];
-        let playerScore = 0;
-        let dealerScore = 0;
-        let gameStarted = false;
+  <script>
+    let playerHand = [], dealerHand = [], deck = [];
+    let playerScore = 0, dealerScore = 0, gameStarted = false;
 
-        async function startGame() {
-            const response = await fetch("/start_game");
-            const gameState = await response.json();
-
-            playerCards = gameState.player_cards;
-            dealerCards = gameState.dealer_cards;
-            playerScore = gameState.player_score;
-            dealerScore = gameState.dealer_score;
-
-            updateGame();
-            document.getElementById("hitButton").style.display = "inline-block";
-            document.getElementById("standButton").style.display = "inline-block";
-            document.getElementById("startButton").style.display = "none";
+    function initializeDeck() {
+      deck = [];
+      const suits = ['♠', '♣', '♦', '♥'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      for (let suit of suits) {
+        for (let value of values) {
+          deck.push({ value, suit });
         }
+      }
+      deck = deck.sort(() => Math.random() - 0.5);
+    }
 
-        async function hit() {
-            const response = await fetch("/hit");
-            const gameState = await response.json();
+    function startGame() {
+      gameStarted = true;
+      playerHand = [];
+      dealerHand = [];
+      playerScore = 0;
+      dealerScore = 0;
+      document.getElementById("game-message").innerText = "Game Started!";
+      document.getElementById("start-button").style.display = "none";
+      document.getElementById("hit-button").style.display = "inline-block";
+      document.getElementById("stand-button").style.display = "inline-block";
+      initializeDeck();
+      dealCards();
+    }
 
-            playerCards = gameState.player_cards;
-            playerScore = gameState.player_score;
+    function dealCards() {
+      playerHand.push(deck.pop());
+      playerHand.push(deck.pop());
+      dealerHand.push(deck.pop());
+      dealerHand.push(deck.pop());
+      updateUI();
+    }
 
-            updateGame();
-        }
+    function updateUI() {
+      const playerCardsDiv = document.getElementById("player-cards");
+      const dealerCardsDiv = document.getElementById("dealer-cards");
+      playerCardsDiv.innerHTML = "";
+      dealerCardsDiv.innerHTML = "";
 
-        async function stand() {
-            const response = await fetch("/stand");
-            const gameState = await response.json();
+      playerHand.forEach(card => {
+        const cardEl = document.createElement("div");
+        cardEl.classList.add("card");
+        cardEl.innerText = `${card.value} ${card.suit}`;
+        playerCardsDiv.appendChild(cardEl);
+      });
 
-            dealerCards = gameState.dealer_cards;
-            dealerScore = gameState.dealer_score;
+      dealerHand.forEach((card, i) => {
+        const cardEl = document.createElement("div");
+        cardEl.classList.add("card");
+        cardEl.innerText = (i === 0) ? "??" : `${card.value} ${card.suit}`;
+        if (i === 0) cardEl.style.backgroundColor = "#666";
+        dealerCardsDiv.appendChild(cardEl);
+      });
 
-            updateGame();
-        }
+      playerScore = calculateScore(playerHand);
+      dealerScore = calculateScore(dealerHand);
+      document.getElementById("game-message").innerText = `Player: ${playerScore} | Dealer: ?`;
+    }
 
-        function updateGame() {
-            document.getElementById("gameMessage").innerText = `Player Score: ${playerScore} | Dealer Score: ${dealerScore}`;
-            displayCards();
-        }
+    function calculateScore(hand) {
+      let score = 0, aces = 0;
+      hand.forEach(card => {
+        if (['J', 'Q', 'K'].includes(card.value)) score += 10;
+        else if (card.value === 'A') { score += 11; aces++; }
+        else score += parseInt(card.value);
+      });
+      while (score > 21 && aces--) score -= 10;
+      return score;
+    }
 
-        function displayCards() {
-            const playerCardsDiv = document.getElementById("playerCards");
-            const dealerCardsDiv = document.getElementById("dealerCards");
+    function hit() {
+      if (!gameStarted) return;
+      playerHand.push(deck.pop());
+      updateUI();
+      if (playerScore > 21) endGame("You busted! Dealer wins.");
+    }
 
-            playerCardsDiv.innerHTML = "";
-            dealerCardsDiv.innerHTML = "";
+    function stand() {
+      while (dealerScore < 17) {
+        dealerHand.push(deck.pop());
+        dealerScore = calculateScore(dealerHand);
+        updateUI();
+      }
 
-            playerCards.forEach(card => {
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card";
-                cardDiv.innerText = card.value + card.suit;
-                playerCardsDiv.appendChild(cardDiv);
-            });
+      if (dealerScore > 21) endGame("Dealer busted! You win.");
+      else if (playerScore > dealerScore) endGame("You win!");
+      else if (playerScore < dealerScore) endGame("Dealer wins!");
+      else endGame("It's a tie!");
+    }
 
-            dealerCards.forEach(card => {
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card";
-                cardDiv.innerText = card.value + card.suit;
-                dealerCardsDiv.appendChild(cardDiv);
-            });
-        }
-    </script>
-
+    function endGame(msg) {
+      document.getElementById("game-message").innerText = msg;
+      gameStarted = false;
+      document.getElementById("hit-button").style.display = "none";
+      document.getElementById("stand-button").style.display = "none";
+      document.getElementById("start-button").style.display = "inline-block";
+    }
+  </script>
 </body>
 </html>
