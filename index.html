@@ -80,7 +80,7 @@
     let roomId = "";
     let playerId = "player" + Math.floor(Math.random() * 1000);
     let isPlayerTurn = false;
-    let playersReady = 0;
+    let gameState = null;
 
     function joinRoom() {
       roomId = document.getElementById("room-id").value.trim();
@@ -95,31 +95,29 @@
     }
 
     function startGame() {
-      // Update the players' ready status
-      db.ref(`rooms/${roomId}/players/${playerId}`).update({ ready: true });
+      const suits = ['♠', '♣', '♦', '♥'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      let deck = [];
+      for (let s of suits) for (let v of values) deck.push({ v, s });
+      deck = deck.sort(() => Math.random() - 0.5);
 
-      // Check if both players are ready to start
+      gameState = {
+        deck,
+        playerHands: {},
+        dealerHand: [],
+        turn: "player1",  // Player 1 always starts
+        startVotes: 0,
+        message: "Game started!"
+      };
+
       db.ref(`rooms/${roomId}/players`).once('value', snap => {
         const players = snap.val();
-        playersReady = Object.values(players).filter(player => player.ready).length;
-        updateStartButtonStatus();
+        for (let pid in players) {
+          gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+        }
+        gameState.dealerHand = [deck.pop(), deck.pop()];
+        db.ref(`rooms/${roomId}/game`).set(gameState);
       });
-    }
-
-    function updateStartButtonStatus() {
-      const status = `${playersReady} out of 2 players ready to start.`;
-      document.getElementById("start-status").innerText = status;
-
-      // If both players are ready, allow the game to start
-      if (playersReady === 2) {
-        db.ref(`rooms/${roomId}/game`).set({
-          gameStarted: true,
-          turn: playerId
-        });
-        document.getElementById("start-status").innerText = "Game Started!";
-        document.getElementById("hit-button").style.display = "inline-block";
-        document.getElementById("stand-button").style.display = "inline-block";
-      }
     }
 
     function listenForUpdates() {
@@ -127,18 +125,19 @@
         const game = snap.val();
         if (!game) return;
 
-        if (game.gameStarted) {
-          const playerHand = game.playerHands?.[playerId] || [];
-          const dealerHand = game.dealerHand || [];
-          isPlayerTurn = game.turn === playerId;
+        const playerHand = game.playerHands?.[playerId] || [];
+        const dealerHand = game.dealerHand || [];
+        isPlayerTurn = game.turn === playerId;
 
-          updateCards("player-cards", playerHand);
-          updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
-          document.getElementById("game-message").innerText = game.message || "";
+        updateCards("player-cards", playerHand);
+        updateCards("dealer-cards", dealerHand.map((c, i) => i === 0 && !game.over ? { v: "??", s: "?" } : c));
+        document.getElementById("game-message").innerText = game.message || "";
 
-          document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
-          document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
-        }
+        document.getElementById("hit-button").style.display = isPlayerTurn ? "inline-block" : "none";
+        document.getElementById("stand-button").style.display = isPlayerTurn ? "inline-block" : "none";
+
+        // Update start button and vote count
+        document.getElementById("start-status").innerText = `${game.startVotes} out of 2 players voted to start`;
       });
     }
 
@@ -176,8 +175,7 @@
       db.ref(`rooms/${roomId}/game`).once('value', snap => {
         const game = snap.val();
         game.message = `${playerId} stands.`;
-        game.turn = null; // or pass to next player if more than 2
-        game.over = true;
+        game.turn = game.turn === "player1" ? "player2" : "player1"; // Switch turns
         db.ref(`rooms/${roomId}/game`).set(game);
       });
     }
