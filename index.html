@@ -131,6 +131,10 @@
       margin: 5px;
       cursor: pointer;
     }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
     #dealer-cards, #player-cards {
       display: flex;
       justify-content: center;
@@ -286,13 +290,14 @@
       playerInfo: document.getElementById("player-info"),
       playersVoting: document.getElementById("players-voting"),
       playerIdDisplay: document.getElementById("player-id-display"),
-      roomIdInput: document.getElementById("room-id")
+      roomIdInput: document.getElementById("room-id"),
+      welcomeMessage: document.getElementById("welcome-message")
     };
 
     // Initialize user interface
     window.onload = function() {
       if (currentUser) {
-        document.getElementById('welcome-message').textContent = `Welcome back, ${currentUser}! Coins: ${userCoins}`;
+        el.welcomeMessage.textContent = `Welcome back, ${currentUser}! Coins: ${userCoins}`;
         document.getElementById('username-input').style.display = 'none';
         document.querySelector('#user-welcome button').style.display = 'none';
       }
@@ -307,7 +312,7 @@
       if (username) {
         currentUser = username;
         localStorage.setItem('username', username);
-        document.getElementById('welcome-message').textContent = `Welcome, ${username}! Coins: ${userCoins}`;
+        el.welcomeMessage.textContent = `Welcome, ${username}! Coins: ${userCoins}`;
         input.style.display = 'none';
         document.querySelector('#user-welcome button').style.display = 'none';
       }
@@ -358,12 +363,12 @@
       themeList.innerHTML = '';
       
       Object.entries(themes).forEach(([id, theme]) => {
-        const owned = id === 'default' || localStorage.getItem(`theme_${id}`);
+        const owned = id === 'default' || localStorage.getItem(`theme_${id}`) === 'true';
         const div = document.createElement('div');
         div.className = 'theme-item';
         div.innerHTML = `
           <span>${theme.name} ${owned ? '(Owned)' : `- ${theme.price} coins`}</span>
-          <button onclick="handleTheme('${id}')" ${owned ? '' : `disabled=${userCoins < theme.price}`}>
+          <button onclick="handleTheme('${id}')" ${owned ? '' : (userCoins < theme.price ? 'disabled' : '')}>
             ${owned ? 'Apply' : 'Buy'}
           </button>
         `;
@@ -373,16 +378,18 @@
 
     function handleTheme(themeId) {
       const theme = themes[themeId];
-      const owned = localStorage.getItem(`theme_${themeId}`);
+      const owned = localStorage.getItem(`theme_${themeId}`) === 'true';
       
       if (owned || themeId === 'default') {
         applyTheme(themeId);
         localStorage.setItem('userTheme', themeId);
       } else if (userCoins >= theme.price) {
         userCoins -= theme.price;
-        localStorage.setItem('userCoins', userCoins);
+        localStorage.setItem('userCoins', userCoins.toString());
         localStorage.setItem(`theme_${themeId}`, 'true');
-        document.getElementById('welcome-message').textContent = `Welcome, ${currentUser}! Coins: ${userCoins}`;
+        el.welcomeMessage.textContent = `Welcome, ${currentUser}! Coins: ${userCoins}`;
+        applyTheme(themeId);
+        localStorage.setItem('userTheme', themeId);
         updateShop();
       }
     }
@@ -422,9 +429,9 @@
       }
       
       localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
-      userCoins += 50; // Award coins for winning
-      localStorage.setItem('userCoins', userCoins);
-      document.getElementById('welcome-message').textContent = `Welcome, ${currentUser}! Coins: ${userCoins}`;
+      userCoins += 20; // Changed from 50 to 20 coins per win
+      localStorage.setItem('userCoins', userCoins.toString());
+      el.welcomeMessage.textContent = `Welcome, ${currentUser}! Coins: ${userCoins}`;
       updateLeaderboard();
     }
 
