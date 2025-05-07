@@ -115,8 +115,7 @@
         document.getElementById("game-message").innerText = `${votes} out of ${totalPlayers} voted to start.`;
 
         if (votes === totalPlayers) {
-          document.getElementById("vote-button").style.display = "none";
-          startGame();
+          startGame(); // Start the game when both players have voted
         }
       });
     }
@@ -128,6 +127,7 @@
     }
 
     function startGame() {
+      // Initialize the game state
       const suits = ['♠', '♣', '♦', '♥'];
       const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
       let deck = [];
@@ -138,7 +138,7 @@
         deck,
         playerHands: {},
         dealerHand: [],
-        turn: playerId,
+        turn: "player1",  // Make sure player1 starts the game
         message: "Game started!",
         playersReady: false
       };
@@ -151,6 +151,12 @@
         gameState.dealerHand = [deck.pop(), deck.pop()];
         db.ref(`rooms/${roomId}/game`).set(gameState);
       });
+
+      db.ref(`rooms/${roomId}/players`).update({
+        vote: false  // Reset vote to false after game starts
+      });
+
+      document.getElementById("vote-button").style.display = "none"; // Hide vote button after game starts
     }
 
     function updateCards(id, cards) {
