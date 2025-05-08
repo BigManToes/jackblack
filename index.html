@@ -36,6 +36,7 @@
             padding: 20px;
             width: 100%;
             box-sizing: border-box;
+            height: 100vh;
         }
 
         .header {
@@ -43,7 +44,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 20px;
-            margin-bottom: 20px;
+            height: 60px;
         }
 
         .game-title {
@@ -73,9 +74,8 @@
             flex-direction: column;
             gap: 20px;
             align-items: center;
-            margin: auto;
-            width: 100%;
-            max-width: 300px;
+            justify-content: center;
+            flex: 1;
         }
 
         .menu-button {
@@ -87,24 +87,31 @@
             color: black;
             cursor: pointer;
             transition: transform 0.2s;
-            width: 100%;
-            max-width: 200px;
+            width: 200px;
         }
 
         .menu-button:hover {
             transform: scale(1.05);
         }
 
-        .game-container, .shop-container, .leaderboard-container {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px auto;
-            max-width: 800px;
-            position: relative;
+        .game-container, .shop-container, .leaderboard-container, .lobby-container {
             display: none;
-            height: calc(100vh - 200px);
-            overflow-y: auto;
+            flex-direction: column;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 800px;
+            height: calc(100vh - 100px);
+            position: relative;
+        }
+
+        .game-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
         }
 
         .back-to-menu {
@@ -122,13 +129,13 @@
 
         .card {
             display: inline-block;
-            width: 100px;
-            height: 140px;
+            width: 80px;
+            height: 120px;
             background-color: var(--card-bg);
             border-radius: 10px;
             margin: 5px;
             font-size: 24px;
-            line-height: 140px;
+            line-height: 120px;
             color: black;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
@@ -155,80 +162,43 @@
             z-index: 1000;
         }
 
-        .action-buttons {
-            margin-top: 20px;
+        .hand-container {
+            margin: 10px 0;
         }
 
-        .action-button {
+        .hand-value {
+            font-size: 24px;
+            color: var(--value-color);
+            margin: 5px 0;
+        }
+
+        .lobby-options {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            margin: 20px;
+        }
+
+        .lobby-input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid var(--accent-color);
+            border-radius: 5px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
+            width: 200px;
+        }
+
+        .lobby-button {
             padding: 10px 20px;
-            margin: 0 10px;
             font-size: 16px;
             background-color: var(--accent-color);
             color: black;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-        }
-
-        .hand-container {
-            margin: 20px 0;
-        }
-
-        .hand-value {
-            font-size: 24px;
-            color: var(--value-color);
-            margin: 10px 0;
-        }
-
-        .theme-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            margin: 10px 0;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-
-        .theme-item button {
-            padding: 8px 15px;
-            background-color: var(--accent-color);
-            color: black;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .theme-item button:disabled {
-            background-color: #666;
-            cursor: not-allowed;
-        }
-
-        .theme-item .owned {
-            color: var(--value-color);
-        }
-
-        .leaderboard-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            margin: 5px 0;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-
-        .vote-container, .vote-replay-container {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            display: none;
-        }
-
-        .vote-status {
-            color: var(--value-color);
-            margin: 10px 0;
-            font-size: 18px;
+            width: 200px;
         }
 
         .players-list {
@@ -236,7 +206,6 @@
             padding: 10px;
             background-color: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
-            text-align: left;
         }
 
         .player-item {
@@ -256,22 +225,25 @@
             color: var(--value-color);
         }
 
-        .vote-button {
-            padding: 8px 15px;
+        .lobby-code {
+            font-size: 24px;
+            color: var(--accent-color);
+            margin: 10px 0;
+        }
+
+        .action-buttons {
+            margin: 10px 0;
+        }
+
+        .action-button {
+            padding: 10px 20px;
             margin: 0 5px;
+            font-size: 16px;
             background-color: var(--accent-color);
             color: black;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-        }
-
-        .theme-preview {
-            width: 50px;
-            height: 50px;
-            border-radius: 5px;
-            margin-right: 10px;
-            border: 2px solid var(--accent-color);
         }
     </style>
 </head>
@@ -286,52 +258,67 @@
         </div>
 
         <div class="menu-container" id="menu">
-            <button class="menu-button" id="play-button">Play Game</button>
+            <button class="menu-button" id="create-lobby-button">Create Lobby</button>
+            <button class="menu-button" id="join-lobby-button">Join Lobby</button>
             <button class="menu-button" id="shop-button">Theme Shop</button>
             <button class="menu-button" id="leaderboard-button">Leaderboard</button>
         </div>
 
+        <div class="lobby-container" id="lobby">
+            <button class="back-to-menu">Back to Menu</button>
+            <div class="game-content">
+                <div class="lobby-options">
+                    <div id="create-lobby-section" style="display: none;">
+                        <h2>Create New Lobby</h2>
+                        <button class="lobby-button" id="generate-lobby">Create New Game</button>
+                        <div class="lobby-code" id="lobby-code"></div>
+                    </div>
+                    <div id="join-lobby-section" style="display: none;">
+                        <h2>Join Lobby</h2>
+                        <input type="text" class="lobby-input" id="lobby-code-input" placeholder="Enter Lobby Code">
+                        <button class="lobby-button" id="join-game">Join Game</button>
+                    </div>
+                </div>
+                <div class="players-list" id="lobby-players"></div>
+            </div>
+        </div>
+
         <div class="game-container" id="game">
             <button class="back-to-menu">Back to Menu</button>
-            <h2>Blackjack Game</h2>
-            <div class="hand-container">
-                <h3>Dealer's Hand</h3>
-                <div id="dealer-cards"></div>
-                <div class="hand-value" id="dealer-value"></div>
-            </div>
-            <div class="hand-container">
-                <h3>Your Hand</h3>
-                <div id="player-cards"></div>
-                <div class="hand-value" id="player-value"></div>
-            </div>
-            <div class="action-buttons">
-                <button class="action-button" id="hit-button" disabled>Hit</button>
-                <button class="action-button" id="stand-button" disabled>Stand</button>
-            </div>
-            <div class="vote-container" id="vote-container">
-                <h3>Players in Game</h3>
+            <div class="game-content">
+                <div class="hand-container">
+                    <h3>Dealer's Hand</h3>
+                    <div id="dealer-cards"></div>
+                    <div class="hand-value" id="dealer-value"></div>
+                </div>
+                <div class="hand-container">
+                    <h3>Your Hand</h3>
+                    <div id="player-cards"></div>
+                    <div class="hand-value" id="player-value"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-button" id="hit-button" disabled>Hit</button>
+                    <button class="action-button" id="stand-button" disabled>Stand</button>
+                </div>
                 <div class="players-list" id="players-list"></div>
-                <div class="vote-status" id="vote-status">Waiting for players to vote...</div>
-                <button class="vote-button" id="vote-yes">Ready</button>
-            </div>
-            <div class="vote-replay-container" id="vote-replay-container">
-                <h3>Vote to Play Again</h3>
-                <div class="players-list" id="replay-players-list"></div>
-                <div class="vote-status" id="replay-vote-status">Waiting for players to vote...</div>
-                <button class="vote-button" id="vote-replay">Play Again</button>
+                <div class="vote-status" id="vote-status">Waiting for players...</div>
             </div>
         </div>
 
         <div class="shop-container" id="shop">
             <button class="back-to-menu">Back to Menu</button>
-            <h2>Theme Shop</h2>
-            <div id="theme-list"></div>
+            <div class="game-content">
+                <h2>Theme Shop</h2>
+                <div id="theme-list"></div>
+            </div>
         </div>
 
         <div class="leaderboard-container" id="leaderboard">
             <button class="back-to-menu">Back to Menu</button>
-            <h2>Leaderboard</h2>
-            <div id="leaderboard-list"></div>
+            <div class="game-content">
+                <h2>Leaderboard</h2>
+                <div id="leaderboard-list"></div>
+            </div>
         </div>
 
         <div class="game-info" id="game-info"></div>
@@ -356,58 +343,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Available themes
-        const themes = {
-            default: {
-                name: "Default Theme",
-                price: 0,
-                colors: {
-                    bg: "#000000",
-                    text: "#ffd700",
-                    accent: "#ffd700",
-                    title: "#ff00ff",
-                    username: "#00ffff",
-                    value: "#00ff00"
-                }
-            },
-            neon: {
-                name: "Neon Theme",
-                price: 100,
-                colors: {
-                    bg: "#0a0a2a",
-                    text: "#00ff00",
-                    accent: "#ff00ff",
-                    title: "#ff00ff",
-                    username: "#00ffff",
-                    value: "#00ff00"
-                }
-            },
-            ocean: {
-                name: "Ocean Theme",
-                price: 150,
-                colors: {
-                    bg: "#001f3f",
-                    text: "#00ffff",
-                    accent: "#0074D9",
-                    title: "#ff00ff",
-                    username: "#00ffff",
-                    value: "#00ff00"
-                }
-            },
-            sunset: {
-                name: "Sunset Theme",
-                price: 200,
-                colors: {
-                    bg: "#2a0a0a",
-                    text: "#ffa500",
-                    accent: "#ff6b6b",
-                    title: "#ff00ff",
-                    username: "#00ffff",
-                    value: "#00ff00"
-                }
-            }
-        };
-
         // Game state
         let username = localStorage.getItem('username') || 'Guest';
         let coins = parseInt(localStorage.getItem('coins')) || 50;
@@ -417,36 +352,42 @@
         let gameActive = false;
         let dealerCardHidden = true;
         let hasVoted = false;
-        let hasVotedReplay = false;
-        let currentRoom = null;
-        let ownedThemes = JSON.parse(localStorage.getItem('ownedThemes')) || ['default'];
+        let currentLobby = null;
+        let lobbyListener = null;
 
         // DOM Elements
         const menuContainer = document.getElementById('menu');
+        const lobbyContainer = document.getElementById('lobby');
         const gameContainer = document.getElementById('game');
         const shopContainer = document.getElementById('shop');
         const leaderboardContainer = document.getElementById('leaderboard');
-        const usernameDisplay = document.getElementById('username-display');
-        const coinsDisplay = document.getElementById('coins-display');
-        const gameInfo = document.getElementById('game-info');
-        const voteContainer = document.getElementById('vote-container');
-        const voteReplayContainer = document.getElementById('vote-replay-container');
-        const playersList = document.getElementById('players-list');
-        const replayPlayersList = document.getElementById('replay-players-list');
+        const createLobbySection = document.getElementById('create-lobby-section');
+        const joinLobbySection = document.getElementById('join-lobby-section');
+        const lobbyCodeDisplay = document.getElementById('lobby-code');
+        const lobbyCodeInput = document.getElementById('lobby-code-input');
+        const lobbyPlayersList = document.getElementById('lobby-players');
+        const gamePlayersList = document.getElementById('players-list');
         const voteStatus = document.getElementById('vote-status');
-        const replayVoteStatus = document.getElementById('replay-vote-status');
-        const hitButton = document.getElementById('hit-button');
-        const standButton = document.getElementById('stand-button');
 
         // Update displays
-        usernameDisplay.textContent = username;
-        coinsDisplay.textContent = coins;
+        document.getElementById('username-display').textContent = username;
+        document.getElementById('coins-display').textContent = coins;
 
         // Event Listeners
-        document.getElementById('play-button').addEventListener('click', () => {
-            showContainer(gameContainer);
-            joinGame();
+        document.getElementById('create-lobby-button').addEventListener('click', () => {
+            showContainer(lobbyContainer);
+            createLobbySection.style.display = 'block';
+            joinLobbySection.style.display = 'none';
         });
+
+        document.getElementById('join-lobby-button').addEventListener('click', () => {
+            showContainer(lobbyContainer);
+            createLobbySection.style.display = 'none';
+            joinLobbySection.style.display = 'block';
+        });
+
+        document.getElementById('generate-lobby').addEventListener('click', createNewLobby);
+        document.getElementById('join-game').addEventListener('click', joinExistingLobby);
 
         document.getElementById('shop-button').addEventListener('click', () => {
             showContainer(shopContainer);
@@ -460,160 +401,115 @@
 
         document.querySelectorAll('.back-to-menu').forEach(button => {
             button.addEventListener('click', () => {
-                if (currentRoom) {
-                    leaveRoom();
-                }
+                leaveLobby();
                 showContainer(menuContainer);
             });
         });
 
-        hitButton.addEventListener('click', handleHit);
-        standButton.addEventListener('click', handleStand);
-        document.getElementById('vote-yes').addEventListener('click', handleVote);
-        document.getElementById('vote-replay').addEventListener('click', handleReplayVote);
+        document.getElementById('hit-button').addEventListener('click', handleHit);
+        document.getElementById('stand-button').addEventListener('click', handleStand);
 
-        // Theme Management
-        function loadThemeShop() {
-            const themeList = document.getElementById('theme-list');
-            themeList.innerHTML = '';
+        // Lobby Management Functions
+        function generateLobbyCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        async function createNewLobby() {
+            const lobbyCode = generateLobbyCode();
+            currentLobby = lobbyCode;
             
-            Object.entries(themes).forEach(([themeId, theme]) => {
-                const themeItem = document.createElement('div');
-                themeItem.className = 'theme-item';
-                
-                const isOwned = ownedThemes.includes(themeId);
-                const canAfford = coins >= theme.price;
-                
-                themeItem.innerHTML = `
-                    <div style="display: flex; align-items: center;">
-                        <div class="theme-preview" style="background-color: ${theme.colors.bg}"></div>
-                        <span>${theme.name} ${isOwned ? '<span class="owned">(Owned)</span>' : `- ${theme.price} coins`}</span>
-                    </div>
-                    ${isOwned ? 
-                        `<button onclick="window.applyTheme('${themeId}')">Apply</button>` :
-                        `<button onclick="window.purchaseTheme('${themeId}')" ${!canAfford ? 'disabled' : ''}>
-                            ${canAfford ? 'Purchase' : 'Not enough coins'}
-                        </button>`
+            const lobbyRef = ref(db, `lobbies/${lobbyCode}`);
+            await set(lobbyRef, {
+                host: username,
+                players: {
+                    [username]: {
+                        ready: false,
+                        coins: coins
                     }
-                `;
-                themeList.appendChild(themeItem);
+                },
+                gameStarted: false,
+                created: Date.now()
             });
+
+            lobbyCodeDisplay.textContent = `Lobby Code: ${lobbyCode}`;
+            setupLobbyListener(lobbyCode);
         }
 
-        window.purchaseTheme = function(themeId) {
-            const theme = themes[themeId];
-            if (coins >= theme.price && !ownedThemes.includes(themeId)) {
-                coins -= theme.price;
-                ownedThemes.push(themeId);
-                localStorage.setItem('coins', coins);
-                localStorage.setItem('ownedThemes', JSON.stringify(ownedThemes));
-                coinsDisplay.textContent = coins;
-                applyTheme(themeId);
-                loadThemeShop();
-                updateLeaderboard();
-            }
-        };
+        async function joinExistingLobby() {
+            const lobbyCode = lobbyCodeInput.value.toUpperCase();
+            const lobbyRef = ref(db, `lobbies/${lobbyCode}`);
+            const snapshot = await get(lobbyRef);
 
-        window.applyTheme = function(themeId) {
-            const theme = themes[themeId];
-            document.documentElement.style.setProperty('--bg-color', theme.colors.bg);
-            document.documentElement.style.setProperty('--text-color', theme.colors.text);
-            document.documentElement.style.setProperty('--accent-color', theme.colors.accent);
-            document.documentElement.style.setProperty('--title-color', theme.colors.title);
-            document.documentElement.style.setProperty('--username-color', theme.colors.username);
-            document.documentElement.style.setProperty('--value-color', theme.colors.value);
-            localStorage.setItem('currentTheme', themeId);
-        };
-
-        // Room Management
-        function joinGame() {
-            if (!currentRoom) {
-                currentRoom = 'main-room';
-            }
-            
-            const roomRef = ref(db, `rooms/${currentRoom}`);
-            const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
-            
-            set(playerRef, {
-                coins: coins,
-                voted: false,
-                votedReplay: false,
-                lastActive: Date.now()
-            });
-
-            onValue(roomRef, (snapshot) => {
-                const roomData = snapshot.val();
-                if (!roomData) return;
-
-                const players = roomData.players || {};
-                updatePlayersList(players);
-                checkVotes(players);
-            });
-
-            voteContainer.style.display = 'block';
-            startGame();
-        }
-
-        function leaveRoom() {
-            if (currentRoom) {
-                const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
-                remove(playerRef);
-                currentRoom = null;
+            if (snapshot.exists()) {
+                currentLobby = lobbyCode;
+                await update(ref(db, `lobbies/${lobbyCode}/players/${username}`), {
+                    ready: false,
+                    coins: coins
+                });
+                setupLobbyListener(lobbyCode);
+            } else {
+                alert('Lobby not found!');
             }
         }
 
-        function updatePlayersList(players) {
-            const playerNames = Object.keys(players);
-            const totalPlayers = playerNames.length;
-            const votedPlayers = playerNames.filter(name => players[name].voted).length;
-            
-            playersList.innerHTML = '';
-            playerNames.forEach(playerName => {
+        function setupLobbyListener(lobbyCode) {
+            if (lobbyListener) {
+                lobbyListener();
+            }
+
+            const lobbyRef = ref(db, `lobbies/${lobbyCode}`);
+            lobbyListener = onValue(lobbyRef, (snapshot) => {
+                const lobbyData = snapshot.val();
+                if (!lobbyData) return;
+
+                updateLobbyDisplay(lobbyData);
+                
+                if (lobbyData.gameStarted) {
+                    showContainer(gameContainer);
+                    startGame(lobbyData);
+                }
+            });
+        }
+
+        function updateLobbyDisplay(lobbyData) {
+            const players = lobbyData.players || {};
+            lobbyPlayersList.innerHTML = '';
+            Object.entries(players).forEach(([playerName, data]) => {
                 const playerItem = document.createElement('div');
                 playerItem.className = 'player-item';
                 playerItem.innerHTML = `
                     <span>${playerName}</span>
-                    <span class="player-status ${players[playerName].voted ? 'voted' : ''}">
-                        ${players[playerName].voted ? '✓ Ready' : 'Not Ready'}
-                    </span>
+                    <span class="player-status ${data.ready ? 'voted' : ''}">${data.ready ? 'Ready' : 'Not Ready'}</span>
                 `;
-                playersList.appendChild(playerItem);
+                lobbyPlayersList.appendChild(playerItem);
             });
-
-            voteStatus.textContent = `Players Ready: ${votedPlayers}/${totalPlayers}`;
         }
 
-        function handleVote() {
-            if (!hasVoted && currentRoom) {
-                const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
-                update(playerRef, {
-                    voted: true
-                });
-                hasVoted = true;
-            }
-        }
-
-        function handleReplayVote() {
-            if (!hasVotedReplay && currentRoom) {
-                const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
-                update(playerRef, {
-                    votedReplay: true
-                });
-                hasVotedReplay = true;
-            }
-        }
-
-        function checkVotes(players) {
-            const playerNames = Object.keys(players);
-            const totalPlayers = playerNames.length;
-            const votedPlayers = playerNames.filter(name => players[name].voted).length;
-
-            if (votedPlayers === totalPlayers && totalPlayers > 0) {
-                startRound();
+        function leaveLobby() {
+            if (currentLobby && username) {
+                remove(ref(db, `lobbies/${currentLobby}/players/${username}`));
+                if (lobbyListener) {
+                    lobbyListener();
+                    lobbyListener = null;
+                }
+                currentLobby = null;
             }
         }
 
         // Game Functions
+        function startGame(lobbyData) {
+            deck = createDeck();
+            playerHand = [drawCard(), drawCard()];
+            dealerHand = [drawCard(), drawCard()];
+            gameActive = true;
+            dealerCardHidden = true;
+            updateDisplay();
+
+            if (calculateHandValue(playerHand) === 21) {
+                handleBlackjack();
+            }
+        }
+
         function createDeck() {
             const suits = ['♠', '♥', '♣', '♦'];
             const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -632,6 +528,11 @@
                 [array[i], array[j]] = [array[j], array[i]];
             }
             return array;
+        }
+
+        function drawCard() {
+            if (deck.length === 0) deck = createDeck();
+            return deck.pop();
         }
 
         function getCardValue(card) {
@@ -661,23 +562,6 @@
             return value;
         }
 
-        function drawCard() {
-            if (deck.length === 0) deck = createDeck();
-            return deck.pop();
-        }
-
-        function renderCard(card, hidden = false) {
-            const cardElement = document.createElement('div');
-            cardElement.className = `card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}`;
-            if (hidden) {
-                cardElement.classList.add('hidden');
-                cardElement.textContent = '?';
-            } else {
-                cardElement.textContent = `${card.value}${card.suit}`;
-            }
-            return cardElement;
-        }
-
         function updateDisplay() {
             const dealerContainer = document.getElementById('dealer-cards');
             const playerContainer = document.getElementById('player-cards');
@@ -703,30 +587,16 @@
             }
         }
 
-        function startGame() {
-            voteContainer.style.display = 'block';
-            voteReplayContainer.style.display = 'none';
-            hitButton.disabled = true;
-            standButton.disabled = true;
-            hasVoted = false;
-            hasVotedReplay = false;
-            deck = createDeck();
-            playerHand = [drawCard(), drawCard()];
-            dealerHand = [drawCard(), drawCard()];
-            gameActive = false;
-            dealerCardHidden = true;
-            updateDisplay();
-        }
-
-        function startRound() {
-            voteContainer.style.display = 'none';
-            hitButton.disabled = false;
-            standButton.disabled = false;
-            gameActive = true;
-
-            if (calculateHandValue(playerHand) === 21) {
-                handleBlackjack();
+        function renderCard(card, hidden = false) {
+            const cardElement = document.createElement('div');
+            cardElement.className = `card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}`;
+            if (hidden) {
+                cardElement.classList.add('hidden');
+                cardElement.textContent = '?';
+            } else {
+                cardElement.textContent = `${card.value}${card.suit}`;
             }
+            return cardElement;
         }
 
         function handleHit() {
@@ -765,10 +635,9 @@
             updateDisplay();
             coins += 15;
             localStorage.setItem('coins', coins);
-            coinsDisplay.textContent = coins;
-            gameInfo.textContent = "Blackjack! You win 15 coins!";
-            showReplayVote();
-            updateLeaderboard();
+            document.getElementById('coins-display').textContent = coins;
+            document.getElementById('game-info').textContent = "Blackjack! You win 15 coins!";
+            updatePlayerData();
         }
 
         function handleBust() {
@@ -777,10 +646,9 @@
             updateDisplay();
             coins -= 10;
             localStorage.setItem('coins', coins);
-            coinsDisplay.textContent = coins;
-            gameInfo.textContent = "Bust! You lose 10 coins!";
-            showReplayVote();
-            updateLeaderboard();
+            document.getElementById('coins-display').textContent = coins;
+            document.getElementById('game-info').textContent = "Bust! You lose 10 coins!";
+            updatePlayerData();
         }
 
         function determineWinner() {
@@ -790,73 +658,53 @@
 
             if (dealerValue > 21) {
                 coins += 5;
-                gameInfo.textContent = "Dealer busts! You win 5 coins!";
+                document.getElementById('game-info').textContent = "Dealer busts! You win 5 coins!";
             } else if (playerValue > dealerValue) {
                 coins += 5;
-                gameInfo.textContent = "You win 5 coins!";
+                document.getElementById('game-info').textContent = "You win 5 coins!";
             } else if (playerValue < dealerValue) {
                 coins -= 10;
-                gameInfo.textContent = "Dealer wins! You lose 10 coins!";
+                document.getElementById('game-info').textContent = "Dealer wins! You lose 10 coins!";
             } else {
-                gameInfo.textContent = "Push! It's a tie!";
+                document.getElementById('game-info').textContent = "Push! It's a tie!";
             }
 
             localStorage.setItem('coins', coins);
-            coinsDisplay.textContent = coins;
-            showReplayVote();
-            updateLeaderboard();
+            document.getElementById('coins-display').textContent = coins;
+            updatePlayerData();
         }
 
-        function showReplayVote() {
-            voteReplayContainer.style.display = 'block';
-            hitButton.disabled = true;
-            standButton.disabled = true;
-        }
-
-        function showContainer(container) {
-            [menuContainer, gameContainer, shopContainer, leaderboardContainer].forEach(c => c.style.display = 'none');
-            container.style.display = 'block';
-            gameInfo.textContent = '';
-        }
-
-        function loadLeaderboard() {
-            const leaderboardRef = ref(db, 'players');
-            onValue(leaderboardRef, (snapshot) => {
-                const data = snapshot.val() || {};
-                const sortedPlayers = Object.entries(data)
-                    .sort(([,a], [,b]) => b.coins - a.coins)
-                    .slice(0, 10);
-
-                const leaderboardList = document.getElementById('leaderboard-list');
-                leaderboardList.innerHTML = '';
-                sortedPlayers.forEach(([name, data], index) => {
-                    const item = document.createElement('div');
-                    item.className = 'leaderboard-item';
-                    item.innerHTML = `
-                        <span>#${index + 1} ${name}</span>
-                        <span>${data.coins} coins</span>
-                    `;
-                    leaderboardList.appendChild(item);
+        function updatePlayerData() {
+            if (currentLobby) {
+                update(ref(db, `lobbies/${currentLobby}/players/${username}`), {
+                    coins: coins
                 });
-            });
-        }
-
-        function updateLeaderboard() {
-            const playerRef = ref(db, `players/${username}`);
-            set(playerRef, {
+            }
+            
+            set(ref(db, `players/${username}`), {
                 coins: coins,
                 lastUpdated: Date.now()
             });
         }
 
-        // Initialize theme
-        const savedTheme = localStorage.getItem('currentTheme') || 'default';
-        window.applyTheme(savedTheme);
+        function showContainer(container) {
+            [menuContainer, lobbyContainer, gameContainer, shopContainer, leaderboardContainer].forEach(c => {
+                if (c) c.style.display = 'none';
+            });
+            if (container) container.style.display = 'flex';
+            document.getElementById('game-info').textContent = '';
+        }
 
         // Clean up when window closes
         window.addEventListener('beforeunload', () => {
-            leaveRoom();
+            leaveLobby();
         });
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('currentTheme') || 'default';
+        if (window.applyTheme) {
+            window.applyTheme(savedTheme);
+        }
     </script>
 </body>
 </html>
