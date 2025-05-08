@@ -34,6 +34,7 @@
             align-items: center;
             padding: 10px 20px;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .game-title {
@@ -41,6 +42,7 @@
             color: var(--accent-color);
             margin: 0;
             text-align: left;
+            cursor: pointer;
         }
 
         #player-info {
@@ -55,15 +57,6 @@
             gap: 20px;
             align-items: center;
             margin-top: 50px;
-        }
-
-        .game-container, .shop-container, .leaderboard-container {
-            display: none;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px auto;
-            max-width: 800px;
         }
 
         .menu-button {
@@ -82,84 +75,123 @@
             transform: scale(1.05);
         }
 
-        .card {
-            display: inline-block;
-            margin: 5px;
-            padding: 20px 25px;
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            color: black;
-            font-size: 24px;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            min-width: 40px;
-            min-height: 60px;
+        .room-list-container {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px auto;
+            max-width: 800px;
+            position: relative;
         }
 
-        .game-buttons {
-            margin: 20px 0;
-        }
-
-        .game-button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            background-color: var(--accent-color);
-            color: black;
-            cursor: pointer;
-        }
-
-        .game-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #room-list {
-            margin: 20px 0;
-            padding: 10px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        .room-item {
-            padding: 10px;
-            margin: 5px 0;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .room-item:hover {
-            background-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .back-button {
-            padding: 8px 15px;
-            background-color: var(--accent-color);
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        .back-to-menu {
             position: absolute;
             top: 20px;
             left: 20px;
+            padding: 10px 20px;
+            background-color: var(--accent-color);
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 100;
         }
 
-        #message {
+        .create-room-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: var(--accent-color);
+            color: black;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
             margin: 20px 0;
-            font-size: 1.2em;
-            color: var(--accent-color);
+        }
+
+        .room-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .room-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .theme-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .theme-button {
+            padding: 8px 15px;
+            background-color: var(--accent-color);
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .username-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid var(--accent-color);
+            z-index: 1000;
+        }
+
+        .username-modal input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 200px;
+            border-radius: 5px;
+            border: 1px solid var(--accent-color);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .username-modal button {
+            padding: 10px 20px;
+            background-color: var(--accent-color);
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="game-title">JackBlack</h1>
+            <h1 class="game-title" onclick="showMainMenu()">JackBlack</h1>
             <div id="player-info">
-                <span id="player-id"></span>
-                <span id="coins">Coins: 100</span>
+                <span id="username-display"></span>
+                <span id="coins-display">Coins: 100</span>
             </div>
         </div>
 
@@ -167,38 +199,34 @@
             <button class="menu-button" onclick="showRoomList()">Play Game</button>
             <button class="menu-button" onclick="showShop()">Theme Shop</button>
             <button class="menu-button" onclick="showLeaderboard()">Leaderboard</button>
+            <button class="menu-button" onclick="showUsernameModal()">Change Username</button>
         </div>
 
-        <div class="game-container">
-            <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
-            <div id="room-info"></div>
-            <div id="dealer-hand"></div>
-            <div id="player-hand"></div>
-            <div id="message"></div>
-            <div class="game-buttons">
-                <button class="game-button" id="hit-button" onclick="hit()">Hit</button>
-                <button class="game-button" id="stand-button" onclick="stand()">Stand</button>
-                <button class="game-button" id="leave-button" onclick="leaveRoom()">Leave Room</button>
-            </div>
-        </div>
-
-        <div id="room-list" style="display: none;">
+        <div class="room-list-container" id="room-list" style="display: none;">
+            <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
             <h2>Available Rooms</h2>
-            <button class="game-button" onclick="createRoom()">Create New Room</button>
+            <button class="create-room-button" onclick="createRoom()">Create New Room</button>
             <div id="rooms"></div>
         </div>
 
-        <div class="shop-container">
-            <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
+        <div class="shop-container" style="display: none;">
+            <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
             <h2>Theme Shop</h2>
             <div id="themes"></div>
         </div>
 
-        <div class="leaderboard-container">
-            <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
+        <div class="leaderboard-container" style="display: none;">
+            <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
             <h2>Leaderboard</h2>
             <div id="leaderboard"></div>
         </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="username-modal" id="username-modal">
+        <h3>Choose Your Username</h3>
+        <input type="text" id="username-input" placeholder="Enter username">
+        <button onclick="setUsername()">Save Username</button>
     </div>
 
     <script type="module">
@@ -223,20 +251,146 @@
 
         // Game state
         let playerId = localStorage.getItem('playerId') || generatePlayerId();
-        let currentRoom = null;
+        let username = localStorage.getItem('username') || playerId;
         let playerCoins = parseInt(localStorage.getItem('playerCoins')) || 100;
+        let selectedTheme = localStorage.getItem('selectedTheme') || 'default';
+        let purchasedThemes = JSON.parse(localStorage.getItem('purchasedThemes')) || ['default'];
+
+        // Available themes
+        const themes = {
+            'default': { price: 0, bg: '#1e1e1e', text: 'white', accent: '#ffd700', cardBg: '#f0f0f0' },
+            'ocean': { price: 20, bg: '#1a3c5a', text: '#e0f0ff', accent: '#00ffff', cardBg: '#b3d9ff' },
+            'forest': { price: 30, bg: '#1b4d1b', text: '#e0ffe0', accent: '#90EE90', cardBg: '#c8e6c9' },
+            'sunset': { price: 40, bg: '#4a1259', text: '#ffe6ff', accent: '#ff69b4', cardBg: '#ffb6c1' },
+            'neon': { price: 50, bg: '#000000', text: '#00ff00', accent: '#ff00ff', cardBg: '#0000ff' },
+            'desert': { price: 35, bg: '#8b4513', text: '#f4a460', accent: '#daa520', cardBg: '#ffe4b5' }
+        };
 
         // Initialize player
         function initializePlayer() {
             localStorage.setItem('playerId', playerId);
-            document.getElementById('player-id').textContent = `Player ID: ${playerId}`;
+            updateUsernameDisplay();
             updateCoinsDisplay();
 
             // Store player in database
             set(ref(db, `players/${playerId}`), {
                 id: playerId,
+                username: username,
                 coins: playerCoins,
+                selectedTheme: selectedTheme,
+                purchasedThemes: purchasedThemes,
                 createdAt: new Date().toISOString()
+            });
+
+            applyTheme(selectedTheme);
+        }
+
+        // Username functions
+        function showUsernameModal() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('username-modal').style.display = 'block';
+            document.getElementById('username-input').value = username;
+        }
+
+        async function setUsername() {
+            const newUsername = document.getElementById('username-input').value.trim();
+            if (newUsername) {
+                username = newUsername;
+                localStorage.setItem('username', username);
+                updateUsernameDisplay();
+                
+                // Update username in database
+                await update(ref(db, `players/${playerId}`), { username });
+                
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('username-modal').style.display = 'none';
+            }
+        }
+
+        function updateUsernameDisplay() {
+            document.getElementById('username-display').textContent = username;
+        }
+
+        // Theme functions
+        function applyTheme(themeName) {
+            const theme = themes[themeName];
+            if (!theme) return;
+
+            document.documentElement.style.setProperty('--bg-color', theme.bg);
+            document.documentElement.style.setProperty('--text-color', theme.text);
+            document.documentElement.style.setProperty('--accent-color', theme.accent);
+            document.documentElement.style.setProperty('--card-bg', theme.cardBg);
+        }
+
+        async function buyTheme(themeName) {
+            const theme = themes[themeName];
+            if (!theme) return;
+
+            if (purchasedThemes.includes(themeName)) {
+                alert('You already own this theme!');
+                return;
+            }
+
+            if (playerCoins < theme.price) {
+                alert('Not enough coins!');
+                return;
+            }
+
+            playerCoins -= theme.price;
+            purchasedThemes.push(themeName);
+            
+            localStorage.setItem('playerCoins', playerCoins);
+            localStorage.setItem('purchasedThemes', JSON.stringify(purchasedThemes));
+            
+            updateCoinsDisplay();
+            updateThemeShop();
+
+            // Update player data in database
+            await update(ref(db, `players/${playerId}`), {
+                coins: playerCoins,
+                purchasedThemes: purchasedThemes
+            });
+        }
+
+        async function selectTheme(themeName) {
+            if (!purchasedThemes.includes(themeName)) return;
+            
+            selectedTheme = themeName;
+            localStorage.setItem('selectedTheme', themeName);
+            applyTheme(themeName);
+
+            // Update player data in database
+            await update(ref(db, `players/${playerId}`), {
+                selectedTheme: themeName
+            });
+
+            updateThemeShop();
+        }
+
+        function updateThemeShop() {
+            const shopContainer = document.getElementById('themes');
+            shopContainer.innerHTML = '';
+            
+            Object.entries(themes).forEach(([name, theme]) => {
+                const div = document.createElement('div');
+                div.className = 'theme-item';
+                const owned = purchasedThemes.includes(name);
+                const isSelected = selectedTheme === name;
+                
+                div.innerHTML = `
+                    <span>${name} Theme</span>
+                    <div>
+                        ${owned 
+                            ? `<button class="theme-button" onclick="selectTheme('${name}')" ${isSelected ? 'disabled' : ''}>
+                                ${isSelected ? 'Selected' : 'Select'}
+                               </button>`
+                            : `<button class="theme-button" onclick="buyTheme('${name}')" ${playerCoins < theme.price ? 'disabled' : ''}>
+                                Buy (${theme.price} coins)
+                               </button>`
+                        }
+                    </div>
+                `;
+                shopContainer.appendChild(div);
             });
         }
 
@@ -246,240 +400,16 @@
             await set(ref(db, `rooms/${roomId}`), {
                 id: roomId,
                 host: playerId,
-                players: [playerId],
+                hostUsername: username,
+                players: [{id: playerId, username: username}],
                 gameState: 'waiting',
-                deck: [],
-                currentTurn: null
+                createdAt: new Date().toISOString()
             });
 
-            joinRoom(roomId);
+            showGameArea(roomId);
         }
 
-        async function joinRoom(roomId) {
-            const roomRef = ref(db, `rooms/${roomId}`);
-            const snapshot = await get(roomRef);
-            
-            if (!snapshot.exists()) {
-                alert('Room not found!');
-                return;
-            }
-
-            const roomData = snapshot.val();
-            if (!roomData.players.includes(playerId)) {
-                const players = [...roomData.players, playerId];
-                await update(roomRef, { players });
-            }
-
-            currentRoom = roomId;
-            showGameArea();
-            document.getElementById('room-info').textContent = `Room: ${roomId}`;
-            startGame();
-        }
-
-        async function leaveRoom() {
-            if (!currentRoom) return;
-
-            const roomRef = ref(db, `rooms/${currentRoom}`);
-            const snapshot = await get(roomRef);
-            
-            if (snapshot.exists()) {
-                const roomData = snapshot.val();
-                const players = roomData.players.filter(p => p !== playerId);
-                
-                if (players.length === 0) {
-                    await remove(roomRef);
-                } else {
-                    await update(roomRef, {
-                        players,
-                        host: roomData.host === playerId ? players[0] : roomData.host
-                    });
-                }
-            }
-
-            currentRoom = null;
-            showMainMenu();
-        }
-
-        // Game logic
-        function createDeck() {
-            const suits = ['♠', '♣', '♥', '♦'];
-            const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-            const deck = [];
-            
-            for (let suit of suits) {
-                for (let value of values) {
-                    deck.push({ suit, value });
-                }
-            }
-            
-            return shuffleDeck(deck);
-        }
-
-        function shuffleDeck(deck) {
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
-            }
-            return deck;
-        }
-
-        function startGame() {
-            if (!currentRoom) return;
-
-            const deck = createDeck();
-            const playerHand = [deck.pop(), deck.pop()];
-            const dealerHand = [deck.pop(), deck.pop()];
-
-            update(ref(db, `rooms/${currentRoom}`), {
-                deck,
-                playerHand,
-                dealerHand,
-                currentTurn: playerId,
-                gameState: 'playing'
-            });
-        }
-
-        function calculateHandValue(hand) {
-            let value = 0;
-            let aces = 0;
-
-            for (let card of hand) {
-                if (card.value === 'A') {
-                    aces++;
-                    value += 11;
-                } else if (['K', 'Q', 'J'].includes(card.value)) {
-                    value += 10;
-                } else {
-                    value += parseInt(card.value);
-                }
-            }
-
-            while (value > 21 && aces > 0) {
-                value -= 10;
-                aces--;
-            }
-
-            return value;
-        }
-
-        async function hit() {
-            if (!currentRoom) return;
-
-            const roomRef = ref(db, `rooms/${currentRoom}`);
-            const snapshot = await get(roomRef);
-            const roomData = snapshot.val();
-
-            const deck = roomData.deck;
-            const playerHand = [...roomData.playerHand, deck.pop()];
-            
-            if (calculateHandValue(playerHand) > 21) {
-                handleGameEnd('dealer');
-            } else {
-                update(roomRef, { playerHand, deck });
-            }
-        }
-
-        async function stand() {
-            if (!currentRoom) return;
-
-            const roomRef = ref(db, `rooms/${currentRoom}`);
-            const snapshot = await get(roomRef);
-            const roomData = snapshot.val();
-
-            let dealerHand = roomData.dealerHand;
-            const deck = roomData.deck;
-
-            while (calculateHandValue(dealerHand) < 17) {
-                dealerHand.push(deck.pop());
-            }
-
-            const playerValue = calculateHandValue(roomData.playerHand);
-            const dealerValue = calculateHandValue(dealerHand);
-
-            let winner;
-            if (dealerValue > 21) winner = 'player';
-            else if (playerValue > dealerValue) winner = 'player';
-            else winner = 'dealer';
-
-            handleGameEnd(winner);
-        }
-
-        async function handleGameEnd(winner) {
-            if (!currentRoom) return;
-
-            if (winner === 'player') {
-                playerCoins += 5;
-                localStorage.setItem('playerCoins', playerCoins);
-                updateCoinsDisplay();
-
-                // Update player data
-                update(ref(db, `players/${playerId}`), { coins: playerCoins });
-
-                // Update leaderboard
-                const leaderboardRef = ref(db, `leaderboard/${playerId}`);
-                const snapshot = await get(leaderboardRef);
-                const currentWins = snapshot.exists() ? snapshot.val().wins : 0;
-                
-                set(leaderboardRef, {
-                    id: playerId,
-                    wins: currentWins + 1,
-                    coins: playerCoins
-                });
-            }
-
-            const message = winner === 'player' ? 'You won! +5 coins!' : 'Dealer wins!';
-            document.getElementById('message').textContent = message;
-
-            setTimeout(() => {
-                startGame();
-            }, 3000);
-        }
-
-        // UI functions
-        function showMainMenu() {
-            document.querySelector('.menu-container').style.display = 'flex';
-            document.querySelector('.game-container').style.display = 'none';
-            document.querySelector('.shop-container').style.display = 'none';
-            document.querySelector('.leaderboard-container').style.display = 'none';
-            document.getElementById('room-list').style.display = 'none';
-        }
-
-        function showGameArea() {
-            document.querySelector('.menu-container').style.display = 'none';
-            document.querySelector('.game-container').style.display = 'block';
-            document.querySelector('.shop-container').style.display = 'none';
-            document.querySelector('.leaderboard-container').style.display = 'none';
-            document.getElementById('room-list').style.display = 'none';
-        }
-
-        function showRoomList() {
-            document.querySelector('.menu-container').style.display = 'none';
-            document.getElementById('room-list').style.display = 'block';
-            loadRooms();
-        }
-
-        function showShop() {
-            document.querySelector('.menu-container').style.display = 'none';
-            document.querySelector('.shop-container').style.display = 'block';
-        }
-
-        function showLeaderboard() {
-            document.querySelector('.menu-container').style.display = 'none';
-            document.querySelector('.leaderboard-container').style.display = 'block';
-            loadLeaderboard();
-        }
-
-        function updateCoinsDisplay() {
-            document.getElementById('coins').textContent = `Coins: ${playerCoins}`;
-        }
-
-        // Utility functions
-        function generatePlayerId() {
-            return 'player_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        // Load data
-        async function loadRooms() {
+        function loadRooms() {
             const roomsRef = ref(db, 'rooms');
             onValue(roomsRef, (snapshot) => {
                 const rooms = snapshot.val() || {};
@@ -489,34 +419,49 @@
                 Object.values(rooms).forEach(room => {
                     const div = document.createElement('div');
                     div.className = 'room-item';
-                    div.textContent = `Room ${room.id} (${room.players.length} players)`;
+                    div.innerHTML = `
+                        Room: ${room.id}<br>
+                        Host: ${room.hostUsername}<br>
+                        Players: ${room.players.length}/4
+                    `;
                     div.onclick = () => joinRoom(room.id);
                     roomsContainer.appendChild(div);
                 });
             });
         }
 
-        async function loadLeaderboard() {
-            const leaderboardRef = ref(db, 'leaderboard');
-            onValue(leaderboardRef, (snapshot) => {
-                const leaderboardData = snapshot.val() || {};
-                const leaderboardContainer = document.getElementById('leaderboard');
-                leaderboardContainer.innerHTML = '';
+        // UI functions
+        function showMainMenu() {
+            document.querySelector('.menu-container').style.display = 'flex';
+            document.querySelector('.room-list-container').style.display = 'none';
+            document.querySelector('.shop-container').style.display = 'none';
+            document.querySelector('.leaderboard-container').style.display = 'none';
+        }
 
-                const sortedPlayers = Object.values(leaderboardData)
-                    .sort((a, b) => b.wins - a.wins)
-                    .slice(0, 10);
+        function showRoomList() {
+            document.querySelector('.menu-container').style.display = 'none';
+            document.querySelector('.room-list-container').style.display = 'block';
+            loadRooms();
+        }
 
-                sortedPlayers.forEach((player, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'leaderboard-item';
-                    div.innerHTML = `
-                        <span>#${index + 1} ${player.id}</span>
-                        <span>Wins: ${player.wins} | Coins: ${player.coins}</span>
-                    `;
-                    leaderboardContainer.appendChild(div);
-                });
-            });
+        function showShop() {
+            document.querySelector('.menu-container').style.display = 'none';
+            document.querySelector('.shop-container').style.display = 'block';
+            updateThemeShop();
+        }
+
+        function showLeaderboard() {
+            document.querySelector('.menu-container').style.display = 'none';
+            document.querySelector('.leaderboard-container').style.display = 'block';
+        }
+
+        function updateCoinsDisplay() {
+            document.getElementById('coins-display').textContent = `Coins: ${playerCoins}`;
+        }
+
+        // Utility functions
+        function generatePlayerId() {
+            return 'player_' + Math.random().toString(36).substr(2, 9);
         }
 
         // Initialize game
@@ -525,14 +470,14 @@
 
         // Make functions available globally
         window.createRoom = createRoom;
-        window.joinRoom = joinRoom;
-        window.leaveRoom = leaveRoom;
-        window.hit = hit;
-        window.stand = stand;
         window.showMainMenu = showMainMenu;
         window.showRoomList = showRoomList;
         window.showShop = showShop;
         window.showLeaderboard = showLeaderboard;
+        window.showUsernameModal = showUsernameModal;
+        window.setUsername = setUsername;
+        window.buyTheme = buyTheme;
+        window.selectTheme = selectTheme;
     </script>
 </body>
 </html>
