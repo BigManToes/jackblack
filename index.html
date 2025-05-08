@@ -10,6 +10,9 @@
             --text-color: #ffd700;
             --accent-color: #ffd700;
             --card-bg: #ffffff;
+            --title-color: #ff00ff;
+            --username-color: #00ffff;
+            --value-color: #00ff00;
         }
 
         body {
@@ -17,15 +20,22 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             text-align: center;
-            padding: 20px;
             margin: 0;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .header {
@@ -38,7 +48,7 @@
 
         .game-title {
             font-size: 2.5em;
-            color: #ff00ff;
+            color: var(--title-color);
             margin: 0;
             text-align: left;
             cursor: pointer;
@@ -51,11 +61,11 @@
         }
 
         .username {
-            color: #00ffff;
+            color: var(--username-color);
         }
 
         .coins {
-            color: #ff00ff;
+            color: var(--title-color);
         }
 
         .menu-container {
@@ -63,7 +73,9 @@
             flex-direction: column;
             gap: 20px;
             align-items: center;
-            margin-top: 50px;
+            margin: auto;
+            width: 100%;
+            max-width: 300px;
         }
 
         .menu-button {
@@ -75,7 +87,8 @@
             color: black;
             cursor: pointer;
             transition: transform 0.2s;
-            width: 200px;
+            width: 100%;
+            max-width: 200px;
         }
 
         .menu-button:hover {
@@ -90,6 +103,8 @@
             max-width: 800px;
             position: relative;
             display: none;
+            height: calc(100vh - 200px);
+            overflow-y: auto;
         }
 
         .back-to-menu {
@@ -137,6 +152,7 @@
             padding: 10px 20px;
             border-radius: 10px;
             color: var(--text-color);
+            z-index: 1000;
         }
 
         .action-buttons {
@@ -160,7 +176,7 @@
 
         .hand-value {
             font-size: 24px;
-            color: #00ff00;
+            color: var(--value-color);
             margin: 10px 0;
         }
 
@@ -183,6 +199,15 @@
             cursor: pointer;
         }
 
+        .theme-item button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+
+        .theme-item .owned {
+            color: var(--value-color);
+        }
+
         .leaderboard-item {
             display: flex;
             justify-content: space-between;
@@ -192,11 +217,43 @@
             border-radius: 8px;
         }
 
-        .vote-container {
+        .vote-container, .vote-replay-container {
             margin-top: 20px;
             padding: 10px;
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
+            display: none;
+        }
+
+        .vote-status {
+            color: var(--value-color);
+            margin: 10px 0;
+            font-size: 18px;
+        }
+
+        .players-list {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            margin: 5px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .player-status {
+            color: var(--text-color);
+        }
+
+        .player-status.voted {
+            color: var(--value-color);
         }
 
         .vote-button {
@@ -207,6 +264,14 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+        }
+
+        .theme-preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            margin-right: 10px;
+            border: 2px solid var(--accent-color);
         }
     </style>
 </head>
@@ -240,12 +305,20 @@
                 <div class="hand-value" id="player-value"></div>
             </div>
             <div class="action-buttons">
-                <button class="action-button" id="hit-button">Hit</button>
-                <button class="action-button" id="stand-button">Stand</button>
+                <button class="action-button" id="hit-button" disabled>Hit</button>
+                <button class="action-button" id="stand-button" disabled>Stand</button>
             </div>
             <div class="vote-container" id="vote-container">
-                <p>Vote to start the game</p>
+                <h3>Players in Game</h3>
+                <div class="players-list" id="players-list"></div>
+                <div class="vote-status" id="vote-status">Waiting for players to vote...</div>
                 <button class="vote-button" id="vote-yes">Ready</button>
+            </div>
+            <div class="vote-replay-container" id="vote-replay-container">
+                <h3>Vote to Play Again</h3>
+                <div class="players-list" id="replay-players-list"></div>
+                <div class="vote-status" id="replay-vote-status">Waiting for players to vote...</div>
+                <button class="vote-button" id="vote-replay">Play Again</button>
             </div>
         </div>
 
@@ -266,7 +339,7 @@
         <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
@@ -283,6 +356,58 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // Available themes
+        const themes = {
+            default: {
+                name: "Default Theme",
+                price: 0,
+                colors: {
+                    bg: "#000000",
+                    text: "#ffd700",
+                    accent: "#ffd700",
+                    title: "#ff00ff",
+                    username: "#00ffff",
+                    value: "#00ff00"
+                }
+            },
+            neon: {
+                name: "Neon Theme",
+                price: 100,
+                colors: {
+                    bg: "#0a0a2a",
+                    text: "#00ff00",
+                    accent: "#ff00ff",
+                    title: "#ff00ff",
+                    username: "#00ffff",
+                    value: "#00ff00"
+                }
+            },
+            ocean: {
+                name: "Ocean Theme",
+                price: 150,
+                colors: {
+                    bg: "#001f3f",
+                    text: "#00ffff",
+                    accent: "#0074D9",
+                    title: "#ff00ff",
+                    username: "#00ffff",
+                    value: "#00ff00"
+                }
+            },
+            sunset: {
+                name: "Sunset Theme",
+                price: 200,
+                colors: {
+                    bg: "#2a0a0a",
+                    text: "#ffa500",
+                    accent: "#ff6b6b",
+                    title: "#ff00ff",
+                    username: "#00ffff",
+                    value: "#00ff00"
+                }
+            }
+        };
+
         // Game state
         let username = localStorage.getItem('username') || 'Guest';
         let coins = parseInt(localStorage.getItem('coins')) || 50;
@@ -292,37 +417,9 @@
         let gameActive = false;
         let dealerCardHidden = true;
         let hasVoted = false;
-
-        // Available themes
-        const themes = {
-            default: {
-                name: "Default Theme",
-                price: 0,
-                colors: {
-                    bg: "#000000",
-                    text: "#ffd700",
-                    accent: "#ffd700"
-                }
-            },
-            neon: {
-                name: "Neon Theme",
-                price: 100,
-                colors: {
-                    bg: "#0a0a2a",
-                    text: "#00ff00",
-                    accent: "#ff00ff"
-                }
-            },
-            ocean: {
-                name: "Ocean Theme",
-                price: 150,
-                colors: {
-                    bg: "#001f3f",
-                    text: "#00ffff",
-                    accent: "#0074D9"
-                }
-            }
-        };
+        let hasVotedReplay = false;
+        let currentRoom = null;
+        let ownedThemes = JSON.parse(localStorage.getItem('ownedThemes')) || ['default'];
 
         // DOM Elements
         const menuContainer = document.getElementById('menu');
@@ -332,9 +429,14 @@
         const usernameDisplay = document.getElementById('username-display');
         const coinsDisplay = document.getElementById('coins-display');
         const gameInfo = document.getElementById('game-info');
-        const themeList = document.getElementById('theme-list');
-        const leaderboardList = document.getElementById('leaderboard-list');
         const voteContainer = document.getElementById('vote-container');
+        const voteReplayContainer = document.getElementById('vote-replay-container');
+        const playersList = document.getElementById('players-list');
+        const replayPlayersList = document.getElementById('replay-players-list');
+        const voteStatus = document.getElementById('vote-status');
+        const replayVoteStatus = document.getElementById('replay-vote-status');
+        const hitButton = document.getElementById('hit-button');
+        const standButton = document.getElementById('stand-button');
 
         // Update displays
         usernameDisplay.textContent = username;
@@ -343,36 +445,56 @@
         // Event Listeners
         document.getElementById('play-button').addEventListener('click', () => {
             showContainer(gameContainer);
-            startGame();
+            joinGame();
         });
+
         document.getElementById('shop-button').addEventListener('click', () => {
             showContainer(shopContainer);
             loadThemeShop();
         });
+
         document.getElementById('leaderboard-button').addEventListener('click', () => {
             showContainer(leaderboardContainer);
             loadLeaderboard();
         });
+
         document.querySelectorAll('.back-to-menu').forEach(button => {
             button.addEventListener('click', () => {
-                gameActive = false;
+                if (currentRoom) {
+                    leaveRoom();
+                }
                 showContainer(menuContainer);
             });
         });
 
-        document.getElementById('hit-button').addEventListener('click', handleHit);
-        document.getElementById('stand-button').addEventListener('click', handleStand);
+        hitButton.addEventListener('click', handleHit);
+        standButton.addEventListener('click', handleStand);
         document.getElementById('vote-yes').addEventListener('click', handleVote);
+        document.getElementById('vote-replay').addEventListener('click', handleReplayVote);
 
-        // Theme Shop Functions
+        // Theme Management
         function loadThemeShop() {
+            const themeList = document.getElementById('theme-list');
             themeList.innerHTML = '';
-            Object.entries(themes).forEach(([id, theme]) => {
+            
+            Object.entries(themes).forEach(([themeId, theme]) => {
                 const themeItem = document.createElement('div');
                 themeItem.className = 'theme-item';
+                
+                const isOwned = ownedThemes.includes(themeId);
+                const canAfford = coins >= theme.price;
+                
                 themeItem.innerHTML = `
-                    <span>${theme.name} - ${theme.price} coins</span>
-                    <button onclick="purchaseTheme('${id}')">Purchase</button>
+                    <div style="display: flex; align-items: center;">
+                        <div class="theme-preview" style="background-color: ${theme.colors.bg}"></div>
+                        <span>${theme.name} ${isOwned ? '<span class="owned">(Owned)</span>' : `- ${theme.price} coins`}</span>
+                    </div>
+                    ${isOwned ? 
+                        `<button onclick="window.applyTheme('${themeId}')">Apply</button>` :
+                        `<button onclick="window.purchaseTheme('${themeId}')" ${!canAfford ? 'disabled' : ''}>
+                            ${canAfford ? 'Purchase' : 'Not enough coins'}
+                        </button>`
+                    }
                 `;
                 themeList.appendChild(themeItem);
             });
@@ -380,45 +502,115 @@
 
         window.purchaseTheme = function(themeId) {
             const theme = themes[themeId];
-            if (coins >= theme.price) {
+            if (coins >= theme.price && !ownedThemes.includes(themeId)) {
                 coins -= theme.price;
+                ownedThemes.push(themeId);
                 localStorage.setItem('coins', coins);
+                localStorage.setItem('ownedThemes', JSON.stringify(ownedThemes));
                 coinsDisplay.textContent = coins;
                 applyTheme(themeId);
+                loadThemeShop();
                 updateLeaderboard();
-            } else {
-                alert('Not enough coins!');
             }
         };
 
-        function applyTheme(themeId) {
+        window.applyTheme = function(themeId) {
             const theme = themes[themeId];
             document.documentElement.style.setProperty('--bg-color', theme.colors.bg);
             document.documentElement.style.setProperty('--text-color', theme.colors.text);
             document.documentElement.style.setProperty('--accent-color', theme.colors.accent);
+            document.documentElement.style.setProperty('--title-color', theme.colors.title);
+            document.documentElement.style.setProperty('--username-color', theme.colors.username);
+            document.documentElement.style.setProperty('--value-color', theme.colors.value);
             localStorage.setItem('currentTheme', themeId);
+        };
+
+        // Room Management
+        function joinGame() {
+            if (!currentRoom) {
+                currentRoom = 'main-room';
+            }
+            
+            const roomRef = ref(db, `rooms/${currentRoom}`);
+            const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
+            
+            set(playerRef, {
+                coins: coins,
+                voted: false,
+                votedReplay: false,
+                lastActive: Date.now()
+            });
+
+            onValue(roomRef, (snapshot) => {
+                const roomData = snapshot.val();
+                if (!roomData) return;
+
+                const players = roomData.players || {};
+                updatePlayersList(players);
+                checkVotes(players);
+            });
+
+            voteContainer.style.display = 'block';
+            startGame();
         }
 
-        // Leaderboard Functions
-        function loadLeaderboard() {
-            const leaderboardRef = ref(db, 'players');
-            onValue(leaderboardRef, (snapshot) => {
-                const data = snapshot.val() || {};
-                const sortedPlayers = Object.entries(data)
-                    .sort(([,a], [,b]) => b.coins - a.coins)
-                    .slice(0, 10);
+        function leaveRoom() {
+            if (currentRoom) {
+                const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
+                remove(playerRef);
+                currentRoom = null;
+            }
+        }
 
-                leaderboardList.innerHTML = '';
-                sortedPlayers.forEach(([name, data], index) => {
-                    const item = document.createElement('div');
-                    item.className = 'leaderboard-item';
-                    item.innerHTML = `
-                        <span>#${index + 1} ${name}</span>
-                        <span>${data.coins} coins</span>
-                    `;
-                    leaderboardList.appendChild(item);
-                });
+        function updatePlayersList(players) {
+            const playerNames = Object.keys(players);
+            const totalPlayers = playerNames.length;
+            const votedPlayers = playerNames.filter(name => players[name].voted).length;
+            
+            playersList.innerHTML = '';
+            playerNames.forEach(playerName => {
+                const playerItem = document.createElement('div');
+                playerItem.className = 'player-item';
+                playerItem.innerHTML = `
+                    <span>${playerName}</span>
+                    <span class="player-status ${players[playerName].voted ? 'voted' : ''}">
+                        ${players[playerName].voted ? '✓ Ready' : 'Not Ready'}
+                    </span>
+                `;
+                playersList.appendChild(playerItem);
             });
+
+            voteStatus.textContent = `Players Ready: ${votedPlayers}/${totalPlayers}`;
+        }
+
+        function handleVote() {
+            if (!hasVoted && currentRoom) {
+                const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
+                update(playerRef, {
+                    voted: true
+                });
+                hasVoted = true;
+            }
+        }
+
+        function handleReplayVote() {
+            if (!hasVotedReplay && currentRoom) {
+                const playerRef = ref(db, `rooms/${currentRoom}/players/${username}`);
+                update(playerRef, {
+                    votedReplay: true
+                });
+                hasVotedReplay = true;
+            }
+        }
+
+        function checkVotes(players) {
+            const playerNames = Object.keys(players);
+            const totalPlayers = playerNames.length;
+            const votedPlayers = playerNames.filter(name => players[name].voted).length;
+
+            if (votedPlayers === totalPlayers && totalPlayers > 0) {
+                startRound();
+            }
         }
 
         // Game Functions
@@ -513,9 +705,11 @@
 
         function startGame() {
             voteContainer.style.display = 'block';
-            document.getElementById('hit-button').disabled = true;
-            document.getElementById('stand-button').disabled = true;
+            voteReplayContainer.style.display = 'none';
+            hitButton.disabled = true;
+            standButton.disabled = true;
             hasVoted = false;
+            hasVotedReplay = false;
             deck = createDeck();
             playerHand = [drawCard(), drawCard()];
             dealerHand = [drawCard(), drawCard()];
@@ -524,17 +718,14 @@
             updateDisplay();
         }
 
-        function handleVote() {
-            if (!hasVoted) {
-                hasVoted = true;
-                voteContainer.style.display = 'none';
-                document.getElementById('hit-button').disabled = false;
-                document.getElementById('stand-button').disabled = false;
-                gameActive = true;
+        function startRound() {
+            voteContainer.style.display = 'none';
+            hitButton.disabled = false;
+            standButton.disabled = false;
+            gameActive = true;
 
-                if (calculateHandValue(playerHand) === 21) {
-                    handleBlackjack();
-                }
+            if (calculateHandValue(playerHand) === 21) {
+                handleBlackjack();
             }
         }
 
@@ -576,6 +767,7 @@
             localStorage.setItem('coins', coins);
             coinsDisplay.textContent = coins;
             gameInfo.textContent = "Blackjack! You win 15 coins!";
+            showReplayVote();
             updateLeaderboard();
         }
 
@@ -587,6 +779,7 @@
             localStorage.setItem('coins', coins);
             coinsDisplay.textContent = coins;
             gameInfo.textContent = "Bust! You lose 10 coins!";
+            showReplayVote();
             updateLeaderboard();
         }
 
@@ -610,13 +803,42 @@
 
             localStorage.setItem('coins', coins);
             coinsDisplay.textContent = coins;
+            showReplayVote();
             updateLeaderboard();
+        }
+
+        function showReplayVote() {
+            voteReplayContainer.style.display = 'block';
+            hitButton.disabled = true;
+            standButton.disabled = true;
         }
 
         function showContainer(container) {
             [menuContainer, gameContainer, shopContainer, leaderboardContainer].forEach(c => c.style.display = 'none');
             container.style.display = 'block';
             gameInfo.textContent = '';
+        }
+
+        function loadLeaderboard() {
+            const leaderboardRef = ref(db, 'players');
+            onValue(leaderboardRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                const sortedPlayers = Object.entries(data)
+                    .sort(([,a], [,b]) => b.coins - a.coins)
+                    .slice(0, 10);
+
+                const leaderboardList = document.getElementById('leaderboard-list');
+                leaderboardList.innerHTML = '';
+                sortedPlayers.forEach(([name, data], index) => {
+                    const item = document.createElement('div');
+                    item.className = 'leaderboard-item';
+                    item.innerHTML = `
+                        <span>#${index + 1} ${name}</span>
+                        <span>${data.coins} coins</span>
+                    `;
+                    leaderboardList.appendChild(item);
+                });
+            });
         }
 
         function updateLeaderboard() {
@@ -629,7 +851,12 @@
 
         // Initialize theme
         const savedTheme = localStorage.getItem('currentTheme') || 'default';
-        applyTheme(savedTheme);
+        window.applyTheme(savedTheme);
+
+        // Clean up when window closes
+        window.addEventListener('beforeunload', () => {
+            leaveRoom();
+        });
     </script>
 </body>
 </html>
