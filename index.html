@@ -99,25 +99,31 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      margin-right: 20px;
       color: black;
       z-index: 1;
     }
 
-    h1 { margin: 0 0 5px; }
-    #game-message { margin-top: 10px; font-size: 18px; }
-    #winner-message {
-      margin-top: 5px;
-      font-size: 28px;
-      font-weight: bold;
-      color: var(--accent-color);
+    .game-controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
     }
-    #turn-indicator {
-      margin: 5px 0;
-      font-size: 20px;
-      font-weight: bold;
-      color: var(--accent-color);
+
+    .player-info, .voting-info {
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
     }
+
+    .cards-area {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
     #player-id-display {
       display: inline-block;
       font-size: 18px;
@@ -130,6 +136,7 @@
       position: absolute;
       right: 20px;
     }
+
     .card {
       display: inline-block;
       margin: 5px;
@@ -144,52 +151,57 @@
       min-width: 40px;
       min-height: 60px;
     }
+
     button {
       padding: 8px 15px;
       font-size: 14px;
       margin: 5px;
       cursor: pointer;
+      background-color: var(--accent-color);
+      border: none;
+      border-radius: 5px;
+      color: black;
     }
+
     button:disabled {
       cursor: not-allowed;
       opacity: 0.6;
     }
-    #dealer-cards, #player-cards {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 10px 0;
-      flex-wrap: wrap;
-    }
-    input { 
-      padding: 8px; 
-      font-size: 14px; 
+
+    input {
+      padding: 8px;
+      font-size: 14px;
       border-radius: 5px;
       border: 1px solid #ccc;
     }
-    .game-area { 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center;
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      position: relative;
+
+    #game-message { 
+      margin-top: 10px; 
+      font-size: 18px; 
     }
-    .card-title { 
-      font-weight: bold; 
-      margin-top: 5px; 
+
+    #winner-message {
+      margin-top: 5px;
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--accent-color);
     }
-    #player-info, #players-voting { 
-      font-size: 14px; 
-      margin: 5px 0; 
+
+    #turn-indicator {
+      margin: 5px 0;
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--accent-color);
     }
-    .stats-container {
-      margin-top: 10px;
-      padding: 10px;
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
+
+    .card-title {
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    #player-info, #players-voting {
+      font-size: 14px;
+      margin: 5px 0;
     }
   </style>
 </head>
@@ -230,600 +242,506 @@
   <!-- Game Area -->
   <div id="game-area" class="game-area" style="display: none;">
     <div class="game-header">
-      <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
+      <button class="back-button" onclick="leaveRoom(); showMainMenu();">Back to Menu</button>
       <h1 class="game-title">JackBlack</h1>
       <div id="player-id-display">You are: waiting to join...</div>
     </div>
     
-    <div id="player-info"></div>
-    <div id="players-voting"></div>
-    
-    <div style="margin: 5px 0;">
+    <div class="game-controls">
       <input id="room-id" placeholder="Enter Room ID" style="width: 150px;">
       <button onclick="joinRoom()">Join Room</button>
       <button id="vote-button" onclick="voteToStart()" style="display:none;">Vote to Start</button>
     </div>
     
-    <div id="turn-indicator"></div>
+    <div id="player-info" class="player-info"></div>
+    <div id="players-voting" class="voting-info"></div>
+    
+    <div id="game-status">
+      <div id="turn-indicator"></div>
+      <div id="game-message"></div>
+      <div id="winner-message"></div>
+    </div>
     
     <div id="controls" style="display:none;">
       <button onclick="hit()">Hit</button>
       <button onclick="stand()">Stand</button>
     </div>
     
-    <div>
-      <div class="card-title">Your Cards:</div>
-      <div id="player-cards"></div>
+    <div class="cards-area">
+      <div>
+        <div class="card-title">Your Cards:</div>
+        <div id="player-cards"></div>
+      </div>
+      
+      <div>
+        <div class="card-title">Dealer Cards:</div>
+        <div id="dealer-cards"></div>
+      </div>
     </div>
-    
-    <div>
-      <div class="card-title">Dealer Cards:</div>
-      <div id="dealer-cards"></div>
-    </div>
-    
-    <div id="game-message"></div>
-    <div id="winner-message"></div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
-    <script>
-    // Initialize Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyBVajydbsrNT6bJOCNMNjJZc4NXvGy42SQ",
-      authDomain: "jackblack-789f5.firebaseapp.com",
-      databaseURL: "https://jackblack-789f5-default-rtdb.firebaseio.com",
-      projectId: "jackblack-789f5",
-      storageBucket: "jackblack-789f5.firebasestorage.app",
-      messagingSenderId: "14557094808",
-      appId: "1:14557094808:web:252134996948616d95c1ed"
-    };
-    firebase.initializeApp(firebaseConfig);
+  <script type="module">
+  // Import Firebase modules
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBVajydbmqN0P_SL_7FXwF1XX1hGwJmVe4",
+    authDomain: "jackblack-e3527.firebaseapp.com",
+    databaseURL: "https://jackblack-e3527-default-rtdb.firebaseio.com",
+    projectId: "jackblack-e3527",
+    storageBucket: "jackblack-e3527.appspot.com",
+    messagingSenderId: "1015611934052",
+    appId: "1:1015611934052:web:e8d1d8459c93d0c5c71a71"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Game state variables
+  let playerId = localStorage.getItem('playerId') || generatePlayerId();
+  let currentRoom = null;
+  let playerHand = [];
+  let dealerHand = [];
+  let deck = [];
+  let playerCoins = parseInt(localStorage.getItem('playerCoins')) || 100;
+  let selectedTheme = localStorage.getItem('selectedTheme') || 'default';
+  let purchasedThemes = JSON.parse(localStorage.getItem('purchasedThemes')) || ['default'];
+
+  // Available themes
+  const themes = {
+    'default': { price: 0, bg: '#1e1e1e', text: 'white', accent: '#ffd700', cardBg: '#f0f0f0' },
+    'ocean': { price: 20, bg: '#1a3c5a', text: '#e0f0ff', accent: '#00ffff', cardBg: '#b3d9ff' },
+    'forest': { price: 30, bg: '#1b4d1b', text: '#e0ffe0', accent: '#90EE90', cardBg: '#c8e6c9' },
+    'sunset': { price: 40, bg: '#4a1259', text: '#ffe6ff', accent: '#ff69b4', cardBg: '#ffb6c1' },
+    'neon': { price: 50, bg: '#000000', text: '#00ff00', accent: '#ff00ff', cardBg: '#0000ff' },
+    'desert': { price: 35, bg: '#8b4513', text: '#f4a460', accent: '#daa520', cardBg: '#ffe4b5' }
+  };
+
+  // Store player in database on first visit
+  if (!localStorage.getItem('playerId')) {
+    localStorage.setItem('playerId', playerId);
+    set(ref(db, `players/${playerId}`), {
+      id: playerId,
+      coins: playerCoins,
+      purchasedThemes: purchasedThemes,
+      selectedTheme: selectedTheme,
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  // Initialize UI
+  document.getElementById('player-id-display').textContent = `Player ID: ${playerId}`;
+  updateCoinsDisplay();
+  applyTheme(selectedTheme);
+
+  // Event Listeners
+  document.getElementById('create-room').addEventListener('click', createRoom);
+  document.getElementById('join-room').addEventListener('click', () => {
+    const roomId = prompt('Enter Room ID:');
+    if (roomId) joinRoom(roomId);
+  });
+  document.getElementById('hit-button').addEventListener('click', hit);
+  document.getElementById('stand-button').addEventListener('click', stand);
+  document.getElementById('leave-room').addEventListener('click', leaveRoom);
+
+  // Room Management Functions
+  async function createRoom() {
+    const roomId = generateRoomId();
+    currentRoom = roomId;
     
-    // Database references
-    const db = firebase.database();
-    const playersDB = db.ref('players');
-    const roomsDB = db.ref('rooms');
-    const leaderboardDB = db.ref('leaderboard');
+    const roomRef = ref(db, `rooms/${roomId}`);
+    await set(roomRef, {
+      id: roomId,
+      host: playerId,
+      players: [playerId],
+      gameState: 'waiting',
+      deck: [],
+      currentTurn: null,
+      hands: {}
+    });
 
-    // Global variables
-    let currentUser = localStorage.getItem('username') || '';
-    let playerId = '';
-    let roomId = "";
+    showGameArea();
+    document.getElementById('room-id-display').textContent = `Room ID: ${roomId}`;
+    listenToRoomChanges(roomId);
+  }
 
-    // Available Themes
-    const themes = {
-      default: {
-        name: 'Default Dark',
-        bgColor: '#1e1e1e',
-        textColor: 'white',
-        accentColor: '#ffd700',
-        price: 0
-      },
-      neon: {
-        name: 'Neon Night',
-        bgColor: '#0f0f2d',
-        textColor: '#ffffff',
-        accentColor: '#ff00ff',
-        price: 175
-      },
-      matrix: {
-        name: 'Matrix Green',
-        bgColor: '#000000',
-        textColor: '#00ff00',
-        accentColor: '#008f11',
-        price: 300
-      },
-      cyber: {
-        name: 'Cyberpunk',
-        bgColor: '#2d0a31',
-        textColor: '#00fff9',
-        accentColor: '#ff00ff',
-        price: 275
-      },
-      sunset: {
-        name: 'Sunset Orange',
-        bgColor: '#2b1415',
-        textColor: '#ffffff',
-        accentColor: '#ff6b35',
-        price: 125
-      },
-      gold: {
-        name: 'Golden Luxury',
-        bgColor: '#2a2000',
-        textColor: '#ffffff',
-        accentColor: '#ffd700',
-        price: 250
-      }
-    };
+  async function joinRoom(roomId) {
+    const roomRef = ref(db, `rooms/${roomId}`);
+    const snapshot = await get(roomRef);
+    
+    if (!snapshot.exists()) {
+      alert('Room not found!');
+      return;
+    }
 
-    // Initialize user interface
-    window.onload = function() {
-      if (currentUser) {
-        document.getElementById('username-input').style.display = 'none';
-        document.querySelector('#user-welcome button').style.display = 'none';
-        loadUserData();
-      }
-      updateLeaderboard();
-    };
+    const roomData = snapshot.val();
+    if (roomData.players.length >= 4) {
+      alert('Room is full!');
+      return;
+    }
 
-    function setUsername() {
-      const input = document.getElementById('username-input');
-      const username = input.value.trim();
-      if (username) {
-        currentUser = username;
-        localStorage.setItem('username', username);
-        input.style.display = 'none';
-        document.querySelector('#user-welcome button').style.display = 'none';
+    if (!roomData.players.includes(playerId)) {
+      const players = [...roomData.players, playerId];
+      await update(roomRef, { players });
+    }
 
-        // Initialize player in database
-        playersDB.child(username).once('value', snapshot => {
-          if (!snapshot.exists()) {
-            playersDB.child(username).set({
-              username: username,
-              registeredDate: Date.now(),
-              lastLogin: Date.now(),
-              coins: 0,
-              theme: 'default',
-              ownedThemes: ['default'],
-              totalGames: 0,
-              wins: 0,
-              status: 'active'
-            });
-          } else {
-            playersDB.child(username).update({
-              lastLogin: Date.now()
-            });
-          }
-        });
+    currentRoom = roomId;
+    showGameArea();
+    document.getElementById('room-id-display').textContent = `Room ID: ${roomId}`;
+    listenToRoomChanges(roomId);
+  }
 
-        loadUserData();
+  async function leaveRoom() {
+    if (!currentRoom) return;
+
+    const roomRef = ref(db, `rooms/${currentRoom}`);
+    const snapshot = await get(roomRef);
+    
+    if (snapshot.exists()) {
+      const roomData = snapshot.val();
+      const players = roomData.players.filter(p => p !== playerId);
+      
+      if (players.length === 0) {
+        await remove(roomRef);
+      } else {
+        const updates = {
+          players,
+          host: roomData.host === playerId ? players[0] : roomData.host
+        };
+        await update(roomRef, updates);
       }
     }
 
-    function loadUserData() {
-      if (!currentUser) return;
+    currentRoom = null;
+    showMainMenu();
+  }
+
+  // Game Logic Functions
+  function startNewGame() {
+    if (!currentRoom) return;
+    
+    deck = createDeck();
+    shuffleDeck(deck);
+    playerHand = [drawCard(), drawCard()];
+    dealerHand = [drawCard(), drawCard()];
+
+    updateGameState({
+      deck,
+      playerHand,
+      dealerHand,
+      currentTurn: playerId,
+      gameState: 'playing'
+    });
+  }
+
+  async function hit() {
+    if (!currentRoom) return;
+    
+    const card = drawCard();
+    playerHand.push(card);
+    
+    const handValue = calculateHandValue(playerHand);
+    if (handValue > 21) {
+      await handleGameEnd('dealer');
+    } else {
+      updateGameState({
+        playerHand,
+        deck
+      });
+    }
+  }
+
+  async function stand() {
+    if (!currentRoom) return;
+    
+    while (calculateHandValue(dealerHand) < 17) {
+      dealerHand.push(drawCard());
+    }
+
+    const playerValue = calculateHandValue(playerHand);
+    const dealerValue = calculateHandValue(dealerHand);
+
+    let winner;
+    if (dealerValue > 21) winner = 'player';
+    else if (playerValue > dealerValue) winner = 'player';
+    else winner = 'dealer';
+
+    await handleGameEnd(winner);
+  }
+
+  async function handleGameEnd(winner) {
+    if (winner === 'player') {
+      playerCoins += 5;
+      localStorage.setItem('playerCoins', playerCoins);
+      updateCoinsDisplay();
       
-      playersDB.child(currentUser).on('value', (snapshot) => {
-        const playerData = snapshot.val();
-        if (playerData) {
-          applyTheme(playerData.theme);
-          document.getElementById('welcome-message').textContent = 
-            `Welcome, ${currentUser}! Coins: ${playerData.coins}`;
-          updateShop(playerData.coins, playerData.ownedThemes);
-        }
+      // Update player data in database
+      const playerRef = ref(db, `players/${playerId}`);
+      await update(playerRef, { coins: playerCoins });
+      
+      // Update leaderboard
+      const leaderboardRef = ref(db, `leaderboard/${playerId}`);
+      const snapshot = await get(leaderboardRef);
+      const currentWins = snapshot.exists() ? snapshot.val().wins : 0;
+      await set(leaderboardRef, {
+        id: playerId,
+        wins: currentWins + 1,
+        coins: playerCoins
       });
     }
 
-    // Navigation Functions
-    function showMainMenu() {
-      document.getElementById('main-menu').style.display = 'flex';
-      document.getElementById('shop').style.display = 'none';
-      document.getElementById('leaderboard').style.display = 'none';
-      document.getElementById('game-area').style.display = 'none';
-      
-      if (roomId) {
-        leaveRoom();
+    updateGameState({
+      gameState: 'ended',
+      winner,
+      dealerHand // Show dealer's full hand
+    });
+  }
+
+  // Theme Management
+  function buyTheme(themeName) {
+    const theme = themes[themeName];
+    if (!theme) return;
+    
+    if (purchasedThemes.includes(themeName)) {
+      alert('You already own this theme!');
+      return;
+    }
+
+    if (playerCoins < theme.price) {
+      alert('Not enough coins!');
+      return;
+    }
+
+    playerCoins -= theme.price;
+    purchasedThemes.push(themeName);
+    
+    localStorage.setItem('playerCoins', playerCoins);
+    localStorage.setItem('purchasedThemes', JSON.stringify(purchasedThemes));
+    
+    updateCoinsDisplay();
+    updateThemeShop();
+
+    // Update player data in database
+    const playerRef = ref(db, `players/${playerId}`);
+    update(playerRef, {
+      coins: playerCoins,
+      purchasedThemes: purchasedThemes
+    });
+  }
+
+  function selectTheme(themeName) {
+    if (!purchasedThemes.includes(themeName)) return;
+    
+    selectedTheme = themeName;
+    localStorage.setItem('selectedTheme', themeName);
+    applyTheme(themeName);
+
+    // Update player data in database
+    const playerRef = ref(db, `players/${playerId}`);
+    update(playerRef, { selectedTheme: themeName });
+  }
+
+  // Utility Functions
+  function generatePlayerId() {
+    return 'player_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  function generateRoomId() {
+    return 'room_' + Math.random().toString(36).substr(2, 6);
+  }
+
+  function createDeck() {
+    const suits = ['♠', '♣', '♥', '♦'];
+    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    const deck = [];
+    
+    for (let suit of suits) {
+      for (let value of values) {
+        deck.push({ suit, value });
+      }
+    }
+    
+    return deck;
+  }
+
+  function shuffleDeck(deck) {
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+  }
+
+  function drawCard() {
+    return deck.pop();
+  }
+
+  function calculateHandValue(hand) {
+    let value = 0;
+    let aces = 0;
+
+    for (let card of hand) {
+      if (card.value === 'A') {
+        aces++;
+        value += 11;
+      } else if (['K', 'Q', 'J'].includes(card.value)) {
+        value += 10;
+      } else {
+        value += parseInt(card.value);
       }
     }
 
-    function leaveRoom() {
-      if (roomId && playerId) {
-        roomsDB.child(`${roomId}/players/${playerId}`).remove();
-        roomsDB.child(`${roomId}/game`).off();
-        roomsDB.child(`${roomId}/players`).off();
-        
-        // Clean up empty room
-        roomsDB.child(roomId).once('value', snapshot => {
-          const roomData = snapshot.val();
-          if (!roomData || !roomData.players || Object.keys(roomData.players).length === 0) {
-            roomsDB.child(roomId).remove();
-          }
-        });
-        
-        roomId = "";
-        playerId = "";
-      }
+    while (value > 21 && aces > 0) {
+      value -= 10;
+      aces--;
     }
 
-    function showGameArea() {
-      if (!currentUser) {
-        alert('Please set a username first!');
+    return value;
+  }
+
+  function updateCoinsDisplay() {
+    document.getElementById('coins-display').textContent = `Coins: ${playerCoins}`;
+  }
+
+  function updateGameState(updates) {
+    if (!currentRoom) return;
+    update(ref(db, `rooms/${currentRoom}`), updates);
+  }
+
+  function listenToRoomChanges(roomId) {
+    const roomRef = ref(db, `rooms/${roomId}`);
+    onValue(roomRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        showMainMenu();
         return;
       }
-      document.getElementById('main-menu').style.display = 'none';
-      document.getElementById('game-area').style.display = 'block';
-      playerId = currentUser;
-      document.getElementById("player-id-display").textContent = `You: ${playerId}`;
+
+      const roomData = snapshot.val();
+      updateGameUI(roomData);
+    });
+  }
+
+  function updateGameUI(gameState) {
+    // Update hands display
+    document.getElementById('player-hand').innerHTML = '';
+    document.getElementById('dealer-hand').innerHTML = '';
+
+    if (gameState.playerHand) {
+      gameState.playerHand.forEach(card => {
+        const cardElement = document.createElement('div');
+        cardElement.className = 'card';
+        cardElement.textContent = `${card.value}${card.suit}`;
+        document.getElementById('player-hand').appendChild(cardElement);
+      });
     }
 
-    function showShop() {
-      document.getElementById('main-menu').style.display = 'none';
-      document.getElementById('shop').style.display = 'block';
+    if (gameState.dealerHand) {
+      gameState.dealerHand.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.className = 'card';
+        cardElement.textContent = index === 0 || gameState.gameState === 'ended' 
+          ? `${card.value}${card.suit}`
+          : '🂠';
+        document.getElementById('dealer-hand').appendChild(cardElement);
+      });
     }
 
-    function showLeaderboard() {
-      document.getElementById('main-menu').style.display = 'none';
-      document.getElementById('leaderboard').style.display = 'block';
+    // Update game messages
+    if (gameState.winner) {
+      document.getElementById('game-message').textContent = 
+        gameState.winner === 'player' ? 'You won! +5 coins!' : 'Dealer wins!';
     }
 
-    // Theme Management
-    function updateShop(userCoins, ownedThemes) {
-      const themeList = document.getElementById('theme-list');
-      themeList.innerHTML = '';
+    // Update buttons state
+    const isPlayerTurn = gameState.currentTurn === playerId;
+    document.getElementById('hit-button').disabled = !isPlayerTurn;
+    document.getElementById('stand-button').disabled = !isPlayerTurn;
+  }
+
+  function showGameArea() {
+    document.querySelector('.menu-container').style.display = 'none';
+    document.querySelector('.game-container').style.display = 'block';
+    document.querySelector('.shop-container').style.display = 'none';
+    document.querySelector('.leaderboard-container').style.display = 'none';
+  }
+
+  function showMainMenu() {
+    document.querySelector('.menu-container').style.display = 'flex';
+    document.querySelector('.game-container').style.display = 'none';
+    document.querySelector('.shop-container').style.display = 'none';
+    document.querySelector('.leaderboard-container').style.display = 'none';
+  }
+
+  function applyTheme(themeName) {
+    const theme = themes[themeName];
+    if (!theme) return;
+
+    document.documentElement.style.setProperty('--bg-color', theme.bg);
+    document.documentElement.style.setProperty('--text-color', theme.text);
+    document.documentElement.style.setProperty('--accent-color', theme.accent);
+    document.documentElement.style.setProperty('--card-bg', theme.cardBg);
+  }
+
+  // Initialize leaderboard listener
+  const leaderboardRef = ref(db, 'leaderboard');
+  onValue(leaderboardRef, (snapshot) => {
+    const leaderboardData = snapshot.val() || {};
+    const leaderboardContainer = document.querySelector('.leaderboard-container');
+    leaderboardContainer.innerHTML = '<h2>Leaderboard</h2>';
+    
+    const sortedPlayers = Object.values(leaderboardData)
+      .sort((a, b) => b.wins - a.wins)
+      .slice(0, 10);
+
+    sortedPlayers.forEach((player, index) => {
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+      item.innerHTML = `
+        <span>#${index + 1} ${player.id}</span>
+        <span>Wins: ${player.wins} | Coins: ${player.coins}</span>
+      `;
+      leaderboardContainer.appendChild(item);
+    });
+  });
+
+  // Initialize theme shop
+  function updateThemeShop() {
+    const shopContainer = document.querySelector('.shop-container');
+    shopContainer.innerHTML = '<h2>Theme Shop</h2>';
+    
+    Object.entries(themes).forEach(([name, theme]) => {
+      const item = document.createElement('div');
+      item.className = 'theme-item';
+      const owned = purchasedThemes.includes(name);
+      const isSelected = selectedTheme === name;
       
-      Object.entries(themes).forEach(([id, theme]) => {
-        const owned = ownedThemes.includes(id);
-        const div = document.createElement('div');
-        div.className = 'theme-item';
-        div.innerHTML = `
-          <span>${theme.name} ${owned ? '(Owned)' : `- ${theme.price} coins`}</span>
-          <button onclick="handleTheme('${id}')" ${owned ? '' : (userCoins < theme.price ? 'disabled' : '')}>
-            ${owned ? 'Apply' : 'Buy'}
-          </button>
-        `;
-        themeList.appendChild(div);
-      });
-    }
-
-    function handleTheme(themeId) {
-      if (!currentUser) return;
-      
-      playersDB.child(currentUser).once('value', snapshot => {
-        const playerData = snapshot.val();
-        const theme = themes[themeId];
-        
-        if (playerData.ownedThemes.includes(themeId)) {
-          playersDB.child(currentUser).update({ theme: themeId });
-          applyTheme(themeId);
-        } else if (playerData.coins >= theme.price) {
-          const newCoins = playerData.coins - theme.price;
-          const newOwnedThemes = [...playerData.ownedThemes, themeId];
-          
-          playersDB.child(currentUser).update({
-            coins: newCoins,
-            theme: themeId,
-            ownedThemes: newOwnedThemes
-          });
-          
-          applyTheme(themeId);
-        }
-      });
-    }
-
-    function applyTheme(themeId) {
-      const theme = themes[themeId];
-      document.documentElement.style.setProperty('--bg-color', theme.bgColor);
-      document.documentElement.style.setProperty('--text-color', theme.textColor);
-      document.documentElement.style.setProperty('--accent-color', theme.accentColor);
-    }
-
-    // Leaderboard Management
-    function updateLeaderboard() {
-      playersDB.orderByChild('wins').limitToLast(10).on('value', (snapshot) => {
-        const leaderboardList = document.getElementById('leaderboard-list');
-        leaderboardList.innerHTML = '';
-        
-        const data = snapshot.val() || {};
-        const sortedEntries = Object.entries(data)
-          .map(([username, stats]) => ({username, ...stats}))
-          .sort((a, b) => b.wins - a.wins);
-
-        sortedEntries.forEach((entry, index) => {
-          const div = document.createElement('div');
-          div.className = 'leaderboard-item';
-          div.innerHTML = `
-            <span>#${index + 1} ${entry.username}</span>
-            <span>Wins: ${entry.wins || 0}</span>
-          `;
-          leaderboardList.appendChild(div);
-        });
-      });
-    }
-
-    function updateWinRecord() {
-      if (!currentUser) return;
-
-      // Update player data
-      playersDB.child(currentUser).transaction((playerData) => {
-        if (playerData) {
-          playerData.coins = (playerData.coins || 0) + 5;  // 5 coins per win
-          playerData.wins = (playerData.wins || 0) + 1;
-          playerData.totalGames = (playerData.totalGames || 0) + 1;
-        }
-        return playerData;
-      });
-    }
-
-    // Game Functions
-    function joinRoom() {
-      if (!currentUser) return alert("Please set a username first!");
-      
-      playersDB.child(currentUser).once('value', snapshot => {
-        const playerData = snapshot.val();
-        
-        if (!playerData || playerData.status === 'banned') {
-          return alert("You are not allowed to join rooms.");
-        }
-
-        roomId = document.getElementById('room-id').value.trim();
-        if (!roomId) return alert("Please enter a room ID!");
-
-        const roomRef = roomsDB.child(roomId);
-        const playerRef = roomRef.child(`players/${currentUser}`);
-        
-        // Check if room exists and has space
-        roomRef.once('value', snapshot => {
-          const roomData = snapshot.val();
-          if (roomData && roomData.players && Object.keys(roomData.players).length >= 4) {
-            return alert("Room is full!");
+      item.innerHTML = `
+        <span>${name} Theme</span>
+        <div>
+          ${owned 
+            ? `<button onclick="selectTheme('${name}')" ${isSelected ? 'disabled' : ''}>
+                ${isSelected ? 'Selected' : 'Select'}
+               </button>`
+            : `<button onclick="buyTheme('${name}')" ${playerCoins < theme.price ? 'disabled' : ''}>
+                Buy (${theme.price} coins)
+               </button>`
           }
-          
-          playerRef.set({
-            joined: Date.now(),
-            vote: false
-          });
-          
-          playerRef.onDisconnect().remove();
-          
-          document.getElementById('controls').style.display = "none";
-          document.getElementById('vote-button').style.display = "inline-block";
-          document.getElementById('player-id-display').textContent = `You: ${currentUser} (Room: ${roomId})`;
-          
-          roomRef.child('game').on('value', updateGameState);
-          roomRef.child('players').on('value', updatePlayers);
-        });
-      });
-    }
+        </div>
+      `;
+      shopContainer.appendChild(item);
+    });
+  }
 
-    function updateGameState(snap) {
-      const game = snap.val();
-      if (!game) return;
-
-      const playerHand = game.playerHands?.[playerId] || [];
-      const dealerHand = game.dealerHand || [];
-      
-      updateCards(document.getElementById('player-cards'), playerHand);
-      updateCards(
-        document.getElementById('dealer-cards'),
-        !game.over && game.turn !== "dealer" 
-          ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "??", s: "?" }))]
-          : dealerHand
-      );
-      
-      document.getElementById('game-message').innerText = game.message || "";
-      
-      if (game.winner === playerId && !game.recordedWin) {
-        updateWinRecord();
-        game.recordedWin = true;
-        roomsDB.child(`${roomId}/game`).update({ recordedWin: true });
-        const score = calcScore(game.playerHands[playerId]);
-        document.getElementById('winner-message').innerText = `🏆 YOU WON WITH ${score}! 🏆`;
-      } else if (game.winner && game.winner !== "dealer") {
-        const score = game.playerHands[game.winner] ? calcScore(game.playerHands[game.winner]) : "";
-        document.getElementById('winner-message').innerText = `🏆 ${game.winner} WON WITH ${score}! 🏆`;
-      } else {
-        document.getElementById('winner-message').innerText = game.winnerMessage || "";
-      }
-      
-      document.getElementById('controls').style.display = 
-        game.turn === playerId && !game.over ? "block" : "none";
-      
-      const turnIndicator = document.getElementById('turn-indicator');
-      if (game.over) turnIndicator.innerText = "Game Over";
-      else if (game.turn === "dealer") turnIndicator.innerText = "Dealer's Turn";
-      else if (game.turn) {
-        turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${game.turn}'s turn`;
-      }
-    }
-
-    function updatePlayers(snap) {
-      const players = snap.val() || {};
-      const playerIds = Object.keys(players);
-      
-      document.getElementById('player-info').innerText = "Players: " + 
-        playerIds.map(pid => `${pid === playerId ? "YOU" : pid} [${players[pid].vote ? "✓" : "✗"}]`).join(", ");
-      
-      const votesCount = Object.values(players).filter(p => p.vote).length;
-      document.getElementById('players-voting').innerText = 
-        `${votesCount}/${playerIds.length} voted to start.`;
-      
-      if (playerIds.length >= 1 && votesCount === playerIds.length) {
-        const sortedIds = [...playerIds].sort();
-        if (playerId === sortedIds[0]) startGame(playerIds);
-      }
-    }
-
-    function voteToStart() {
-      roomsDB.child(`${roomId}/players/${playerId}`).update({ vote: true });
-      document.getElementById('vote-button').style.display = "none";
-    }
-
-    function startGame(playerIds) {
-      const suits = ['♠', '♣', '♦', '♥'];
-      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-      let deck = [];
-      for (let s of suits) for (let v of values) deck.push({ v, s });
-      deck.sort(() => Math.random() - 0.5);
-
-      const shuffledIds = [...playerIds].sort(() => Math.random() - 0.5);
-      
-      const gameState = {
-        deck,
-        playerHands: {},
-        dealerHand: [deck.pop(), deck.pop()],
-        turn: shuffledIds[0],
-        message: "Game started!",
-        winnerMessage: "",
-        stood: {},
-        busted: {},
-        over: false,
-        playerOrder: shuffledIds
-      };
-
-      for (let pid of shuffledIds) {
-        gameState.playerHands[pid] = [deck.pop(), deck.pop()];
-        
-        if (calcScore(gameState.playerHands[pid]) === 21) {
-          gameState.message = `${pid} has blackjack (21)!`;
-          gameState.winnerMessage = `${pid} WON WITH BLACKJACK!`;
-          gameState.winner = pid;
-          gameState.over = true;
-        }
-      }
-
-      roomsDB.child(`${roomId}/game`).set(gameState);
-      document.getElementById('vote-button').style.display = "none";
-    }
-
-    function updateCards(container, cards) {
-      container.innerHTML = "";
-      cards.forEach(card => {
-        const cardEl = document.createElement("div");
-        cardEl.className = "card";
-        cardEl.innerText = `${card.v} ${card.s}`;
-        container.appendChild(cardEl);
-      });
-    }
-
-    function hit() {
-      roomsDB.child(`${roomId}/game`).once('value', snap => {
-        const game = snap.val();
-        if (game.turn !== playerId || game.over) return;
-        if (game.stood?.[playerId] || game.busted?.[playerId]) return;
-
-        const newCard = game.deck.pop();
-        game.playerHands[playerId].push(newCard);
-        
-        const score = calcScore(game.playerHands[playerId]);
-        
-        if (score > 21) {
-          game.busted = game.busted || {};
-          game.busted[playerId] = true;
-          game.message = `${playerId} BUSTED with ${score}!`;
-        } else if (score === 21) {
-          game.message = `${playerId} hits 21!`;
-          game.stood = game.stood || {};
-          game.stood[playerId] = true;
-        } else {
-          game.message = `${playerId} hits. Score: ${score}`;
-        }
-
-        nextTurn(game);
-        roomsDB.child(`${roomId}/game`).set(game);
-      });
-    }
-
-    function stand() {
-      roomsDB.child(`${roomId}/game`).once('value', snap => {
-        const game = snap.val();
-        if (game.turn !== playerId || game.over) return;
-        
-        game.stood = game.stood || {};
-        game.stood[playerId] = true;
-        game.message = `${playerId} stands.`;
-        
-        nextTurn(game);
-        roomsDB.child(`${roomId}/game`).set(game);
-      });
-    }
-
-    function nextTurn(game) {
-      if (allPlayersDone(game)) {
-        game.turn = "dealer";
-        game.message += " Dealer's turn!";
-        setTimeout(() => dealerPlay(), 1000);
-      } else {
-        const playerIds = game.playerOrder;
-        const currentIdx = playerIds.indexOf(game.turn);
-        
-        for (let i = 1; i <= playerIds.length; i++) {
-          const nextId = playerIds[(currentIdx + i) % playerIds.length];
-          if (!game.stood?.[nextId] && !game.busted?.[nextId] && 
-              calcScore(game.playerHands[nextId]) < 21) {
-            game.turn = nextId;
-            return;
-          }
-        }
-      }
-    }
-
-    function allPlayersDone(game) {
-      return Object.keys(game.playerHands).every(pid => 
-        game.stood?.[pid] || game.busted?.[pid] || calcScore(game.playerHands[pid]) === 21
-      );
-    }
-
-    function dealerPlay() {
-      roomsDB.child(`${roomId}/game`).once('value', snap => {
-        const game = snap.val();
-        if (!game || game.over || game.turn !== "dealer") return;
-
-        if (Object.keys(game.playerHands).every(pid => game.busted?.[pid])) {
-          game.winnerMessage = "Dealer wins - all players busted!";
-          game.over = true;
-          game.winner = "dealer";
-          roomsDB.child(`${roomId}/game`).set(game);
-          return;
-        }
-
-        let dealerScore = calcScore(game.dealerHand);
-        while (dealerScore < 17) {
-          game.dealerHand.push(game.deck.pop());
-          dealerScore = calcScore(game.dealerHand);
-        }
-
-        const dealerBusted = dealerScore > 21;
-        game.over = true;
-        
-        let winner = dealerBusted ? null : "dealer";
-        let highestScore = dealerBusted ? 0 : dealerScore;
-        
-        for (const pid of game.playerOrder) {
-          if (game.busted?.[pid]) continue;
-          
-          const playerScore = calcScore(game.playerHands[pid]);
-          
-          if (playerScore <= 21 && (playerScore > highestScore || dealerBusted)) {
-            winner = pid;
-            highestScore = playerScore;
-          }
-        }
-        
-        if (winner === "dealer") {
-          game.winnerMessage = `Dealer wins with ${dealerScore}!`;
-        } else if (winner) {
-          game.winnerMessage = `${winner} WON WITH ${highestScore}!`;
-        } else {
-          game.winnerMessage = "Everyone busted! No winner.";
-        }
-        
-        game.message = dealerBusted 
-          ? `Dealer BUSTED with ${dealerScore}!` 
-          : `Dealer has ${dealerScore}.`;
-        game.winner = winner;
-        
-        roomsDB.child(`${roomId}/game`).set(game);
-      });
-    }
-
-    function calcScore(hand) {
-      let score = 0, aces = 0;
-      hand.forEach(c => {
-        if (['J','Q','K'].includes(c.v)) score += 10;
-        else if (c.v === 'A') { score += 11; aces++; }
-        else score += parseInt(c.v);
-      });
-      while (score > 21 && aces--) score -= 10;
-      return score;
-    }
-
-    // Clean up on window close
-    window.onbeforeunload = function() {
-      if (roomId && playerId) {
-        leaveRoom();
-      }
-    };
-  </script>
+  // Make functions available globally
+  window.buyTheme = buyTheme;
+  window.selectTheme = selectTheme;
+  
+  // Initialize the theme shop
+  updateThemeShop();
+</script>
 </body>
 </html>
