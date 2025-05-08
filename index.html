@@ -133,6 +133,21 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
+        .room-input-container {
+            margin: 20px 0;
+        }
+
+        .room-input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid var(--accent-color);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            width: 200px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -154,8 +169,11 @@
     <div class="room-list-container" id="room-list">
         <button class="back-button">Back to Menu</button>
         <h2>Game Rooms</h2>
-        <button class="menu-button" id="create-room-button">Create Room</button>
-        <div id="rooms-list"></div>
+        <div class="room-input-container">
+            <input type="text" id="room-id-input" class="room-input" placeholder="Enter Room ID">
+            <button class="menu-button" id="join-room-button">Join Room</button>
+        </div>
+        <button class="menu-button" id="create-room-button">Create New Room</button>
     </div>
 
     <div class="game-container" id="game-area">
@@ -205,15 +223,16 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Firebase configuration
+        // Your Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBVajydbmqN0P_SLhf8p3S3RbKhRRQjrKE",
-            authDomain: "jackblack-f0d6d.firebaseapp.com",
-            projectId: "jackblack-f0d6d",
-            storageBucket: "jackblack-f0d6d.appspot.com",
-            messagingSenderId: "1018784094665",
-            appId: "1:1018784094665:web:d1f9c2b502c8f7b8c6c2f7",
-            databaseURL: "https://jackblack-f0d6d-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
+            authDomain: "jackblack-95dbd.firebaseapp.com",
+            databaseURL: "https://jackblack-95dbd-default-rtdb.firebaseio.com",
+            projectId: "jackblack-95dbd",
+            storageBucket: "jackblack-95dbd.firebasestorage.app",
+            messagingSenderId: "321007761489",
+            appId: "1:321007761489:web:e62d122547783bd86ea070",
+            measurementId: "G-08KQXFNB5X"
         };
 
         // Initialize Firebase
@@ -240,7 +259,6 @@
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize player and show main menu
             initializePlayer();
             showMainMenu();
 
@@ -254,8 +272,18 @@
             document.getElementById('save-username-button').addEventListener('click', saveUsername);
             document.getElementById('cancel-username-button').addEventListener('click', closeUsernameModal);
 
-            // Game buttons
+            // Room buttons
             document.getElementById('create-room-button').addEventListener('click', createRoom);
+            document.getElementById('join-room-button').addEventListener('click', () => {
+                const roomId = document.getElementById('room-id-input').value.trim();
+                if (roomId) {
+                    joinRoom(roomId);
+                } else {
+                    alert('Please enter a room ID');
+                }
+            });
+
+            // Game buttons
             document.getElementById('hit-button').addEventListener('click', hit);
             document.getElementById('stand-button').addEventListener('click', stand);
 
@@ -276,8 +304,10 @@
                 
                 if (!snapshot.exists()) {
                     await set(playerRef, currentPlayer);
+                    console.log("New player created:", currentPlayer.id);
                 } else {
                     currentPlayer = snapshot.val();
+                    console.log("Existing player loaded:", currentPlayer.id);
                     updatePlayerDisplay();
                 }
 
@@ -333,10 +363,10 @@
             }
         }
 
-        async function showRoomList() {
+        function showRoomList() {
             hideAllContainers();
             document.getElementById('room-list').style.display = 'block';
-            await refreshRoomList();
+            document.getElementById('room-id-input').value = '';
         }
 
         function showShop() {
@@ -355,6 +385,8 @@
         async function createRoom() {
             try {
                 const roomId = generateRoomId();
+                console.log("Creating room:", roomId);
+                
                 const room = {
                     id: roomId,
                     host: currentPlayer.id,
@@ -364,14 +396,18 @@
                 };
 
                 await set(ref(db, `rooms/${roomId}`), room);
+                alert(`Room created! Your room ID is: ${roomId}`);
+                document.getElementById('room-id-input').value = roomId;
                 joinRoom(roomId);
             } catch (error) {
                 console.error("Create room error:", error);
+                alert("Failed to create room. Please try again.");
             }
         }
 
         async function joinRoom(roomId) {
             try {
+                console.log("Joining room:", roomId);
                 const roomRef = ref(db, `rooms/${roomId}`);
                 const snapshot = await get(roomRef);
                 
@@ -382,39 +418,14 @@
                         await update(roomRef, { players: room.players });
                     }
                     currentRoom = room;
+                    console.log("Joined room successfully");
                     startGame();
+                } else {
+                    alert("Room not found!");
                 }
             } catch (error) {
                 console.error("Join room error:", error);
-            }
-        }
-
-        async function refreshRoomList() {
-            try {
-                const roomsRef = ref(db, 'rooms');
-                const snapshot = await get(roomsRef);
-                const roomsList = document.getElementById('rooms-list');
-                roomsList.innerHTML = '';
-
-                if (snapshot.exists()) {
-                    const rooms = snapshot.val();
-                    Object.values(rooms).forEach(room => {
-                        const roomElement = document.createElement('div');
-                        roomElement.className = 'room-item';
-                        roomElement.innerHTML = `
-                            <span>Room ${room.id}</span>
-                            <button class="menu-button join-room-button" data-room-id="${room.id}">Join</button>
-                        `;
-                        roomsList.appendChild(roomElement);
-                    });
-
-                    // Add event listeners to join buttons
-                    document.querySelectorAll('.join-room-button').forEach(button => {
-                        button.addEventListener('click', () => joinRoom(button.dataset.roomId));
-                    });
-                }
-            } catch (error) {
-                console.error("Refresh room list error:", error);
+                alert("Failed to join room. Please check the room ID and try again.");
             }
         }
 
@@ -502,7 +513,7 @@
         }
 
         function generateRoomId() {
-            return 'room_' + Math.random().toString(36).substr(2, 9);
+            return Math.random().toString(36).substr(2, 6).toUpperCase();
         }
 
         function createDeck() {
