@@ -22,18 +22,11 @@
             min-height: 100vh;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            margin-bottom: 20px;
+            padding: 20px;
         }
 
         .game-title {
@@ -50,14 +43,14 @@
             align-items: center;
         }
 
-        .coin-display {
+        .username-display {
+            color: #00ffff;
             font-size: 1.2em;
-            color: var(--accent-color);
         }
 
-        .username-display {
+        .coin-display {
+            color: var(--accent-color);
             font-size: 1.2em;
-            color: #00ffff;
         }
 
         .menu-container {
@@ -85,113 +78,12 @@
         }
 
         .room-list-container, .game-container, .shop-container, .leaderboard-container {
+            display: none;
             background-color: rgba(0, 0, 0, 0.5);
             padding: 20px;
             border-radius: 15px;
             margin: 20px auto;
             max-width: 800px;
-            position: relative;
-            display: none;
-        }
-
-        .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 10px 20px;
-            background-color: var(--accent-color);
-            color: black;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .create-room-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: var(--accent-color);
-            color: black;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin: 20px 0;
-        }
-
-        .room-item {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .room-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .game-area {
-            margin-top: 20px;
-        }
-
-        .player-hand, .dealer-hand {
-            margin: 20px 0;
-        }
-
-        .card {
-            display: inline-block;
-            width: 60px;
-            height: 90px;
-            margin: 5px;
-            background-color: var(--card-bg);
-            border-radius: 5px;
-            line-height: 90px;
-            font-size: 24px;
-            font-weight: bold;
-            color: black;
-        }
-
-        .game-controls {
-            margin: 20px 0;
-        }
-
-        .game-button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            font-size: 16px;
-            background-color: var(--accent-color);
-            color: black;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .theme-item {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .theme-preview {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        .buy-button {
-            padding: 8px 15px;
-            background-color: var(--accent-color);
-            color: black;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
         }
 
         .modal {
@@ -224,80 +116,77 @@
             color: var(--text-color);
         }
 
-        .modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
         .error-message {
             color: #ff4444;
             margin: 10px 0;
             display: none;
         }
 
-        .success-message {
-            color: #44ff44;
-            margin: 10px 0;
-            display: none;
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background-color: var(--accent-color);
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 class="game-title" onclick="showMainMenu()">JackBlack</h1>
-            <div id="player-info">
-                <span class="username-display">Guest</span>
-                <span class="coin-display">Coins: 0</span>
+    <div class="header">
+        <h1 class="game-title">JackBlack</h1>
+        <div id="player-info">
+            <span class="username-display">Guest</span>
+            <span class="coin-display">Coins: 0</span>
+        </div>
+    </div>
+
+    <div class="menu-container" id="main-menu">
+        <button class="menu-button" id="username-button">Set Username</button>
+        <button class="menu-button" id="play-button">Play Game</button>
+        <button class="menu-button" id="shop-button">Theme Shop</button>
+        <button class="menu-button" id="leaderboard-button">Leaderboard</button>
+    </div>
+
+    <div class="room-list-container" id="room-list">
+        <button class="back-button">Back to Menu</button>
+        <h2>Game Rooms</h2>
+        <button class="menu-button" id="create-room-button">Create Room</button>
+        <div id="rooms-list"></div>
+    </div>
+
+    <div class="game-container" id="game-area">
+        <button class="back-button">Back to Menu</button>
+        <h2>BlackJack Game</h2>
+        <div class="game-area">
+            <div class="dealer-hand">
+                <h3>Dealer's Hand</h3>
+                <div id="dealer-cards"></div>
+            </div>
+            <div class="player-hand">
+                <h3>Your Hand</h3>
+                <div id="player-cards"></div>
+            </div>
+            <div class="game-controls">
+                <button class="menu-button" id="hit-button">Hit</button>
+                <button class="menu-button" id="stand-button">Stand</button>
             </div>
         </div>
+    </div>
 
-        <div class="menu-container" id="main-menu">
-            <button class="menu-button" onclick="showUsername()">Set Username</button>
-            <button class="menu-button" onclick="showRoomList()">Play Game</button>
-            <button class="menu-button" onclick="showShop()">Theme Shop</button>
-            <button class="menu-button" onclick="showLeaderboard()">Leaderboard</button>
-        </div>
+    <div class="shop-container" id="shop">
+        <button class="back-button">Back to Menu</button>
+        <h2>Theme Shop</h2>
+        <div id="theme-list"></div>
+    </div>
 
-        <div class="room-list-container" id="room-list">
-            <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Game Rooms</h2>
-            <button class="create-room-button" onclick="createRoom()">Create Room</button>
-            <div id="rooms-list"></div>
-        </div>
-
-        <div class="game-container" id="game-area">
-            <button class="back-button" onclick="leaveGame()">Leave Game</button>
-            <h2>BlackJack Game</h2>
-            <div class="game-area">
-                <div class="dealer-hand">
-                    <h3>Dealer's Hand</h3>
-                    <div id="dealer-cards"></div>
-                </div>
-                <div class="player-hand">
-                    <h3>Your Hand</h3>
-                    <div id="player-cards"></div>
-                </div>
-                <div class="game-controls">
-                    <button class="game-button" onclick="hit()">Hit</button>
-                    <button class="game-button" onclick="stand()">Stand</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="shop-container" id="shop">
-            <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Theme Shop</h2>
-            <div id="theme-list"></div>
-        </div>
-
-        <div class="leaderboard-container" id="leaderboard">
-            <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Leaderboard</h2>
-            <div id="leaderboard-list"></div>
-        </div>
+    <div class="leaderboard-container" id="leaderboard">
+        <button class="back-button">Back to Menu</button>
+        <h2>Leaderboard</h2>
+        <div id="leaderboard-list"></div>
     </div>
 
     <div class="modal" id="username-modal">
@@ -306,220 +195,484 @@
             <input type="text" id="username-input" placeholder="Enter username">
             <div class="error-message" id="username-error"></div>
             <div class="modal-buttons">
-                <button class="game-button" onclick="saveUsername()">Save</button>
-                <button class="game-button" onclick="closeUsernameModal()">Cancel</button>
+                <button class="menu-button" id="save-username-button">Save</button>
+                <button class="menu-button" id="cancel-username-button">Cancel</button>
             </div>
         </div>
     </div>
-</body>
-</html>
-<script type="module">
-    // Import Firebase modules
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyBVajydbmqN0P_SLhf8p3S3RbKhRRQjrKE",
-        authDomain: "jackblack-f0d6d.firebaseapp.com",
-        projectId: "jackblack-f0d6d",
-        storageBucket: "jackblack-f0d6d.appspot.com",
-        messagingSenderId: "1018784094665",
-        appId: "1:1018784094665:web:d1f9c2b502c8f7b8c6c2f7",
-        databaseURL: "https://jackblack-f0d6d-default-rtdb.firebaseio.com"
-    };
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVajydbmqN0P_SLhf8p3S3RbKhRRQjrKE",
+            authDomain: "jackblack-f0d6d.firebaseapp.com",
+            projectId: "jackblack-f0d6d",
+            storageBucket: "jackblack-f0d6d.appspot.com",
+            messagingSenderId: "1018784094665",
+            appId: "1:1018784094665:web:d1f9c2b502c8f7b8c6c2f7",
+            databaseURL: "https://jackblack-f0d6d-default-rtdb.firebaseio.com"
+        };
 
-    // Initialize Firebase with error handling
-    let app;
-    let db;
-    try {
-        app = initializeApp(firebaseConfig);
-        db = getDatabase(app);
-        console.log("Firebase initialized successfully");
-    } catch (error) {
-        console.error("Firebase initialization error:", error);
-        alert("Failed to connect to game server. Please refresh the page.");
-    }
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    // Game state
-    let currentPlayer = {
-        id: generatePlayerId(),
-        username: "Guest",
-        coins: 100,
-        currentTheme: "default"
-    };
+        // Game state
+        let currentPlayer = {
+            id: generatePlayerId(),
+            username: "Guest",
+            coins: 100,
+            currentTheme: "default"
+        };
 
-    console.log("Generated Player ID:", currentPlayer.id);
+        let currentRoom = null;
+        let currentGame = null;
+        let themes = {
+            default: { name: "Default", price: 0, colors: { bg: "#1e1e1e", text: "white", accent: "#ffd700" } },
+            neon: { name: "Neon", price: 50, colors: { bg: "#000000", text: "#00ff00", accent: "#ff00ff" } },
+            ocean: { name: "Ocean", price: 75, colors: { bg: "#001f3f", text: "#7FDBFF", accent: "#01FF70" } },
+            sunset: { name: "Sunset", price: 100, colors: { bg: "#2c1810", text: "#ffd700", accent: "#ff4500" } },
+            forest: { name: "Forest", price: 125, colors: { bg: "#1a2f1a", text: "#90EE90", accent: "#228B22" } }
+        };
 
-    let currentRoom = null;
-    let currentGame = null;
-    let themes = {
-        default: { name: "Default", price: 0, colors: { bg: "#1e1e1e", text: "white", accent: "#ffd700" } },
-        neon: { name: "Neon", price: 50, colors: { bg: "#000000", text: "#00ff00", accent: "#ff00ff" } },
-        ocean: { name: "Ocean", price: 75, colors: { bg: "#001f3f", text: "#7FDBFF", accent: "#01FF70" } },
-        sunset: { name: "Sunset", price: 100, colors: { bg: "#2c1810", text: "#ffd700", accent: "#ff4500" } },
-        forest: { name: "Forest", price: 125, colors: { bg: "#1a2f1a", text: "#90EE90", accent: "#228B22" } }
-    };
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize player and show main menu
+            initializePlayer();
+            showMainMenu();
 
-    // Initialize player data with error handling
-    async function initializePlayer() {
-        try {
-            const playerRef = ref(db, `players/${currentPlayer.id}`);
-            console.log("Initializing player:", currentPlayer.id);
-            
-            const snapshot = await get(playerRef);
-            console.log("Player data snapshot:", snapshot.exists() ? "exists" : "doesn't exist");
-            
-            if (!snapshot.exists()) {
-                await set(playerRef, currentPlayer);
-                console.log("New player created");
-            } else {
-                currentPlayer = snapshot.val();
-                console.log("Existing player loaded:", currentPlayer);
-                updatePlayerDisplay();
-            }
+            // Main menu buttons
+            document.getElementById('username-button').addEventListener('click', showUsernameModal);
+            document.getElementById('play-button').addEventListener('click', showRoomList);
+            document.getElementById('shop-button').addEventListener('click', showShop);
+            document.getElementById('leaderboard-button').addEventListener('click', showLeaderboard);
 
-            // Listen for player updates
-            onValue(playerRef, (snapshot) => {
-                if (snapshot.exists()) {
+            // Username modal buttons
+            document.getElementById('save-username-button').addEventListener('click', saveUsername);
+            document.getElementById('cancel-username-button').addEventListener('click', closeUsernameModal);
+
+            // Game buttons
+            document.getElementById('create-room-button').addEventListener('click', createRoom);
+            document.getElementById('hit-button').addEventListener('click', hit);
+            document.getElementById('stand-button').addEventListener('click', stand);
+
+            // Back buttons
+            document.querySelectorAll('.back-button').forEach(button => {
+                button.addEventListener('click', showMainMenu);
+            });
+
+            // Game title click
+            document.querySelector('.game-title').addEventListener('click', showMainMenu);
+        });
+
+        // Initialize player data
+        async function initializePlayer() {
+            try {
+                const playerRef = ref(db, `players/${currentPlayer.id}`);
+                const snapshot = await get(playerRef);
+                
+                if (!snapshot.exists()) {
+                    await set(playerRef, currentPlayer);
+                } else {
                     currentPlayer = snapshot.val();
-                    console.log("Player data updated:", currentPlayer);
                     updatePlayerDisplay();
                 }
-            }, (error) => {
-                console.error("Player update error:", error);
-            });
-        } catch (error) {
-            console.error("Player initialization error:", error);
-            alert("Failed to initialize player data. Please refresh the page.");
-        }
-    }
 
-    // UI Functions
-    window.showMainMenu = function() {
-        document.querySelectorAll('.room-list-container, .game-container, .shop-container, .leaderboard-container').forEach(el => el.style.display = 'none');
-        document.getElementById('main-menu').style.display = 'flex';
-    };
-
-    window.showUsername = function() {
-        document.getElementById('username-modal').style.display = 'block';
-        document.getElementById('username-input').value = currentPlayer.username;
-    };
-
-    window.closeUsernameModal = function() {
-        document.getElementById('username-modal').style.display = 'none';
-    };
-
-    window.saveUsername = async function() {
-        try {
-            const username = document.getElementById('username-input').value.trim();
-            if (username.length < 3) {
-                document.getElementById('username-error').textContent = 'Username must be at least 3 characters long';
-                document.getElementById('username-error').style.display = 'block';
-                return;
+                // Listen for player updates
+                onValue(playerRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        currentPlayer = snapshot.val();
+                        updatePlayerDisplay();
+                    }
+                });
+            } catch (error) {
+                console.error("Player initialization error:", error);
             }
-
-            console.log("Saving username:", username);
-            currentPlayer.username = username;
-            
-            const playerRef = ref(db, `players/${currentPlayer.id}`);
-            await update(playerRef, { username: username });
-            console.log("Username saved successfully");
-            
-            closeUsernameModal();
-            updatePlayerDisplay();
-        } catch (error) {
-            console.error("Save username error:", error);
-            alert("Failed to save username. Please try again.");
         }
-    };
 
-    window.showRoomList = async function() {
-        try {
-            document.getElementById('main-menu').style.display = 'none';
+        // UI Functions
+        function showMainMenu() {
+            hideAllContainers();
+            document.getElementById('main-menu').style.display = 'flex';
+        }
+
+        function hideAllContainers() {
+            const containers = ['main-menu', 'room-list', 'game-area', 'shop', 'leaderboard'];
+            containers.forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        function showUsernameModal() {
+            document.getElementById('username-modal').style.display = 'block';
+            document.getElementById('username-input').value = currentPlayer.username;
+        }
+
+        function closeUsernameModal() {
+            document.getElementById('username-modal').style.display = 'none';
+        }
+
+        async function saveUsername() {
+            try {
+                const username = document.getElementById('username-input').value.trim();
+                if (username.length < 3) {
+                    document.getElementById('username-error').textContent = 'Username must be at least 3 characters long';
+                    document.getElementById('username-error').style.display = 'block';
+                    return;
+                }
+
+                currentPlayer.username = username;
+                await update(ref(db, `players/${currentPlayer.id}`), { username: username });
+                closeUsernameModal();
+                updatePlayerDisplay();
+            } catch (error) {
+                console.error("Save username error:", error);
+            }
+        }
+
+        async function showRoomList() {
+            hideAllContainers();
             document.getElementById('room-list').style.display = 'block';
             await refreshRoomList();
-        } catch (error) {
-            console.error("Show room list error:", error);
-            alert("Failed to load room list. Please try again.");
         }
-    };
 
-    window.showShop = function() {
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('shop').style.display = 'block';
-        displayThemes();
-    };
+        function showShop() {
+            hideAllContainers();
+            document.getElementById('shop').style.display = 'block';
+            displayThemes();
+        }
 
-    window.showLeaderboard = async function() {
-        try {
-            document.getElementById('main-menu').style.display = 'none';
+        async function showLeaderboard() {
+            hideAllContainers();
             document.getElementById('leaderboard').style.display = 'block';
             await refreshLeaderboard();
-        } catch (error) {
-            console.error("Show leaderboard error:", error);
-            alert("Failed to load leaderboard. Please try again.");
         }
-    };
 
-    // Room Management with error handling
-    window.createRoom = async function() {
-        try {
-            const roomId = generateRoomId();
-            console.log("Creating room:", roomId);
+        // Room Management
+        async function createRoom() {
+            try {
+                const roomId = generateRoomId();
+                const room = {
+                    id: roomId,
+                    host: currentPlayer.id,
+                    players: [currentPlayer.id],
+                    status: 'waiting',
+                    game: null
+                };
+
+                await set(ref(db, `rooms/${roomId}`), room);
+                joinRoom(roomId);
+            } catch (error) {
+                console.error("Create room error:", error);
+            }
+        }
+
+        async function joinRoom(roomId) {
+            try {
+                const roomRef = ref(db, `rooms/${roomId}`);
+                const snapshot = await get(roomRef);
+                
+                if (snapshot.exists()) {
+                    const room = snapshot.val();
+                    if (!room.players.includes(currentPlayer.id)) {
+                        room.players.push(currentPlayer.id);
+                        await update(roomRef, { players: room.players });
+                    }
+                    currentRoom = room;
+                    startGame();
+                }
+            } catch (error) {
+                console.error("Join room error:", error);
+            }
+        }
+
+        async function refreshRoomList() {
+            try {
+                const roomsRef = ref(db, 'rooms');
+                const snapshot = await get(roomsRef);
+                const roomsList = document.getElementById('rooms-list');
+                roomsList.innerHTML = '';
+
+                if (snapshot.exists()) {
+                    const rooms = snapshot.val();
+                    Object.values(rooms).forEach(room => {
+                        const roomElement = document.createElement('div');
+                        roomElement.className = 'room-item';
+                        roomElement.innerHTML = `
+                            <span>Room ${room.id}</span>
+                            <button class="menu-button join-room-button" data-room-id="${room.id}">Join</button>
+                        `;
+                        roomsList.appendChild(roomElement);
+                    });
+
+                    // Add event listeners to join buttons
+                    document.querySelectorAll('.join-room-button').forEach(button => {
+                        button.addEventListener('click', () => joinRoom(button.dataset.roomId));
+                    });
+                }
+            } catch (error) {
+                console.error("Refresh room list error:", error);
+            }
+        }
+
+        // Game Logic
+        function startGame() {
+            hideAllContainers();
+            document.getElementById('game-area').style.display = 'block';
             
-            const room = {
-                id: roomId,
-                host: currentPlayer.id,
-                players: [currentPlayer.id],
-                status: 'waiting',
-                game: null
+            currentGame = {
+                deck: createDeck(),
+                playerHand: [],
+                dealerHand: [],
+                status: 'playing'
             };
 
-            await set(ref(db, `rooms/${roomId}`), room);
-            console.log("Room created successfully");
-            joinRoom(roomId);
-        } catch (error) {
-            console.error("Create room error:", error);
-            alert("Failed to create room. Please try again.");
-        }
-    };
+            // Deal initial cards
+            currentGame.playerHand.push(drawCard());
+            currentGame.dealerHand.push(drawCard());
+            currentGame.playerHand.push(drawCard());
+            currentGame.dealerHand.push(drawCard());
 
-    window.joinRoom = async function(roomId) {
-        try {
-            console.log("Joining room:", roomId);
-            const roomRef = ref(db, `rooms/${roomId}`);
-            const snapshot = await get(roomRef);
-            
-            if (snapshot.exists()) {
-                const room = snapshot.val();
-                if (!room.players.includes(currentPlayer.id)) {
-                    room.players.push(currentPlayer.id);
-                    await update(roomRef, { players: room.players });
+            updateGameDisplay();
+        }
+
+        function hit() {
+            if (currentGame && currentGame.status === 'playing') {
+                currentGame.playerHand.push(drawCard());
+                const playerValue = calculateHandValue(currentGame.playerHand);
+                
+                if (playerValue > 21) {
+                    endGame('dealer');
                 }
-                currentRoom = room;
-                console.log("Joined room successfully");
-                startGame();
-            } else {
-                console.error("Room not found:", roomId);
-                alert("Room not found");
+                updateGameDisplay();
             }
-        } catch (error) {
-            console.error("Join room error:", error);
-            alert("Failed to join room. Please try again.");
         }
-    };
 
-    // Rest of the code remains the same...
-    // [Previous helper functions and game logic remain unchanged]
+        function stand() {
+            if (currentGame && currentGame.status === 'playing') {
+                let dealerValue = calculateHandValue(currentGame.dealerHand);
+                
+                while (dealerValue < 17) {
+                    currentGame.dealerHand.push(drawCard());
+                    dealerValue = calculateHandValue(currentGame.dealerHand);
+                }
 
-    // Initialize the game with error handling
-    try {
-        await initializePlayer();
-        showMainMenu();
-        console.log("Game initialized successfully");
-    } catch (error) {
-        console.error("Game initialization error:", error);
-        alert("Failed to initialize game. Please refresh the page.");
-    }
-</script>
+                const playerValue = calculateHandValue(currentGame.playerHand);
+                
+                if (dealerValue > 21 || playerValue > dealerValue) {
+                    endGame('player');
+                } else if (dealerValue > playerValue) {
+                    endGame('dealer');
+                } else {
+                    endGame('tie');
+                }
+            }
+        }
+
+        async function endGame(winner) {
+            currentGame.status = 'ended';
+            updateGameDisplay();
+
+            if (winner === 'player') {
+                await updatePlayerCoins(5);
+                alert('You win! +5 coins');
+            } else if (winner === 'dealer') {
+                alert('Dealer wins!');
+            } else {
+                alert('Tie game!');
+            }
+
+            if (winner === 'player') {
+                const playerRef = ref(db, `players/${currentPlayer.id}`);
+                const snapshot = await get(playerRef);
+                if (snapshot.exists()) {
+                    const player = snapshot.val();
+                    const wins = (player.wins || 0) + 1;
+                    await update(playerRef, { wins: wins });
+                }
+            }
+        }
+
+        // Helper Functions
+        function generatePlayerId() {
+            return 'player_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function generateRoomId() {
+            return 'room_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function createDeck() {
+            const suits = ['♠', '♣', '♥', '♦'];
+            const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            const deck = [];
+            
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ suit, value });
+                }
+            }
+            
+            return shuffle(deck);
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function drawCard() {
+            return currentGame.deck.pop();
+        }
+
+        function calculateHandValue(hand) {
+            let value = 0;
+            let aces = 0;
+            
+            for (let card of hand) {
+                if (card.value === 'A') {
+                    aces += 1;
+                } else if (['K', 'Q', 'J'].includes(card.value)) {
+                    value += 10;
+                } else {
+                    value += parseInt(card.value);
+                }
+            }
+            
+            for (let i = 0; i < aces; i++) {
+                if (value + 11 <= 21) {
+                    value += 11;
+                } else {
+                    value += 1;
+                }
+            }
+            
+            return value;
+        }
+
+        async function updatePlayerCoins(amount) {
+            try {
+                const newCoins = currentPlayer.coins + amount;
+                await update(ref(db, `players/${currentPlayer.id}`), { coins: newCoins });
+                currentPlayer.coins = newCoins;
+                updatePlayerDisplay();
+            } catch (error) {
+                console.error("Update coins error:", error);
+            }
+        }
+
+        function updatePlayerDisplay() {
+            document.querySelector('.username-display').textContent = currentPlayer.username;
+            document.querySelector('.coin-display').textContent = `Coins: ${currentPlayer.coins}`;
+        }
+
+        function updateGameDisplay() {
+            const dealerCards = document.getElementById('dealer-cards');
+            const playerCards = document.getElementById('player-cards');
+            
+            dealerCards.innerHTML = currentGame.dealerHand.map(card => 
+                `<div class="card" style="color: ${card.suit === '♥' || card.suit === '♦' ? 'red' : 'black'}">${card.value}${card.suit}</div>`
+            ).join('');
+            
+            playerCards.innerHTML = currentGame.playerHand.map(card => 
+                `<div class="card" style="color: ${card.suit === '♥' || card.suit === '♦' ? 'red' : 'black'}">${card.value}${card.suit}</div>`
+            ).join('');
+        }
+
+        async function refreshLeaderboard() {
+            try {
+                const playersRef = ref(db, 'players');
+                const snapshot = await get(playersRef);
+                const leaderboardList = document.getElementById('leaderboard-list');
+                leaderboardList.innerHTML = '';
+
+                if (snapshot.exists()) {
+                    const players = Object.values(snapshot.val())
+                        .sort((a, b) => (b.wins || 0) - (a.wins || 0))
+                        .slice(0, 10);
+
+                    players.forEach((player, index) => {
+                        const playerElement = document.createElement('div');
+                        playerElement.className = 'room-item';
+                        playerElement.innerHTML = `
+                            <span>#${index + 1} ${player.username}</span>
+                            <span>Wins: ${player.wins || 0}</span>
+                        `;
+                        leaderboardList.appendChild(playerElement);
+                    });
+                }
+            } catch (error) {
+                console.error("Refresh leaderboard error:", error);
+            }
+        }
+
+        function displayThemes() {
+            const themeList = document.getElementById('theme-list');
+            themeList.innerHTML = '';
+
+            Object.entries(themes).forEach(([id, theme]) => {
+                const themeElement = document.createElement('div');
+                themeElement.className = 'theme-item';
+                const isOwned = id === 'default' || currentPlayer.ownedThemes?.includes(id);
+                
+                themeElement.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        <div class="theme-preview" style="background-color: ${theme.colors.accent}"></div>
+                        <span>${theme.name}</span>
+                    </div>
+                    <button class="menu-button buy-theme-button" data-theme-id="${id}" 
+                        ${isOwned ? 'disabled' : ''}>
+                        ${isOwned ? 'Owned' : `Buy (${theme.price} coins)`}
+                    </button>
+                `;
+                themeList.appendChild(themeElement);
+            });
+
+            // Add event listeners to buy buttons
+            document.querySelectorAll('.buy-theme-button').forEach(button => {
+                if (!button.disabled) {
+                    button.addEventListener('click', () => purchaseTheme(button.dataset.themeId));
+                }
+            });
+        }
+
+        async function purchaseTheme(themeId) {
+            try {
+                const theme = themes[themeId];
+                if (theme && currentPlayer.coins >= theme.price) {
+                    const ownedThemes = currentPlayer.ownedThemes || [];
+                    if (!ownedThemes.includes(themeId)) {
+                        ownedThemes.push(themeId);
+                        await updatePlayerCoins(-theme.price);
+                        await update(ref(db, `players/${currentPlayer.id}`), { 
+                            ownedThemes: ownedThemes,
+                            currentTheme: themeId
+                        });
+                        applyTheme(themeId);
+                        displayThemes();
+                    }
+                } else {
+                    alert('Not enough coins!');
+                }
+            } catch (error) {
+                console.error("Purchase theme error:", error);
+            }
+        }
+
+        function applyTheme(themeId) {
+            const theme = themes[themeId];
+            if (theme) {
+                document.documentElement.style.setProperty('--bg-color', theme.colors.bg);
+                document.documentElement.style.setProperty('--text-color', theme.colors.text);
+                document.documentElement.style.setProperty('--accent-color', theme.colors.accent);
+            }
+        }
+    </script>
+</body>
+</html>
