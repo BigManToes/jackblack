@@ -1,1283 +1,1390 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JackBlack</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♠️</text></svg>">
-    <style>
-        :root {
-            --bg-color: #1e1e1e;
-            --text-color: #ffd700;
-            --accent-color: #ffd700;
-            --card-bg: #f0f0f0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JackBlack</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♠️</text></svg>">
 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: black;
-            color: var(--text-color);
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+  <style>
+    :root {
+      --bg-color: #1e1e1e;
+      --text-color: #ffd700;
+      --accent-color: #ffd700;
+      --card-bg: #f0f0f0;
+    }
 
-        .owner-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            object-fit: cover;
-            opacity: 0.3;
-        }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: black;
+      color: var(--text-color);
+      text-align: center;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      transition: background-color 0.3s;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+    .menu-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+      margin-top: 50px;
+    }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            margin-bottom: 40px;
-        }
+    .menu-button {
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background-color: var(--accent-color);
+      color: black;
+      cursor: pointer;
+      transition: transform 0.2s;
+      width: 200px;
+    }
 
-        .game-title {
-            font-size: 3.5em;
-            color: var(--accent-color);
-            margin: 0;
-            text-align: left;
-            cursor: pointer;
-        }
+    .menu-button:hover {
+      transform: scale(1.05);
+    }
 
-        #player-info {
-            display: flex;
-            gap: 30px;
-            align-items: center;
-        }
+    .shop-container, .leaderboard-container {
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px auto;
+      max-width: 800px;
+      display: none;
+    }
 
-        .menu-container {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            align-items: center;
-            margin: 60px auto;
-        }
+    #theme-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
 
-        .menu-button {
-            padding: 20px 40px;
-            font-size: 20px;
-            border: none;
-            border-radius: 15px;
-            background-color: var(--accent-color);
-            color: black;
-            cursor: pointer;
-            transition: transform 0.2s;
-            width: 250px;
-        }
+    .theme-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
 
-        .menu-button:hover {
-            transform: scale(1.05);
-        }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      margin: 5px 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
 
-        .room-list-container, .game-container, .shop-container, .leaderboard-container {
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 40px;
-            border-radius: 20px;
-            margin: 40px auto;
-            max-width: 800px;
-            position: relative;
-            display: none;
-        }
+    .back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 8px 15px;
+      background-color: var(--accent-color);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-        .back-to-menu {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            padding: 15px 30px;
-            background-color: var(--accent-color);
-            color: black;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            z-index: 100;
-            font-size: 18px;
-        }
+    .game-container {
+      display: none;
+      margin-top: 20px;
+    }
 
-        .create-room-container {
-            margin: 40px 0;
-        }
+    h1 { margin: 0 0 5px; }
+    #game-message { margin-top: 10px; font-size: 18px; }
+    #winner-message {
+      margin-top: 5px;
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+    #turn-indicator {
+      margin: 5px 0;
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+    #player-id-display {
+      display: inline-block;
+      font-size: 18px;
+      font-weight: bold;
+      color: #00ffff;
+      background-color: rgba(0,0,0,0.3);
+      padding: 3px 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+    }
+    .card {
+      display: inline-block;
+      margin: 5px;
+      padding: 20px 25px;
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      color: black;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      border: 2px solid #ccc;
+      min-width: 40px;
+      min-height: 60px;
+    }
+    .red-card {
+      color: red;
+    }
+    .hidden-card {
+      background-image: linear-gradient(45deg, #ff0000 25%, #cc0000 25%, #cc0000 50%, #ff0000 50%, #ff0000 75%, #cc0000 75%, #cc0000 100%);
+      background-size: 56.57px 56.57px;
+    }
+    button {
+      padding: 8px 15px;
+      font-size: 14px;
+      margin: 5px;
+      cursor: pointer;
+      background-color: var(--accent-color);
+      color: black;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+      transform: none;
+    }
 
-        .room-code-input {
-            padding: 15px;
-            font-size: 18px;
-            border: 2px solid var(--accent-color);
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            color: var(--text-color);
-            margin-right: 20px;
-            width: 200px;
-        }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
 
-        .player-list {
-            margin: 30px 0;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            font-size: 18px;
-        }
+    #player-info {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
 
-        .player-item {
-            padding: 15px;
-            margin: 10px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    #coins-display {
+      font-size: 20px;
+      color: var(--accent-color);
+    }
 
-        .vote-container {
-            margin: 30px 0;
-            font-size: 24px;
-        }
+    .username-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      border: 2px solid var(--accent-color);
+      z-index: 1000;
+    }
 
-        .vote-status {
-            margin-bottom: 20px;
-            font-size: 20px;
-            color: var(--accent-color);
-        }
+    .owner-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      object-fit: cover;
+      opacity: 0.3;
+    }
 
-        .cards-container {
-            margin: 30px 0;
-            min-height: 150px;
-        }
+    .owner-tag {
+      color: #ff0000;
+      font-weight: bold;
+      margin-left: 10px;
+    }
 
-        .card {
-            display: inline-block;
-            margin: 10px;
-            padding: 30px 35px;
-            background-color: var(--card-bg);
-            border-radius: 15px;
-            color: black;
-            font-size: 28px;
-            font-weight: bold;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-            min-width: 50px;
-            min-height: 80px;
-            vertical-align: middle;
-        }
+    .room-list-container {
+      display: none;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px auto;
+      max-width: 800px;
+    }
 
-        .red-card {
-            color: red;
-        }
+    .player-list {
+      margin: 20px 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px;
+    }
 
-        .hidden-card {
-            background-image: linear-gradient(45deg, #ff0000 25%, #cc0000 25%, #cc0000 50%, #ff0000 50%, #ff0000 75%, #cc0000 75%, #cc0000 100%);
-            background-size: 56.57px 56.57px;
-        }
+    .player-item {
+      padding: 10px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
 
-        #theme-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
+    .vote-container {
+      margin: 15px 0;
+      font-size: 18px;
+    }
 
-        .theme-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            font-size: 18px;
-        }
-
-        .leaderboard-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-            margin: 15px 0;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            font-size: 20px;
-        }
-
-        .username-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            border: 3px solid var(--accent-color);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        #coins-display {
-            font-size: 24px;
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        .owner-tag {
-            color: #ff0000;
-            font-weight: bold;
-            margin-left: 15px;
-            font-size: 20px;
-        }
-
-        h2 {
-            font-size: 32px;
-            margin-bottom: 30px;
-        }
-
-        h3 {
-            font-size: 24px;
-            margin: 20px 0;
-        }
-
-        #game-controls {
-            margin-top: 30px;
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-        }
-
-        #dealer-cards, #player-cards {
-            margin: 30px 0;
-        }
-
-        #room-id-display {
-            font-size: 24px;
-            color: var(--accent-color);
-            margin-bottom: 30px;
-        }
-
-        #game-message {
-            font-size: 22px;
-            color: var(--accent-color);
-            margin: 20px 0;
-            min-height: 30px;
-        }
-
-        .score-display {
-            font-size: 18px;
-            margin-top: 5px;
-            color: #fff;
-        }
-    </style>
+    #dealer-score, #player-score {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 class="game-title">JackBlack</h1>
-            <div id="player-info">
-                <span id="username-display">Guest</span>
-                <button onclick="showUsernameModal()" class="menu-button">Change Username</button>
-                <span id="coins-display">Coins: 0</span>
-            </div>
-        </div>
-
-        <div class="menu-container" id="main-menu">
-            <button class="menu-button" onclick="showCreateRoom()">Create Game</button>
-            <button class="menu-button" onclick="showJoinRoom()">Join Game</button>
-            <button class="menu-button" onclick="showShop()">Theme Shop</button>
-            <button class="menu-button" onclick="showLeaderboard()">Leaderboard</button>
-        </div>
-
-        <div class="room-list-container" id="create-room-container">
-            <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Create Game</h2>
-            <div class="create-room-container">
-                <input type="text" id="room-code" class="room-code-input" placeholder="Room Code" readonly>
-                <button class="menu-button" onclick="createRoom()">Create Room</button>
-            </div>
-            <div class="player-list" id="player-list"></div>
-            <div class="vote-container" id="vote-container"></div>
-        </div>
-
-        <div class="room-list-container" id="join-room-container">
-            <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Join Game</h2>
-            <div class="create-room-container">
-                <input type="text" id="join-room-code" class="room-code-input" placeholder="Enter Room Code">
-                <button class="menu-button" onclick="joinRoom()">Join Room</button>
-            </div>
-        </div>
-
-        <div class="game-container" id="game-container">
-            <button class="back-to-menu" onclick="leaveGame()">Leave Game</button>
-            <h2>Game Room: <span id="room-id-display"></span></h2>
-            
-            <div id="dealer-cards" class="cards-container">
-                <h3>Dealer's Cards</h3>
-                <div class="cards-display"></div>
-                <div class="score-display"></div>
-            </div>
-            
-            <div id="player-cards" class="cards-container">
-                <h3>Your Cards</h3>
-                <div class="cards-display"></div>
-                <div class="score-display"></div>
-            </div>
-            
-            <div id="game-message"></div>
-            
-            <div id="game-controls">
-                <button class="menu-button" onclick="hit()">Hit</button>
-                <button class="menu-button" onclick="stand()">Stand</button>
-            </div>
-            
-            <div class="vote-container" id="replay-vote-container"></div>
-        </div>
-
-        <div class="shop-container" id="shop-container">
-            <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Theme Shop</h2>
-            <div id="theme-list"></div>
-        </div>
-
-        <div class="leaderboard-container" id="leaderboard-container">
-            <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Leaderboard</h2>
-            <div id="leaderboard-list"></div>
-        </div>
+  <div class="header">
+    <h1>JackBlack</h1>
+    <div id="player-info">
+      <span id="username-display">Guest</span>
+      <button onclick="showUsernameModal()">Change Username</button>
+      <span id="coins-display">Coins: 0</span>
     </div>
+  </div>
 
-    <div class="username-modal" id="username-modal">
-        <div class="modal-content">
-            <h2>Change Username</h2>
-            <input type="text" id="username-input" class="room-code-input" placeholder="Enter username">
-            <button class="menu-button" onclick="changeUsername()">Save</button>
-            <button class="menu-button" onclick="closeUsernameModal()">Cancel</button>
-        </div>
+  <div class="menu-container" id="main-menu">
+    <button class="menu-button" onclick="showGameMenu()">Play Game</button>
+    <button class="menu-button" onclick="showShop()">Theme Shop</button>
+    <button class="menu-button" onclick="showLeaderboard()">Leaderboard</button>
+  </div>
+
+  <div class="room-list-container" id="game-menu">
+    <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
+    <h2>Game Menu</h2>
+    <button class="menu-button" onclick="showCreateRoom()">Create Room</button>
+    <button class="menu-button" onclick="showJoinRoom()">Join Room</button>
+    <button class="menu-button" onclick="startSinglePlayerGame()">Single Player</button>
+  </div>
+
+  <div class="room-list-container" id="create-room-container">
+    <button class="back-button" onclick="showGameMenu()">Back</button>
+    <h2>Create Room</h2>
+    <div>
+      <input type="text" id="room-code" placeholder="Room Code" readonly class="room-code-input">
+      <button class="menu-button" onclick="createRoom()">Create Room</button>
     </div>
-        <script type="module">
-        // Import Firebase modules
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <div class="player-list" id="player-list"></div>
+    <div class="vote-container" id="vote-container"></div>
+  </div>
 
-        // Your Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
-            authDomain: "jackblack-95dbd.firebaseapp.com",
-            databaseURL: "https://jackblack-95dbd-default-rtdb.firebaseio.com",
-            projectId: "jackblack-95dbd",
-            storageBucket: "jackblack-95dbd.firebasestorage.app",
-            messagingSenderId: "321007761489",
-            appId: "1:321007761489:web:e62d122547783bd86ea070",
-            measurementId: "G-08KQXFNB5X"
-        };
+  <div class="room-list-container" id="join-room-container">
+    <button class="back-button" onclick="showGameMenu()">Back</button>
+    <h2>Join Room</h2>
+    <div>
+      <input type="text" id="join-room-code" placeholder="Enter Room Code" class="room-code-input">
+      <button class="menu-button" onclick="joinRoom()">Join Room</button>
+    </div>
+  </div>
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+  <div class="game-container" id="game-container">
+    <button class="back-button" id="leave-game-button" onclick="leaveGame()">Leave Game</button>
+    <h2>Room: <span id="room-id-display"></span></h2>
+    
+    <div id="dealer-area">
+      <h3>Dealer's Cards</h3>
+      <div id="dealer-cards"></div>
+      <div id="dealer-score"></div>
+    </div>
+    
+    <div id="player-area">
+      <h3>Your Cards</h3>
+      <div id="player-cards"></div>
+      <div id="player-score"></div>
+    </div>
+    
+    <div id="game-message"></div>
+    <div id="winner-message"></div>
+    
+    <div id="game-controls">
+      <button id="hit-button" onclick="hit()">Hit</button>
+      <button id="stand-button" onclick="stand()">Stand</button>
+      <button id="play-again-button" onclick="startNextRound()" style="display: none;">Play Again</button>
+    </div>
+    
+    <div class="vote-container" id="replay-vote-container"></div>
+  </div>
 
-        // Global variables
-        let currentRoom = null;
-        let currentUsername = "Guest";
-        let userCoins = 0;
-        let playerCards = [];
-        let dealerCards = [];
-        let gameStarted = false;
-        let currentTurn = null;
-        let hasVoted = false;
-        let ownedThemes = ["default"];
-        let currentTheme = "default";
-        let isHost = false;
+  <div class="shop-container" id="shop-container">
+    <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
+    <h2>Theme Shop</h2>
+    <div id="theme-list"></div>
+  </div>
 
-        // Theme definitions
-        const themes = {
-            default: {
-                name: "Default",
-                price: 0,
-                colors: {
-                    background: "black",
-                    text: "#ffd700",
-                    accent: "#ffd700"
-                }
-            },
-            neon: {
-                name: "Neon",
-                price: 100,
-                colors: {
-                    background: "#000",
-                    text: "#0ff",
-                    accent: "#f0f"
-                }
-            },
-            forest: {
-                name: "Forest",
-                price: 150,
-                colors: {
-                    background: "#1a472a",
-                    text: "#90ee90",
-                    accent: "#2e8b57"
-                }
-            },
-            sunset: {
-                name: "Sunset",
-                price: 200,
-                colors: {
-                    background: "#2c1810",
-                    text: "#ff7f50",
-                    accent: "#ff4500"
-                }
-            },
-            ocean: {
-                name: "Ocean",
-                price: 250,
-                colors: {
-                    background: "#000080",
-                    text: "#00ffff",
-                    accent: "#4169e1"
-                }
-            }
-        };
+  <div class="leaderboard-container" id="leaderboard-container">
+    <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
+    <h2>Leaderboard</h2>
+    <div id="leaderboard-list"></div>
+  </div>
 
-        // Initialize user data
-        async function initializeUser() {
-            console.log("Initializing user...");
-            const storedUsername = localStorage.getItem('username');
-            if (storedUsername) {
-                currentUsername = storedUsername;
-                document.getElementById('username-display').textContent = currentUsername;
-            }
+  <div class="username-modal" id="username-modal">
+    <h3>Change Username</h3>
+    <input type="text" id="username-input" placeholder="Enter username">
+    <div>
+      <button onclick="changeUsername()">Save</button>
+      <button onclick="closeUsernameModal()">Cancel</button>
+    </div>
+  </div>
 
-            // Check if user is owner
-            if (currentUsername === "BigManToes") {
-                const ownerBg = document.createElement('img');
-                ownerBg.src = 'https://raw.githubusercontent.com/BigManToes/BigManToes/main/background.jpg';
-                ownerBg.className = 'owner-background';
-                document.body.appendChild(ownerBg);
-                document.getElementById('username-display').innerHTML += '<span class="owner-tag">[OWNER]</span>';
-            }
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-            // Load user data from Firebase
-            try {
-                const userRef = ref(db, `users/${currentUsername}`);
-                const snapshot = await get(userRef);
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    userCoins = userData.coins || 0;
-                    ownedThemes = userData.ownedThemes || ["default"];
-                    currentTheme = userData.currentTheme || "default";
-                } else {
-                    // Create new user
-                    await set(userRef, {
-                        coins: 0,
-                        ownedThemes: ["default"],
-                        currentTheme: "default"
-                    });
-                }
-                updateCoinsDisplay();
-                applyTheme(currentTheme);
-                console.log("User initialized successfully:", currentUsername, userCoins, ownedThemes);
-            } catch (error) {
-                console.error("Error initializing user:", error);
-            }
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
+      authDomain: "jackblack-95dbd.firebaseapp.com",
+      databaseURL: "https://jackblack-95dbd-default-rtdb.firebaseio.com",
+      projectId: "jackblack-95dbd",
+      storageBucket: "jackblack-95dbd.firebasestorage.app",
+      messagingSenderId: "321007761489",
+      appId: "1:321007761489:web:e62d122547783bd86ea070",
+      measurementId: "G-08KQXFNB5X"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Global variables
+    let currentUsername = "Guest";
+    let userCoins = 0;
+    let currentRoom = null;
+    let isHost = false;
+    let playerCards = [];
+    let dealerCards = [];
+    let currentDeck = [];
+    let gameStarted = false;
+    let currentTurn = null;
+    let hasVoted = false;
+    let ownedThemes = ["default"];
+    let currentTheme = "default";
+    let isSinglePlayer = false;
+
+    // Available themes
+    const themes = {
+      default: {
+        name: "Default",
+        price: 0,
+        colors: {
+          background: "black",
+          text: "#ffd700",
+          accent: "#ffd700"
         }
-
-        // Theme functions
-        function applyTheme(themeName) {
-            const theme = themes[themeName];
-            if (theme) {
-                document.documentElement.style.setProperty('--bg-color', theme.colors.background);
-                document.documentElement.style.setProperty('--text-color', theme.colors.text);
-                document.documentElement.style.setProperty('--accent-color', theme.colors.accent);
-                document.body.style.backgroundColor = theme.colors.background;
-            }
+      },
+      neon: {
+        name: "Neon",
+        price: 100,
+        colors: {
+          background: "#000",
+          text: "#0ff",
+          accent: "#f0f"
         }
-
-        async function buyTheme(themeName) {
-            const theme = themes[themeName];
-            if (theme && userCoins >= theme.price) {
-                userCoins -= theme.price;
-                ownedThemes.push(themeName);
-                
-                // Update Firebase
-                const userRef = ref(db, `users/${currentUsername}`);
-                await update(userRef, {
-                    coins: userCoins,
-                    ownedThemes: ownedThemes
-                });
-
-                updateCoinsDisplay();
-                showShop();
-                alert(`You purchased the ${theme.name} theme!`);
-            } else {
-                alert("Not enough coins to purchase this theme!");
-            }
+      },
+      forest: {
+        name: "Forest",
+        price: 150,
+        colors: {
+          background: "#1a472a",
+          text: "#90ee90",
+          accent: "#2e8b57"
         }
-
-        async function selectTheme(themeName) {
-            if (ownedThemes.includes(themeName)) {
-                currentTheme = themeName;
-                applyTheme(themeName);
-                
-                // Update Firebase
-                const userRef = ref(db, `users/${currentUsername}`);
-                await update(userRef, {
-                    currentTheme: themeName
-                });
-                
-                alert(`${themes[themeName].name} theme selected!`);
-            }
+      },
+      sunset: {
+        name: "Sunset",
+        price: 200,
+        colors: {
+          background: "#2c1810",
+          text: "#ff7f50",
+          accent: "#ff4500"
         }
-
-        // Room functions
-        function generateRoomCode() {
-            return Math.random().toString(36).substring(2, 8).toUpperCase();
+      },
+      ocean: {
+        name: "Ocean",
+        price: 250,
+        colors: {
+          background: "#000080",
+          text: "#00ffff",
+          accent: "#4169e1"
         }
+      }
+    };
 
-        async function createRoom() {
-            try {
-                const roomCode = generateRoomCode();
-                currentRoom = roomCode;
-                isHost = true;
-                
-                const roomRef = ref(db, `rooms/${roomCode}`);
-                await set(roomRef, {
-                    host: currentUsername,
-                    players: {
-                        [currentUsername]: {
-                            ready: false,
-                            cards: [],
-                            score: 0
-                        }
-                    },
-                    gameStarted: false,
-                    dealerCards: [],
-                    currentTurn: null,
-                    votesToStart: {}
-                });
+    // Initialize user data
+    async function initializeUser() {
+      const storedUsername = localStorage.getItem('username');
+      if (storedUsername) {
+        currentUsername = storedUsername;
+        document.getElementById('username-display').textContent = currentUsername;
+      }
 
-                document.getElementById('room-code').value = roomCode;
-                document.getElementById('room-id-display').textContent = roomCode;
-                
-                // Listen for room updates
-                onValue(roomRef, handleRoomUpdate);
-                showGameRoom();
-                console.log("Room created:", roomCode);
-            } catch (error) {
-                console.error("Error creating room:", error);
-                alert("Failed to create room. Please try again.");
-            }
+      // Check if user is owner
+      if (currentUsername === "BigManToes") {
+        const ownerBg = document.createElement('img');
+        ownerBg.src = 'https://raw.githubusercontent.com/BigManToes/BigManToes/main/background.jpg';
+        ownerBg.className = 'owner-background';
+        document.body.appendChild(ownerBg);
+        document.getElementById('username-display').innerHTML += '<span class="owner-tag">[OWNER]</span>';
+      }
+
+      // Load user data from Firebase
+      try {
+        const userRef = ref(db, `users/${currentUsername}`);
+        const snapshot = await get(userRef);
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          userCoins = userData.coins || 0;
+          ownedThemes = userData.ownedThemes || ["default"];
+          currentTheme = userData.currentTheme || "default";
+        } else {
+          // Create new user
+          await set(userRef, {
+            coins: 0,
+            ownedThemes: ["default"],
+            currentTheme: "default"
+          });
         }
+        updateCoinsDisplay();
+        applyTheme(currentTheme);
+      } catch (error) {
+        console.error("Error initializing user:", error);
+      }
+    }
 
-        async function joinRoom() {
-            try {
-                const roomCode = document.getElementById('join-room-code').value.toUpperCase();
-                if (!roomCode) {
-                    alert("Please enter a room code");
-                    return;
-                }
-                
-                const roomRef = ref(db, `rooms/${roomCode}`);
-                const snapshot = await get(roomRef);
+    // Theme functions
+    function applyTheme(themeName) {
+      const theme = themes[themeName];
+      if (theme) {
+        document.documentElement.style.setProperty('--bg-color', theme.colors.background);
+        document.documentElement.style.setProperty('--text-color', theme.colors.text);
+        document.documentElement.style.setProperty('--accent-color', theme.colors.accent);
+        document.body.style.backgroundColor = theme.colors.background;
+      }
+    }
 
-                if (snapshot.exists()) {
-                    const roomData = snapshot.val();
-                    if (roomData.gameStarted) {
-                        alert("Game already in progress. Please try another room.");
-                        return;
-                    }
-                    
-                    if (Object.keys(roomData.players || {}).length >= 4) {
-                        alert('Room is full! (Maximum 4 players)');
-                        return;
-                    }
+    async function buyTheme(themeName) {
+      const theme = themes[themeName];
+      if (!theme) return;
+      
+      if (userCoins >= theme.price) {
+        userCoins -= theme.price;
+        ownedThemes.push(themeName);
+        
+        // Update Firebase
+        const userRef = ref(db, `users/${currentUsername}`);
+        await update(userRef, {
+          coins: userCoins,
+          ownedThemes: ownedThemes
+        });
 
-                    currentRoom = roomCode;
-                    isHost = roomData.host === currentUsername;
-                    hasVoted = false;
-                    
-                    await update(roomRef, {
-                        [`players/${currentUsername}`]: {
-                            ready: false,
-                            cards: [],
-                            score: 0
-                        }
-                    });
+        updateCoinsDisplay();
+        showShop();
+        alert(`You purchased the ${theme.name} theme!`);
+      } else {
+        alert("Not enough coins!");
+      }
+    }
 
-                    document.getElementById('room-id-display').textContent = roomCode;
-                    showGameRoom();
-                    
-                    // Listen for room updates
-                    onValue(roomRef, handleRoomUpdate);
-                    console.log("Joined room:", roomCode);
-                } else {
-                    alert('Room not found!');
-                }
-            } catch (error) {
-                console.error("Error joining room:", error);
-                alert("Failed to join room. Please check the room code and try again.");
-            }
-        }
+    async function selectTheme(themeName) {
+      if (ownedThemes.includes(themeName)) {
+        currentTheme = themeName;
+        applyTheme(themeName);
+        
+        // Update Firebase
+        const userRef = ref(db, `users/${currentUsername}`);
+        await update(userRef, {
+          currentTheme: themeName
+        });
+        
+        alert(`${themes[themeName].name} theme selected!`);
+      }
+    }
 
-        async function leaveGame() {
-            if (currentRoom) {
-                try {
-                    const roomRef = ref(db, `rooms/${currentRoom}`);
-                    const snapshot = await get(roomRef);
-                    
-                    if (snapshot.exists()) {
-                        const roomData = snapshot.val();
-                        
-                        // Remove player from room
-                        await remove(ref(db, `rooms/${currentRoom}/players/${currentUsername}`));
-                        
-                        // If room empty or player is host, delete the room
-                        const remainingPlayers = Object.keys(roomData.players).filter(p => p !== currentUsername);
-                        if (remainingPlayers.length === 0 || roomData.host === currentUsername) {
-                            await remove(roomRef);
-                            console.log("Room deleted:", currentRoom);
-                        } else if (roomData.host === currentUsername && remainingPlayers.length > 0) {
-                            // Transfer host if current host is leaving
-                            await update(roomRef, {
-                                host: remainingPlayers[0]
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error leaving room:", error);
-                }
-                
-                currentRoom = null;
-                isHost = false;
-                hasVoted = false;
-                gameStarted = false;
-                showMainMenu();
-            }
-        }
+    // Username functions
+    function showUsernameModal() {
+      document.getElementById('username-modal').style.display = 'block';
+    }
 
-        // Game functions
-        function createDeck() {
-            const suits = ['♠', '♣', '♥', '♦'];
-            const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-            const deck = [];
-            
-            for (let suit of suits) {
-                for (let value of values) {
-                    deck.push({ suit, value });
-                }
-            }
-            
-            return shuffle(deck);
-        }
+    function closeUsernameModal() {
+      document.getElementById('username-modal').style.display = 'none';
+    }
 
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
+    async function changeUsername() {
+      const newUsername = document.getElementById('username-input').value.trim();
+      if (newUsername && newUsername !== currentUsername) {
+        try {
+          // Check if username is taken
+          const userRef = ref(db, `users/${newUsername}`);
+          const snapshot = await get(userRef);
+          
+          if (snapshot.exists()) {
+            alert('Username already taken!');
+            return;
+          }
 
-        function calculateScore(cards) {
-            let score = 0;
-            let aces = 0;
-            
-            for (let card of cards) {
-                if (card.value === 'A') {
-                    aces++;
-                } else if (['K', 'Q', 'J'].includes(card.value)) {
-                    score += 10;
-                } else {
-                    score += parseInt(card.value);
-                }
-            }
-            
-            for (let i = 0; i < aces; i++) {
-                if (score + 11 <= 21) {
-                    score += 11;
-                } else {
-                    score += 1;
-                }
-            }
-            
-            return score;
-        }
-
-        async function voteToStart() {
-            if (currentRoom && !gameStarted && !hasVoted) {
-                try {
-                    const roomRef = ref(db, `rooms/${currentRoom}`);
-                    const snapshot = await get(roomRef);
-                    const roomData = snapshot.val();
-                    
-                    await update(roomRef, {
-                        [`votesToStart/${currentUsername}`]: true,
-                        [`players/${currentUsername}/ready`]: true
-                    });
-
-                    hasVoted = true;
-                    console.log("Voted to start");
-
-                    // If all players voted and current player is host, start game
-                    const totalPlayers = Object.keys(roomData.players).length;
-                    const totalVotes = Object.keys(roomData.votesToStart || {}).length + 1;
-                    
-                    if (totalVotes === totalPlayers && currentUsername === roomData.host) {
-                        console.log("All players ready, starting game...");
-                        startGame();
-                    }
-                } catch (error) {
-                    console.error("Error voting to start:", error);
-                }
-            }
-        }
-
-        async function voteToReplay() {
-            if (currentRoom && !gameStarted && !hasVoted) {
-                try {
-                    const roomRef = ref(db, `rooms/${currentRoom}`);
-                    const snapshot = await get(roomRef);
-                    const roomData = snapshot.val();
-                    
-                    await update(roomRef, {
-                        [`votesToReplay/${currentUsername}`]: true,
-                        [`players/${currentUsername}/ready`]: true
-                    });
-
-                    hasVoted = true;
-                    
-                    // Check if all players have voted to replay
-                    const totalPlayers = Object.keys(roomData.players).length;
-                    const totalVotes = Object.keys(roomData.votesToReplay || {}).length + 1;
-                    
-                    if (totalVotes === totalPlayers && currentUsername === roomData.host) {
-                        // Reset and start new game
-                        startGame();
-                    }
-                } catch (error) {
-                    console.error("Error voting to replay:", error);
-                }
-            }
-        }
-
-        async function startGame() {
-            try {
-                const deck = createDeck();
-                const roomRef = ref(db, `rooms/${currentRoom}`);
-                const snapshot = await get(roomRef);
-                const roomData = snapshot.val();
-                const players = Object.keys(roomData.players);
-                
-                // Deal initial cards
-                const initialState = {
-                    gameStarted: true,
-                    dealerCards: [deck.pop(), deck.pop()],
-                    currentTurn: players[0],
-                    deck: deck,
-                    votesToStart: {},
-                    votesToReplay: {}
-                };
-
-                // Deal cards to each player
-                for (let player of players) {
-                    initialState[`players/${player}/cards`] = [deck.pop(), deck.pop()];
-                    initialState[`players/${player}/ready`] = false;
-                }
-
-                await update(roomRef, initialState);
-                console.log("Game started with deck:", deck.length, "cards");
-            } catch (error) {
-                console.error("Error starting game:", error);
-            }
-        }
-
-        async function hit() {
-            if (currentRoom && gameStarted && currentTurn === currentUsername) {
-                try {
-                    const roomRef = ref(db, `rooms/${currentRoom}`);
-                    const snapshot = await get(roomRef);
-                    const roomData = snapshot.val();
-                    
-                    // Get deck and draw a card
-                    const deck = roomData.deck;
-                    const newCard = deck.pop();
-                    if (!newCard) {
-                        console.error("Deck is empty!");
-                        return;
-                    }
-                    
-                    // Add card to player's hand
-                    const updatedCards = [...playerCards, newCard];
-                    const score = calculateScore(updatedCards);
-                    
-                    const updates = {
-                        [`players/${currentUsername}/cards`]: updatedCards,
-                        deck: deck
-                    };
-
-                    // If bust, move to next player
-                    if (score > 21) {
-                        document.getElementById('game-message').textContent = "Bust! You went over 21.";
-                        
-                        const players = Object.keys(roomData.players);
-                        const currentIndex = players.indexOf(currentUsername);
-                        const nextPlayer = players[(currentIndex + 1) % players.length];
-                        updates.currentTurn = nextPlayer;
-                    }
-
-                    await update(roomRef, updates);
-                } catch (error) {
-                    console.error("Error hitting:", error);
-                }
-            }
-        }
-
-        async function stand() {
-            if (currentRoom && gameStarted && currentTurn === currentUsername) {
-                try {
-                    const roomRef = ref(db, `rooms/${currentRoom}`);
-                    const snapshot = await get(roomRef);
-                    const roomData = snapshot.val();
-                    
-                    const players = Object.keys(roomData.players);
-                    const currentIndex = players.indexOf(currentUsername);
-                    const nextPlayer = players[(currentIndex + 1) % players.length];
-
-                    const updates = {
-                        currentTurn: nextPlayer
-                    };
-
-                    // If we've gone through all players, it's dealer's turn
-                    if (nextPlayer === players[0] && isHost) {
-                        await update(roomRef, updates);
-                        setTimeout(() => dealerPlay(), 1000);
-                    } else {
-                        await update(roomRef, updates);
-                    }
-                } catch (error) {
-                    console.error("Error standing:", error);
-                }
-            }
-        }
-
-        async function dealerPlay() {
-            try {
-                if (!isHost) return;
-                
-                const roomRef = ref(db, `rooms/${currentRoom}`);
-                const snapshot = await get(roomRef);
-                const roomData = snapshot.val();
-                
-                let currentDealerCards = [...roomData.dealerCards];
-                const currentDeck = [...roomData.deck];
-
-                // Dealer draws until 17 or higher
-                while (calculateScore(currentDealerCards) < 17) {
-                    const card = currentDeck.pop();
-                    if (!card) break;
-                    currentDealerCards.push(card);
-                }
-
-                const dealerScore = calculateScore(currentDealerCards);
-                const players = Object.keys(roomData.players);
-                
-                // Prepare updates
-                const updates = {
-                    dealerCards: currentDealerCards,
-                    deck: currentDeck,
-                    gameStarted: false,
-                    currentTurn: null
-                };
-
-                // Determine winners and update coins
-                for (let player of players) {
-                    const playerCards = roomData.players[player].cards;
-                    const playerScore = calculateScore(playerCards);
-                    
-                    let result = "lose";
-                    
-                    if (playerScore <= 21) {
-                        if (dealerScore > 21) {
-                            result = "win"; // Dealer busts
-                        } else if (playerScore > dealerScore) {
-                            result = "win"; // Player beats dealer
-                        } else if (playerScore === dealerScore) {
-                            result = "push"; // Tie
-                        }
-                    }
-                    
-                    updates[`players/${player}/result`] = result;
-                    
-                    // Award coins to winners
-                    if (result === "win") {
-                        const userRef = ref(db, `users/${player}`);
-                        const userSnapshot = await get(userRef);
-                        if (userSnapshot.exists()) {
-                            const userData = userSnapshot.val();
-                            const currentCoins = userData.coins || 0;
-                            await update(userRef, { coins: currentCoins + 5 });
-                            
-                            if (player === currentUsername) {
-                                userCoins += 5;
-                                updateCoinsDisplay();
-                            }
-                        }
-                    }
-                }
-
-                await update(roomRef, updates);
-                console.log("Dealer play completed");
-            } catch (error) {
-                console.error("Error in dealer play:", error);
-            }
-        }
-
-        // UI functions
-        function showMainMenu() {
-            document.getElementById('main-menu').style.display = 'flex';
-            document.getElementById('create-room-container').style.display = 'none';
-            document.getElementById('join-room-container').style.display = 'none';
-            document.getElementById('game-container').style.display = 'none';
-            document.getElementById('shop-container').style.display = 'none';
-            document.getElementById('leaderboard-container').style.display = 'none';
-        }
-
-        function showCreateRoom() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('create-room-container').style.display = 'block';
-        }
-
-        function showJoinRoom() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('join-room-container').style.display = 'block';
-        }
-
-        function showGameRoom() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('create-room-container').style.display = 'none';
-            document.getElementById('join-room-container').style.display = 'none';
-            document.getElementById('game-container').style.display = 'block';
-        }
-
-        function showShop() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('shop-container').style.display = 'block';
-            
-            const themeList = document.getElementById('theme-list');
-            themeList.innerHTML = '';
-            
-            for (const [themeName, theme] of Object.entries(themes)) {
-                const themeItem = document.createElement('div');
-                themeItem.className = 'theme-item';
-                
-                // Determine if theme is owned
-                const isOwned = ownedThemes.includes(themeName);
-                const isSelected = currentTheme === themeName;
-                
-                themeItem.innerHTML = `
-                    <span>${theme.name}</span>
-                    <div>
-                        ${isOwned 
-                            ? `<button class="menu-button" onclick="selectTheme('${themeName}')" ${isSelected ? 'disabled' : ''}>${isSelected ? 'Selected' : 'Select'}</button>`
-                            : `<button class="menu-button" onclick="buyTheme('${themeName}')">${theme.price} Coins</button>`
-                        }
-                    </div>
-                `;
-                themeList.appendChild(themeItem);
-            }
-        }
-
-        function showLeaderboard() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('leaderboard-container').style.display = 'block';
-            
-            const leaderboardRef = ref(db, 'users');
-            onValue(leaderboardRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    const users = snapshot.val();
-                    const leaderboardList = document.getElementById('leaderboard-list');
-                    leaderboardList.innerHTML = '';
-                    
-                    const sortedUsers = Object.entries(users)
-                        .sort(([,a], [,b]) => (b.coins || 0) - (a.coins || 0))
-                        .slice(0, 10);
-
-                    sortedUsers.forEach(([username, data], index) => {
-                        const item = document.createElement('div');
-                        item.className = 'leaderboard-item';
-                        item.innerHTML = `
-                            <span>#${index + 1} ${username}</span>
-                            <span>${data.coins || 0} Coins</span>
-                        `;
-                        leaderboardList.appendChild(item);
-                    });
-                }
+          // Transfer user data to new username
+          const oldUserRef = ref(db, `users/${currentUsername}`);
+          const oldUserSnapshot = await get(oldUserRef);
+          
+          if (oldUserSnapshot.exists()) {
+            const oldUserData = oldUserSnapshot.val();
+            await set(userRef, oldUserData);
+            await remove(oldUserRef);
+          } else {
+            await set(userRef, {
+              coins: userCoins,
+              ownedThemes: ownedThemes,
+              currentTheme: currentTheme
             });
+          }
+          
+          currentUsername = newUsername;
+          localStorage.setItem('username', newUsername);
+          document.getElementById('username-display').textContent = newUsername;
+          
+          // If in a room, leave it
+          if (currentRoom) {
+            leaveGame();
+          }
+          
+          closeUsernameModal();
+        } catch (error) {
+          console.error("Error changing username:", error);
+          alert("Failed to change username. Please try again.");
         }
+      }
+    }
 
-        function showUsernameModal() {
-            document.getElementById('username-modal').style.display = 'block';
-        }
+    // Navigation functions
+    function showMainMenu() {
+      document.getElementById('main-menu').style.display = 'flex';
+      document.getElementById('game-menu').style.display = 'none';
+      document.getElementById('create-room-container').style.display = 'none';
+      document.getElementById('join-room-container').style.display = 'none';
+      document.getElementById('game-container').style.display = 'none';
+      document.getElementById('shop-container').style.display = 'none';
+      document.getElementById('leaderboard-container').style.display = 'none';
+    }
 
-        function closeUsernameModal() {
-            document.getElementById('username-modal').style.display = 'none';
-        }
+    function showGameMenu() {
+      document.getElementById('main-menu').style.display = 'none';
+      document.getElementById('game-menu').style.display = 'block';
+    }
 
-        async function changeUsername() {
-            const newUsername = document.getElementById('username-input').value.trim();
-            if (newUsername && newUsername !== currentUsername) {
-                try {
-                    // Check if username is taken
-                    const userRef = ref(db, `users/${newUsername}`);
-                    const snapshot = await get(userRef);
-                    
-                    if (snapshot.exists()) {
-                        alert('Username already taken!');
-                        return;
-                    }
+    function showCreateRoom() {
+      document.getElementById('game-menu').style.display = 'none';
+      document.getElementById('create-room-container').style.display = 'block';
+    }
 
-                    // Transfer user data to new username
-                    const oldUserRef = ref(db, `users/${currentUsername}`);
-                    const oldUserSnapshot = await get(oldUserRef);
-                    
-                    if (oldUserSnapshot.exists()) {
-                        const oldUserData = oldUserSnapshot.val();
-                        await set(userRef, oldUserData);
-                        await remove(oldUserRef);
-                    } else {
-                        await set(userRef, {
-                            coins: userCoins,
-                            ownedThemes: ownedThemes,
-                            currentTheme: currentTheme
-                        });
-                    }
-                    
-                    currentUsername = newUsername;
-                    localStorage.setItem('username', newUsername);
-                    document.getElementById('username-display').textContent = newUsername;
-                    
-                    // If in a room, update the player name
-                    if (currentRoom) {
-                        alert("Please leave and rejoin the room with your new username.");
-                        leaveGame();
-                    }
-                    
-                    closeUsernameModal();
-                } catch (error) {
-                    console.error("Error changing username:", error);
-                    alert("Failed to change username. Please try again.");
-                }
+    function showJoinRoom() {
+      document.getElementById('game-menu').style.display = 'none';
+      document.getElementById('join-room-container').style.display = 'block';
+    }
+
+    function showShop() {
+      document.getElementById('main-menu').style.display = 'none';
+      document.getElementById('shop-container').style.display = 'block';
+      
+      const themeList = document.getElementById('theme-list');
+      themeList.innerHTML = '';
+      
+      for (const [themeName, theme] of Object.entries(themes)) {
+        const themeItem = document.createElement('div');
+        themeItem.className = 'theme-item';
+        
+        // Determine if theme is owned
+        const isOwned = ownedThemes.includes(themeName);
+        const isSelected = currentTheme === themeName;
+        
+        themeItem.innerHTML = `
+          <span>${theme.name}</span>
+          <div>
+            ${isOwned 
+              ? `<button onclick="selectTheme('${themeName}')" ${isSelected ? 'disabled' : ''}>${isSelected ? 'Selected' : 'Select'}</button>`
+              : `<button onclick="buyTheme('${themeName}')">${theme.price} Coins</button>`
             }
-        }
+          </div>
+        `;
+        themeList.appendChild(themeItem);
+      }
+    }
 
-        function updateCoinsDisplay() {
-            document.getElementById('coins-display').textContent = `Coins: ${userCoins}`;
-        }
+    function showLeaderboard() {
+      document.getElementById('main-menu').style.display = 'none';
+      document.getElementById('leaderboard-container').style.display = 'block';
+      
+      const leaderboardRef = ref(db, 'users');
+      onValue(leaderboardRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const users = snapshot.val();
+          const leaderboardList = document.getElementById('leaderboard-list');
+          leaderboardList.innerHTML = '';
+          
+          const sortedUsers = Object.entries(users)
+            .sort(([,a], [,b]) => (b.coins || 0) - (a.coins || 0))
+            .slice(0, 10);
 
-        function getCardColorClass(suit) {
-            return ['♥', '♦'].includes(suit) ? 'red-card' : '';
+          sortedUsers.forEach(([username, data], index) => {
+            const item = document.createElement('div');
+            item.className = 'leaderboard-item';
+            item.innerHTML = `
+              <span>#${index + 1} ${username}</span>
+              <span>${data.coins || 0} Coins</span>
+            `;
+            leaderboardList.appendChild(item);
+          });
         }
+      });
+    }
 
-        function handleRoomUpdate(snapshot) {
+    // Multiplayer room functions
+    function generateRoomCode() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    async function createRoom() {
+      try {
+        const roomCode = generateRoomCode();
+        currentRoom = roomCode;
+        isHost = true;
+        isSinglePlayer = false;
+        
+        const roomRef = ref(db, `rooms/${roomCode}`);
+        await set(roomRef, {
+          host: currentUsername,
+          players: {
+            [currentUsername]: {
+              ready: false,
+              cards: [],
+              score: 0
+            }
+          },
+          gameStarted: false,
+          dealerCards: [],
+          currentTurn: null,
+          votesToStart: {}
+        });
+
+        document.getElementById('room-code').value = roomCode;
+        document.getElementById('room-id-display').textContent = roomCode;
+        
+        // Listen for room updates
+        onValue(roomRef, handleRoomUpdate);
+        showGameContainer();
+      } catch (error) {
+        console.error("Error creating room:", error);
+        alert("Failed to create room. Please try again.");
+      }
+    }
+
+    async function joinRoom() {
+      try {
+        const roomCode = document.getElementById('join-room-code').value.toUpperCase();
+        if (!roomCode) {
+          alert("Please enter a room code");
+          return;
+        }
+        
+        const roomRef = ref(db, `rooms/${roomCode}`);
+        const snapshot = await get(roomRef);
+
+        if (snapshot.exists()) {
+          const roomData = snapshot.val();
+          if (roomData.gameStarted) {
+            alert("Game already in progress. Please try another room.");
+            return;
+          }
+          
+          if (Object.keys(roomData.players || {}).length >= 4) {
+            alert('Room is full! (Maximum 4 players)');
+            return;
+          }
+
+          currentRoom = roomCode;
+          isHost = roomData.host === currentUsername;
+          hasVoted = false;
+          isSinglePlayer = false;
+          
+          await update(roomRef, {
+            [`players/${currentUsername}`]: {
+              ready: false,
+              cards: [],
+              score: 0
+            }
+          });
+
+          document.getElementById('room-id-display').textContent = roomCode;
+          
+          // Listen for room updates
+          onValue(roomRef, handleRoomUpdate);
+          showGameContainer();
+        } else {
+          alert('Room not found!');
+        }
+      } catch (error) {
+        console.error("Error joining room:", error);
+        alert("Failed to join room. Please check the room code and try again.");
+      }
+    }
+
+    async function leaveGame() {
+      resetGameState();
+      
+      if (currentRoom && !isSinglePlayer) {
+        try {
+          const roomRef = ref(db, `rooms/${currentRoom}`);
+          const snapshot = await get(roomRef);
+          
+          if (snapshot.exists()) {
             const roomData = snapshot.val();
-            if (!roomData) {
-                showMainMenu();
-                return;
-            }
-
-            // Update player list
-            const playerList = document.getElementById('player-list');
-            playerList.innerHTML = '<h3>Players in Room:</h3>';
             
-            const players = Object.keys(roomData.players || {});
-            players.forEach(player => {
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'player-item';
-                const readyStatus = roomData.players[player].ready ? '✓ Ready' : 'Not Ready';
-                playerDiv.innerHTML = `
-                    <span>${player}${player === roomData.host ? ' (Host)' : ''}</span>
-                    <span>${readyStatus}</span>
-                `;
-                playerList.appendChild(playerDiv);
-            });
-
-            // Update host status
-            isHost = roomData.host === currentUsername;
-
-            // Update vote display and game controls based on game state
-            if (!roomData.gameStarted) {
-                // Game not started - show ready button
-                const voteContainer = document.getElementById('vote-container');
-                const totalVotes = Object.keys(roomData.votesToStart || {}).length;
-                
-                const playerHasVoted = roomData.votesToStart && currentUsername in roomData.votesToStart;
-                hasVoted = playerHasVoted;
-                
-                voteContainer.innerHTML = `
-                    <div class="vote-status">Players Ready: ${totalVotes}/${players.length}</div>
-                    ${!playerHasVoted ? `<button class="menu-button" onclick="voteToStart()">Ready</button>` : ''}
-                `;
-                
-                // Check for game results and show replay option
-                if (roomData.players[currentUsername]?.result) {
-                    const playerResult = roomData.players[currentUsername].result;
-                    const gameMessage = document.getElementById('game-message');
-                    
-                    if (playerResult === "win") {
-                        gameMessage.textContent = "You win! +5 coins";
-                    } else if (playerResult === "push") {
-                        gameMessage.textContent = "Push - it's a tie!";
-                    } else {
-                        gameMessage.textContent = "Dealer wins this round.";
-                    }
-                    
-                    // Show replay vote option
-                    const replayContainer = document.getElementById('replay-vote-container');
-                    const totalReplayVotes = Object.keys(roomData.votesToReplay || {}).length;
-                    const playerHasVotedReplay = roomData.votesToReplay && currentUsername in roomData.votesToReplay;
-                    
-                    replayContainer.innerHTML = `
-                        <div class="vote-status">Vote to play again: ${totalReplayVotes}/${players.length}</div>
-                        ${!playerHasVotedReplay ? `<button class="menu-button" onclick="voteToReplay()">Play Again</button>` : ''}
-                    `;
-                }
-            } else {
-                // Game in progress
-                document.getElementById('vote-container').innerHTML = '';
-                document.getElementById('replay-vote-container').innerHTML = '';
-                document.getElementById('game-message').textContent = '';
-                
-                // Update game state
-                gameStarted = true;
-                currentTurn = roomData.currentTurn;
-                playerCards = roomData.players[currentUsername]?.cards || [];
-                dealerCards = roomData.dealerCards || [];
-
-                // Update card displays
-                updateCardDisplay(playerCards, dealerCards, roomData.gameStarted);
-                
-                // Show/hide controls based on turn
-                const controls = document.getElementById('game-controls');
-                controls.style.display = currentTurn === currentUsername ? 'flex' : 'none';
-                
-                // Show whose turn it is
-                if (currentTurn) {
-                    document.getElementById('game-message').textContent = 
-                        currentTurn === currentUsername ? "Your turn" : `Waiting for ${currentTurn}`;
-                }
+            // Remove player from room
+            await remove(ref(db, `rooms/${currentRoom}/players/${currentUsername}`));
+            
+            // If room empty or player is host, delete the room
+            const remainingPlayers = Object.keys(roomData.players || {}).filter(p => p !== currentUsername);
+            if (remainingPlayers.length === 0) {
+              await remove(roomRef);
+            } else if (roomData.host === currentUsername && remainingPlayers.length > 0) {
+              // Transfer host if current host is leaving
+              await update(roomRef, {
+                host: remainingPlayers[0]
+              });
             }
+          }
+        } catch (error) {
+          console.error("Error leaving room:", error);
         }
+      }
+      
+      currentRoom = null;
+      isHost = false;
+      isSinglePlayer = false;
+      showMainMenu();
+    }
 
-        function updateCardDisplay(playerCards, dealerCards, gameInProgress) {
-            // Update dealer cards
-            const dealerCardsDiv = document.querySelector('#dealer-cards .cards-display');
-            const dealerScoreDiv = document.querySelector('#dealer-cards .score-display');
-            
-            dealerCardsDiv.innerHTML = '';
-            
-            // First card is hidden during game
-            dealerCards.forEach((card, index) => {
-                const cardDiv = document.createElement('div');
-                cardDiv.className = `card ${gameInProgress && index === 0 ? 'hidden-card' : getCardColorClass(card.suit)}`;
-                
-                if (gameInProgress && index === 0) {
-                    cardDiv.innerHTML = '';
-                } else {
-                    cardDiv.innerHTML = `${card.value}${card.suit}`;
-                }
-                
-                dealerCardsDiv.appendChild(cardDiv);
-            });
-            
-            // Only show score when game is over
-            if (!gameInProgress && dealerCards.length > 0) {
-                dealerScoreDiv.textContent = `Score: ${calculateScore(dealerCards)}`;
-            } else {
-                dealerScoreDiv.textContent = '';
-            }
+    function showGameContainer() {
+      document.getElementById('main-menu').style.display = 'none';
+      document.getElementById('game-menu').style.display = 'none';
+      document.getElementById('create-room-container').style.display = 'none';
+      document.getElementById('join-room-container').style.display = 'none';
+      document.getElementById('game-container').style.display = 'block';
+    }
 
-                        // Update player cards
-            const playerCardsDiv = document.querySelector('#player-cards .cards-display');
-            const playerScoreDiv = document.querySelector('#player-cards .score-display');
-            
-            playerCardsDiv.innerHTML = '';
-            
-            // Show all player cards
-            playerCards.forEach(card => {
-                const cardDiv = document.createElement('div');
-                cardDiv.className = `card ${getCardColorClass(card.suit)}`;
-                cardDiv.innerHTML = `${card.value}${card.suit}`;
-                playerCardsDiv.appendChild(cardDiv);
-            });
-            
-            // Always show player score
-            if (playerCards.length > 0) {
-                const score = calculateScore(playerCards);
-                playerScoreDiv.textContent = `Score: ${score}`;
-                
-                // Add visual indication if bust
-                if (score > 21) {
-                    playerScoreDiv.style.color = 'red';
-                } else {
-                    playerScoreDiv.style.color = '';
-                }
-            } else {
-                playerScoreDiv.textContent = '';
-            }
+    async function voteToStart() {
+      if (currentRoom && !gameStarted && !hasVoted) {
+        try {
+          const roomRef = ref(db, `rooms/${currentRoom}`);
+          const snapshot = await get(roomRef);
+          const roomData = snapshot.val();
+          
+          await update(roomRef, {
+            [`votesToStart/${currentUsername}`]: true,
+            [`players/${currentUsername}/ready`]: true
+          });
+
+          hasVoted = true;
+
+          // If all players voted and current player is host, start game
+          const totalPlayers = Object.keys(roomData.players).length;
+          const totalVotes = Object.keys(roomData.votesToStart || {}).length + 1;
+          
+          if (totalVotes === totalPlayers && currentUsername === roomData.host) {
+            startMultiplayerGame(roomData);
+          }
+        } catch (error) {
+          console.error("Error voting to start:", error);
         }
+      }
+    }
 
-        // Make functions available globally
-        window.showMainMenu = showMainMenu;
-        window.showCreateRoom = showCreateRoom;
-        window.showJoinRoom = showJoinRoom;
-        window.showShop = showShop;
-        window.showLeaderboard = showLeaderboard;
-        window.showUsernameModal = showUsernameModal;
-        window.closeUsernameModal = closeUsernameModal;
-        window.changeUsername = changeUsername;
-        window.createRoom = createRoom;
-        window.joinRoom = joinRoom;
-        window.leaveGame = leaveGame;
-        window.voteToStart = voteToStart;
-        window.voteToReplay = voteToReplay;
-        window.hit = hit;
-        window.stand = stand;
-        window.buyTheme = buyTheme;
-        window.selectTheme = selectTheme;
+    // Single player functions
+    function startSinglePlayerGame() {
+      resetGameState();
+      isSinglePlayer = true;
+      gameStarted = true;
+      document.getElementById('room-id-display').textContent = "Single Player";
+      document.getElementById('leave-game-button').textContent = "Back to Menu";
+      showGameContainer();
+      
+      // Deal initial cards
+      currentDeck = createDeck();
+      playerCards = [currentDeck.pop(), currentDeck.pop()];
+      dealerCards = [currentDeck.pop(), currentDeck.pop()];
+      
+      updateCardDisplay();
+      checkForBlackjack();
+    }
 
-        // Initialize game
-        window.onload = function() {
-            initializeUser();
-            showMainMenu();
-            
-            // Add click handler for game title to return to menu
-            document.querySelector('.game-title').addEventListener('click', () => {
-                if (confirm("Return to main menu? This will exit any current game.")) {
-                    if (currentRoom) {
-                        leaveGame();
-                    } else {
-                        showMainMenu();
-                    }
-                }
-            });
+    // Game functions
+    function createDeck() {
+      const suits = ['♠', '♣', '♥', '♦'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      const deck = [];
+      
+      for (let suit of suits) {
+        for (let value of values) {
+          deck.push({ suit, value });
+        }
+      }
+      
+      return shuffle(deck);
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function calculateScore(cards) {
+      let score = 0;
+      let aces = 0;
+      
+      for (let card of cards) {
+        if (card.value === 'A') {
+          aces++;
+        } else if (['K', 'Q', 'J'].includes(card.value)) {
+          score += 10;
+        } else {
+          score += parseInt(card.value);
+        }
+      }
+      
+      for (let i = 0; i < aces; i++) {
+        if (score + 11 <= 21) {
+          score += 11;
+        } else {
+          score += 1;
+        }
+      }
+      
+      return score;
+    }
+          function getCardColorClass(suit) {
+      return ['♥', '♦'].includes(suit) ? 'red-card' : '';
+    }
+
+    function updateCardDisplay() {
+      // Update dealer cards
+      const dealerCardsElement = document.getElementById('dealer-cards');
+      dealerCardsElement.innerHTML = '';
+      
+      dealerCards.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.className = `card ${getCardColorClass(card.suit)}`;
+        
+        // Hide first dealer card during gameplay
+        if (index === 0 && gameStarted && !gameEnded) {
+          cardElement.className += ' hidden-card';
+          cardElement.textContent = '';
+        } else {
+          cardElement.textContent = `${card.value}${card.suit}`;
+        }
+        
+        dealerCardsElement.appendChild(cardElement);
+      });
+      
+      // Update player cards
+      const playerCardsElement = document.getElementById('player-cards');
+      playerCardsElement.innerHTML = '';
+      
+      playerCards.forEach(card => {
+        const cardElement = document.createElement('div');
+        cardElement.className = `card ${getCardColorClass(card.suit)}`;
+        cardElement.textContent = `${card.value}${card.suit}`;
+        playerCardsElement.appendChild(cardElement);
+      });
+      
+      // Update scores
+      document.getElementById('player-score').textContent = `Score: ${calculateScore(playerCards)}`;
+      
+      if (gameEnded) {
+        document.getElementById('dealer-score').textContent = `Score: ${calculateScore(dealerCards)}`;
+      } else {
+        document.getElementById('dealer-score').textContent = '';
+      }
+    }
+
+    let gameEnded = false;
+
+    function checkForBlackjack() {
+      const playerScore = calculateScore(playerCards);
+      const dealerScore = calculateScore(dealerCards);
+      
+      if (playerScore === 21) {
+        if (dealerScore === 21) {
+          endGame('push');
+        } else {
+          endGame('player');
+        }
+        return true;
+      } else if (dealerScore === 21) {
+        endGame('dealer');
+        return true;
+      }
+      
+      return false;
+    }
+
+    function hit() {
+      if (!gameStarted || gameEnded) return;
+      
+      if (isSinglePlayer) {
+        playerCards.push(currentDeck.pop());
+        updateCardDisplay();
+        
+        const playerScore = calculateScore(playerCards);
+        if (playerScore > 21) {
+          endGame('bust');
+        }
+      } else if (currentRoom && currentTurn === currentUsername) {
+        performMultiplayerHit();
+      }
+    }
+
+    async function performMultiplayerHit() {
+      try {
+        const roomRef = ref(db, `rooms/${currentRoom}`);
+        const snapshot = await get(roomRef);
+        const roomData = snapshot.val();
+        
+        // Get deck and draw a card
+        const deck = [...roomData.deck];
+        const newCard = deck.pop();
+        if (!newCard) {
+          console.error("Deck is empty!");
+          return;
+        }
+        
+        // Add card to player's hand
+        const updatedCards = [...playerCards, newCard];
+        const score = calculateScore(updatedCards);
+        
+        const updates = {
+          [`players/${currentUsername}/cards`]: updatedCards,
+          deck: deck
         };
-    </script>
+
+        // If bust, move to next player
+        if (score > 21) {
+          document.getElementById('game-message').textContent = "Bust! You went over 21.";
+          
+          const players = Object.keys(roomData.players);
+          const currentIndex = players.indexOf(currentUsername);
+          const nextPlayer = players[(currentIndex + 1) % players.length];
+          updates.currentTurn = nextPlayer;
+        }
+
+        await update(ref(db, `rooms/${currentRoom}`), updates);
+      } catch (error) {
+        console.error("Error hitting:", error);
+      }
+    }
+
+    function stand() {
+      if (!gameStarted || gameEnded) return;
+      
+      if (isSinglePlayer) {
+        dealerPlay();
+      } else if (currentRoom && currentTurn === currentUsername) {
+        performMultiplayerStand();
+      }
+    }
+
+    async function performMultiplayerStand() {
+      try {
+        const roomRef = ref(db, `rooms/${currentRoom}`);
+        const snapshot = await get(roomRef);
+        const roomData = snapshot.val();
+        
+        const players = Object.keys(roomData.players);
+        const currentIndex = players.indexOf(currentUsername);
+        const nextPlayer = players[(currentIndex + 1) % players.length];
+
+        const updates = {
+          currentTurn: nextPlayer
+        };
+
+        // If we've gone through all players, it's dealer's turn
+        if (nextPlayer === players[0] && isHost) {
+          await update(ref(db, `rooms/${currentRoom}`), updates);
+          setTimeout(() => dealerPlayMultiplayer(), 1000);
+        } else {
+          await update(ref(db, `rooms/${currentRoom}`), updates);
+        }
+      } catch (error) {
+        console.error("Error standing:", error);
+      }
+    }
+
+    function dealerPlay() {
+      // Show dealer's hidden card
+      gameEnded = true;
+      updateCardDisplay();
+      
+      // Dealer draws until 17 or higher
+      while (calculateScore(dealerCards) < 17) {
+        dealerCards.push(currentDeck.pop());
+      }
+      
+      updateCardDisplay();
+      
+      // Determine winner
+      const playerScore = calculateScore(playerCards);
+      const dealerScore = calculateScore(dealerCards);
+      
+      if (playerScore > 21) {
+        endGame('bust');
+      } else if (dealerScore > 21) {
+        endGame('dealer_bust');
+      } else if (playerScore > dealerScore) {
+        endGame('player');
+      } else if (dealerScore > playerScore) {
+        endGame('dealer');
+      } else {
+        endGame('push');
+      }
+    }
+
+    async function dealerPlayMultiplayer() {
+      try {
+        if (!isHost) return;
+        
+        const roomRef = ref(db, `rooms/${currentRoom}`);
+        const snapshot = await get(roomRef);
+        const roomData = snapshot.val();
+        
+        let currentDealerCards = [...roomData.dealerCards];
+        const currentDeck = [...roomData.deck];
+
+        // Dealer draws until 17 or higher
+        while (calculateScore(currentDealerCards) < 17) {
+          const card = currentDeck.pop();
+          if (!card) break;
+          currentDealerCards.push(card);
+        }
+
+        const dealerScore = calculateScore(currentDealerCards);
+        const players = Object.keys(roomData.players);
+        
+        // Prepare updates
+        const updates = {
+          dealerCards: currentDealerCards,
+          deck: currentDeck,
+          gameStarted: false,
+          currentTurn: null
+        };
+
+        // Determine winners and update coins
+        for (let player of players) {
+          const playerCards = roomData.players[player].cards;
+          const playerScore = calculateScore(playerCards);
+          
+          let result = "lose";
+          
+          if (playerScore <= 21) {
+            if (dealerScore > 21) {
+              result = "win"; // Dealer busts
+            } else if (playerScore > dealerScore) {
+              result = "win"; // Player beats dealer
+            } else if (playerScore === dealerScore) {
+              result = "push"; // Tie
+            }
+          }
+          
+          updates[`players/${player}/result`] = result;
+          
+          // Award coins to winners
+          if (result === "win") {
+            const userRef = ref(db, `users/${player}`);
+            const userSnapshot = await get(userRef);
+            if (userSnapshot.exists()) {
+              const userData = userSnapshot.val();
+              const currentCoins = userData.coins || 0;
+              await update(userRef, { coins: currentCoins + 5 });
+              
+              if (player === currentUsername) {
+                userCoins += 5;
+                updateCoinsDisplay();
+              }
+            }
+          }
+        }
+
+        await update(roomRef, updates);
+      } catch (error) {
+        console.error("Error in dealer play:", error);
+      }
+    }
+
+    function endGame(result) {
+      gameEnded = true;
+      updateCardDisplay();
+      
+      const winnerMessage = document.getElementById('winner-message');
+      const gameMessage = document.getElementById('game-message');
+      const playAgainButton = document.getElementById('play-again-button');
+      
+      document.getElementById('hit-button').disabled = true;
+      document.getElementById('stand-button').disabled = true;
+      playAgainButton.style.display = 'inline-block';
+      
+      if (result === 'player') {
+        winnerMessage.textContent = "You win!";
+        addCoins(5);
+      } else if (result === 'dealer') {
+        winnerMessage.textContent = "Dealer wins.";
+      } else if (result === 'bust') {
+        winnerMessage.textContent = "Bust! You went over 21.";
+      } else if (result === 'dealer_bust') {
+        winnerMessage.textContent = "Dealer busts! You win!";
+        addCoins(5);
+      } else if (result === 'push') {
+        winnerMessage.textContent = "Push - it's a tie!";
+      }
+    }
+
+    async function addCoins(amount) {
+      userCoins += amount;
+      updateCoinsDisplay();
+      
+      // Update Firebase
+      const userRef = ref(db, `users/${currentUsername}`);
+      await update(userRef, { coins: userCoins });
+    }
+
+    function updateCoinsDisplay() {
+      document.getElementById('coins-display').textContent = `Coins: ${userCoins}`;
+    }
+
+    function startNextRound() {
+      if (isSinglePlayer) {
+        resetGameState();
+        startSinglePlayerGame();
+      }
+    }
+
+    function resetGameState() {
+      playerCards = [];
+      dealerCards = [];
+      currentDeck = [];
+      gameStarted = false;
+      gameEnded = false;
+      
+      document.getElementById('hit-button').disabled = false;
+      document.getElementById('stand-button').disabled = false;
+      document.getElementById('play-again-button').style.display = 'none';
+      document.getElementById('winner-message').textContent = '';
+      document.getElementById('game-message').textContent = '';
+      document.getElementById('player-score').textContent = '';
+      document.getElementById('dealer-score').textContent = '';
+    }
+
+    async function startMultiplayerGame(roomData) {
+      try {
+        const deck = createDeck();
+        const players = Object.keys(roomData.players);
+        
+        // Deal initial cards
+        const initialState = {
+          gameStarted: true,
+          dealerCards: [deck.pop(), deck.pop()],
+          currentTurn: players[0],
+          deck: deck,
+          votesToStart: {}
+        };
+
+        // Deal cards to each player
+        for (let player of players) {
+          initialState[`players/${player}/cards`] = [deck.pop(), deck.pop()];
+          initialState[`players/${player}/ready`] = false;
+        }
+
+        await update(ref(db, `rooms/${currentRoom}`), initialState);
+      } catch (error) {
+        console.error("Error starting game:", error);
+      }
+    }
+
+    function handleRoomUpdate(snapshot) {
+      const roomData = snapshot.val();
+      if (!roomData) {
+        showMainMenu();
+        return;
+      }
+
+      // Update player list
+      const playerList = document.getElementById('player-list');
+      playerList.innerHTML = '<h3>Players in Room:</h3>';
+      
+      const players = Object.keys(roomData.players || {});
+      players.forEach(player => {
+        const playerItem = document.createElement('div');
+        playerItem.className = 'player-item';
+        const readyStatus = roomData.players[player].ready ? '✓ Ready' : 'Not Ready';
+        playerItem.innerHTML = `
+          <span>${player}${player === roomData.host ? ' (Host)' : ''}</span>
+          <span>${readyStatus}</span>
+        `;
+        playerList.appendChild(playerItem);
+      });
+
+      // Update host status
+      isHost = roomData.host === currentUsername;
+
+      // Update vote display and game controls based on game state
+      if (roomData.gameStarted) {
+        // Game in progress
+        gameStarted = true;
+        currentTurn = roomData.currentTurn;
+        playerCards = roomData.players[currentUsername]?.cards || [];
+        dealerCards = roomData.dealerCards || [];
+        gameEnded = false;
+        
+        // Update vote container
+        document.getElementById('vote-container').innerHTML = '';
+        
+        // Update card display
+        updateCardDisplay();
+        
+        // Show/hide controls based on turn
+        document.getElementById('hit-button').disabled = currentTurn !== currentUsername;
+        document.getElementById('stand-button').disabled = currentTurn !== currentUsername;
+        
+        // Show whose turn it is
+        if (currentTurn) {
+          document.getElementById('game-message').textContent = 
+            currentTurn === currentUsername ? "Your turn" : `Waiting for ${currentTurn}`;
+        }
+      } else {
+        // Game not started or ended
+        if (roomData.players[currentUsername]?.result) {
+          // Game ended, show results
+          gameEnded = true;
+          gameStarted = false;
+          
+          const playerResult = roomData.players[currentUsername].result;
+          const message = document.getElementById('winner-message');
+          
+          if (playerResult === "win") {
+            message.textContent = "You win! +5 coins";
+          } else if (playerResult === "push") {
+            message.textContent = "Push - it's a tie!";
+          } else {
+            message.textContent = "Dealer wins this round.";
+          }
+          
+          // Show dealer cards
+          dealerCards = roomData.dealerCards || [];
+          updateCardDisplay();
+          
+          // Show vote to replay
+          const replayContainer = document.getElementById('replay-vote-container');
+          const totalVotes = Object.keys(roomData.votesToReplay || {}).length;
+          const playerHasVoted = roomData.votesToReplay && currentUsername in roomData.votesToReplay;
+          
+          replayContainer.innerHTML = `
+            <div>Vote to play again: ${totalVotes}/${players.length}</div>
+            ${!playerHasVoted ? `<button onclick="voteToReplay()">Play Again</button>` : ''}
+          `;
+        } else {
+          // Game not started, show ready button
+          gameStarted = false;
+          gameEnded = false;
+          
+          const voteContainer = document.getElementById('vote-container');
+          const totalVotes = Object.keys(roomData.votesToStart || {}).length;
+          
+          const playerHasVoted = roomData.votesToStart && currentUsername in roomData.votesToStart;
+          hasVoted = playerHasVoted;
+          
+          voteContainer.innerHTML = `
+            <div>Players Ready: ${totalVotes}/${players.length}</div>
+            ${!playerHasVoted ? `<button onclick="voteToStart()">Ready</button>` : ''}
+          `;
+          
+          document.getElementById('winner-message').textContent = '';
+          document.getElementById('replay-vote-container').innerHTML = '';
+        }
+      }
+    }
+
+    async function voteToReplay() {
+      if (!currentRoom || hasVoted) return;
+      
+      try {
+        const roomRef = ref(db, `rooms/${currentRoom}`);
+        const snapshot = await get(roomRef);
+        const roomData = snapshot.val();
+        
+        if (roomData.gameStarted) return;
+        
+        await update(roomRef, {
+          [`votesToReplay/${currentUsername}`]: true,
+          [`players/${currentUsername}/ready`]: true
+        });
+        
+        hasVoted = true;
+        
+        // Check if all players voted
+        const totalPlayers = Object.keys(roomData.players).length;
+        const totalVotes = Object.keys(roomData.votesToReplay || {}).length + 1;
+        
+        if (totalVotes === totalPlayers && isHost) {
+          resetGameState();
+          startMultiplayerGame(roomData);
+        }
+      } catch (error) {
+        console.error("Error voting to replay:", error);
+      }
+    }
+
+    // Make functions available globally
+    window.showMainMenu = showMainMenu;
+    window.showGameMenu = showGameMenu;
+    window.showCreateRoom = showCreateRoom;
+    window.showJoinRoom = showJoinRoom;
+    window.showShop = showShop;
+    window.showLeaderboard = showLeaderboard;
+    window.showUsernameModal = showUsernameModal;
+    window.closeUsernameModal = closeUsernameModal;
+    window.changeUsername = changeUsername;
+    window.createRoom = createRoom;
+    window.joinRoom = joinRoom;
+    window.leaveGame = leaveGame;
+    window.voteToStart = voteToStart;
+    window.voteToReplay = voteToReplay;
+    window.hit = hit;
+    window.stand = stand;
+    window.startNextRound = startNextRound;
+    window.startSinglePlayerGame = startSinglePlayerGame;
+    window.buyTheme = buyTheme;
+    window.selectTheme = selectTheme;
+
+    // Initialize game
+    window.onload = function() {
+      initializeUser();
+      showMainMenu();
+    };
+  </script>
 </body>
 </html>
