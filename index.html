@@ -76,15 +76,30 @@
       border-radius: 8px;
     }
 
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .game-title {
+      margin: 0;
+      flex-grow: 1;
+      text-align: center;
+    }
+
     .back-button {
-      position: absolute;
-      top: 20px;
-      left: 20px;
       padding: 8px 15px;
       background-color: var(--accent-color);
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      margin-right: 20px;
+      color: black;
     }
 
     h1 { margin: 0 0 5px; }
@@ -110,6 +125,7 @@
       padding: 3px 10px;
       border-radius: 10px;
       margin: 5px 0;
+      margin-left: 20px;
     }
     .card {
       display: inline-block;
@@ -143,7 +159,15 @@
       flex-wrap: wrap;
     }
     input { padding: 8px; font-size: 14px; }
-    .game-area { display: flex; flex-direction: column; gap: 5px; }
+    .game-area { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
     .card-title { font-weight: bold; margin-top: 5px; }
     #player-info, #players-voting { font-size: 14px; margin: 5px 0; }
   </style>
@@ -166,8 +190,11 @@
 
   <!-- Theme Shop -->
   <div id="shop" class="shop-container" style="display: none;">
-    <button class="back-button" onclick="showMainMenu()">Back</button>
-    <h2>Theme Shop</h2>
+    <div class="game-header">
+      <button class="back-button" onclick="showMainMenu()">Back</button>
+      <h2 class="game-title">Theme Shop</h2>
+      <div style="width: 100px;"></div><!-- Spacer for alignment -->
+    </div>
     <div id="theme-list">
       <!-- Themes will be populated here -->
     </div>
@@ -175,8 +202,11 @@
 
   <!-- Leaderboard -->
   <div id="leaderboard" class="leaderboard-container" style="display: none;">
-    <button class="back-button" onclick="showMainMenu()">Back</button>
-    <h2>Leaderboard</h2>
+    <div class="game-header">
+      <button class="back-button" onclick="showMainMenu()">Back</button>
+      <h2 class="game-title">Leaderboard</h2>
+      <div style="width: 100px;"></div><!-- Spacer for alignment -->
+    </div>
     <div id="leaderboard-list">
       <!-- Leaderboard will be populated here -->
     </div>
@@ -184,10 +214,9 @@
 
   <!-- Game Area -->
   <div id="game-area" class="game-area" style="display: none;">
-    <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-      <h1>JackBlack</h1>
+    <div class="game-header">
+      <button class="back-button" onclick="showMainMenu()">Back to Menu</button>
+      <h1 class="game-title">JackBlack</h1>
       <div id="player-id-display">You are: waiting to join...</div>
     </div>
     
@@ -244,45 +273,6 @@
     let playerId = '';
     let roomId = "";
 
-    // Get user data from Firebase or initialize if new user
-    function initializeUserData() {
-      if (!currentUser) return;
-      
-      const userRef = db.ref(`users/${currentUser}`);
-      userRef.once('value', (snapshot) => {
-        const userData = snapshot.val();
-        if (!userData) {
-          // Initialize new user
-          userRef.set({
-            coins: 0,
-            theme: 'default',
-            ownedThemes: ['default']
-          });
-        }
-        // Load user data
-        loadUserData();
-      });
-    }
-
-    function loadUserData() {
-      if (!currentUser) return;
-      
-      const userRef = db.ref(`users/${currentUser}`);
-      userRef.on('value', (snapshot) => {
-        const userData = snapshot.val();
-        if (userData) {
-          applyTheme(userData.theme);
-          updateWelcomeMessage(userData.coins);
-          updateShop(userData.coins, userData.ownedThemes);
-        }
-      });
-    }
-
-    function updateWelcomeMessage(coins) {
-      document.getElementById('welcome-message').textContent = 
-        `Welcome, ${currentUser}! Coins: ${coins}`;
-    }
-
     // Available Themes
     const themes = {
       default: {
@@ -325,6 +315,44 @@
       updateLeaderboard();
     };
 
+    function initializeUserData() {
+      if (!currentUser) return;
+      
+      const userRef = db.ref(`users/${currentUser}`);
+      userRef.once('value', (snapshot) => {
+        const userData = snapshot.val();
+        if (!userData) {
+          // Initialize new user
+          userRef.set({
+            coins: 0,
+            theme: 'default',
+            ownedThemes: ['default']
+          });
+        }
+        // Load user data
+        loadUserData();
+      });
+    }
+
+    function loadUserData() {
+      if (!currentUser) return;
+      
+      const userRef = db.ref(`users/${currentUser}`);
+      userRef.on('value', (snapshot) => {
+        const userData = snapshot.val();
+        if (userData) {
+          applyTheme(userData.theme);
+          updateWelcomeMessage(userData.coins);
+          updateShop(userData.coins, userData.ownedThemes);
+        }
+      });
+    }
+
+    function updateWelcomeMessage(coins) {
+      document.getElementById('welcome-message').textContent = 
+        `Welcome, ${currentUser}! Coins: ${coins}`;
+    }
+
     function setUsername() {
       const input = document.getElementById('username-input');
       const username = input.value.trim();
@@ -361,7 +389,7 @@
       document.getElementById('game-area').style.display = 'flex';
       
       playerId = currentUser;
-      document.getElementById("player-id-display").textContent = `You are: ${playerId}`;
+      document.getElementById("player-id-display").textContent = `You: ${playerId}`;
     }
 
     function showShop() {
@@ -397,22 +425,24 @@
       if (!currentUser) return;
       
       const userRef = db.ref(`users/${currentUser}`);
-      userRef.once('value', (snapshot) => {
-        const userData = snapshot.val();
+      userRef.once('value', snapshot => {
+        const userData = snapshot.val() || { coins: 0, ownedThemes: ['default'] };
         const theme = themes[themeId];
         
         if (userData.ownedThemes.includes(themeId)) {
-          // Apply theme if already owned
           userRef.update({ theme: themeId });
+          applyTheme(themeId);
         } else if (userData.coins >= theme.price) {
-          // Buy new theme
           const newCoins = userData.coins - theme.price;
           const newOwnedThemes = [...userData.ownedThemes, themeId];
+          
           userRef.update({
             coins: newCoins,
             theme: themeId,
             ownedThemes: newOwnedThemes
           });
+          
+          applyTheme(themeId);
         }
       });
     }
@@ -442,7 +472,7 @@
           div.className = 'leaderboard-item';
           div.innerHTML = `
             <span>#${index + 1} ${entry.username}</span>
-            <span>Wins: ${entry.wins}</span>
+            <span>Wins: ${entry.wins || 0}</span>
           `;
           leaderboardList.appendChild(div);
         });
@@ -471,22 +501,270 @@
     // Game Functions
     function joinRoom() {
       roomId = document.getElementById('room-id').value.trim();
-      if (!roomId) return alert("Enter room ID!");
+      if (!roomId) return alert("Please enter a room ID!");
+      if (!currentUser) return alert("Please set a username first!");
 
-      const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-      playerRef.set({ joined: Date.now(), vote: false });
+      playerId = currentUser;
+      
+      const roomRef = db.ref(`rooms/${roomId}`);
+      const playerRef = roomRef.child(`players/${playerId}`);
+      
+      playerRef.set({
+        joined: Date.now(),
+        vote: false
+      });
+      
       playerRef.onDisconnect().remove();
-
-      document.getElementById('controls').style.display = "block";
+      
+      document.getElementById('controls').style.display = "none";
       document.getElementById('vote-button').style.display = "inline-block";
       document.getElementById('player-id-display').textContent = `You: ${playerId} (Room: ${roomId})`;
       
-      db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
-      db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
+      roomRef.child('game').on('value', updateGameState);
+      roomRef.child('players').on('value', updatePlayers);
     }
 
-    // ... [Rest of the game functions remain the same] ...
+    function updateGameState(snap) {
+      const game = snap.val();
+      if (!game) return;
 
+      const playerHand = game.playerHands?.[playerId] || [];
+      const dealerHand = game.dealerHand || [];
+      
+      updateCards(document.getElementById('player-cards'), playerHand);
+      updateCards(
+        document.getElementById('dealer-cards'),
+        !game.over && game.turn !== "dealer" 
+          ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "??", s: "?" }))]
+          : dealerHand
+      );
+      
+      document.getElementById('game-message').innerText = game.message || "";
+      
+      if (game.winner === playerId && !game.recordedWin) {
+        updateWinRecord();
+        game.recordedWin = true;
+        db.ref(`rooms/${roomId}/game`).update({ recordedWin: true });
+        const score = calcScore(game.playerHands[playerId]);
+        document.getElementById('winner-message').innerText = `🏆 YOU WON WITH ${score}! 🏆`;
+      } else if (game.winner && game.winner !== "dealer") {
+        const score = game.playerHands[game.winner] ? calcScore(game.playerHands[game.winner]) : "";
+        document.getElementById('winner-message').innerText = `🏆 ${game.winner} WON WITH ${score}! 🏆`;
+      } else {
+        document.getElementById('winner-message').innerText = game.winnerMessage || "";
+      }
+      
+      document.getElementById('controls').style.display = 
+        game.turn === playerId && !game.over ? "block" : "none";
+      
+      const turnIndicator = document.getElementById('turn-indicator');
+      if (game.over) turnIndicator.innerText = "Game Over";
+      else if (game.turn === "dealer") turnIndicator.innerText = "Dealer's Turn";
+      else if (game.turn) {
+        turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${game.turn}'s turn`;
+      }
+    }
+
+    function updatePlayers(snap) {
+      const players = snap.val() || {};
+      const playerIds = Object.keys(players);
+      
+      document.getElementById('player-info').innerText = "Players: " + 
+        playerIds.map(pid => `${pid === playerId ? "YOU" : pid} [${players[pid].vote ? "✓" : "✗"}]`).join(", ");
+      
+      const votesCount = Object.values(players).filter(p => p.vote).length;
+      document.getElementById('players-voting').innerText = 
+        `${votesCount}/${playerIds.length} voted to start.`;
+      
+      if (playerIds.length >= 1 && votesCount === playerIds.length) {
+        const sortedIds = [...playerIds].sort();
+        if (playerId === sortedIds[0]) startGame(playerIds);
+      }
+    }
+
+    function voteToStart() {
+      db.ref(`rooms/${roomId}/players/${playerId}`).update({ vote: true });
+      document.getElementById('vote-button').style.display = "none";
+    }
+
+    function startGame(playerIds) {
+      const suits = ['♠', '♣', '♦', '♥'];
+      const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+      let deck = [];
+      for (let s of suits) for (let v of values) deck.push({ v, s });
+      deck.sort(() => Math.random() - 0.5);
+
+      const shuffledIds = [...playerIds].sort(() => Math.random() - 0.5);
+      
+      const gameState = {
+        deck,
+        playerHands: {},
+        dealerHand: [deck.pop(), deck.pop()],
+        turn: shuffledIds[0],
+        message: "Game started!",
+        winnerMessage: "",
+        stood: {},
+        busted: {},
+        over: false,
+        playerOrder: shuffledIds
+      };
+
+      for (let pid of shuffledIds) {
+        gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+        
+        if (calcScore(gameState.playerHands[pid]) === 21) {
+          gameState.message = `${pid} has blackjack (21)!`;
+          gameState.winnerMessage = `${pid} WON WITH BLACKJACK!`;
+          gameState.winner = pid;
+          gameState.over = true;
+        }
+      }
+
+      db.ref(`rooms/${roomId}/game`).set(gameState);
+      document.getElementById('vote-button').style.display = "none";
+    }
+
+    function updateCards(container, cards) {
+      container.innerHTML = "";
+      cards.forEach(card => {
+        const cardEl = document.createElement("div");
+        cardEl.className = "card";
+        cardEl.innerText = `${card.v} ${card.s}`;
+        container.appendChild(cardEl);
+      });
+    }
+
+    function hit() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (game.turn !== playerId || game.over) return;
+        if (game.stood?.[playerId] || game.busted?.[playerId]) return;
+
+        const newCard = game.deck.pop();
+        game.playerHands[playerId].push(newCard);
+        
+        const score = calcScore(game.playerHands[playerId]);
+        
+        if (score > 21) {
+          game.busted = game.busted || {};
+          game.busted[playerId] = true;
+          game.message = `${playerId} BUSTED with ${score}!`;
+        } else if (score === 21) {
+          game.message = `${playerId} hits 21!`;
+          game.stood = game.stood || {};
+          game.stood[playerId] = true;
+        } else {
+          game.message = `${playerId} hits. Score: ${score}`;
+        }
+
+        nextTurn(game);
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
+
+    function stand() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (game.turn !== playerId || game.over) return;
+        
+        game.stood = game.stood || {};
+        game.stood[playerId] = true;
+        game.message = `${playerId} stands.`;
+        
+        nextTurn(game);
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
+
+    function nextTurn(game) {
+      if (allPlayersDone(game)) {
+        game.turn = "dealer";
+        game.message += " Dealer's turn!";
+        setTimeout(() => dealerPlay(), 1000);
+      } else {
+        const playerIds = game.playerOrder;
+        const currentIdx = playerIds.indexOf(game.turn);
+        
+        for (let i = 1; i <= playerIds.length; i++) {
+          const nextId = playerIds[(currentIdx + i) % playerIds.length];
+          if (!game.stood?.[nextId] && !game.busted?.[nextId] && 
+              calcScore(game.playerHands[nextId]) < 21) {
+            game.turn = nextId;
+            return;
+          }
+        }
+      }
+    }
+
+    function allPlayersDone(game) {
+      return Object.keys(game.playerHands).every(pid => 
+        game.stood?.[pid] || game.busted?.[pid] || calcScore(game.playerHands[pid]) === 21
+      );
+    }
+
+    function dealerPlay() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (!game || game.over || game.turn !== "dealer") return;
+
+        if (Object.keys(game.playerHands).every(pid => game.busted?.[pid])) {
+          game.winnerMessage = "Dealer wins - all players busted!";
+          game.over = true;
+          game.winner = "dealer";
+          db.ref(`rooms/${roomId}/game`).set(game);
+          return;
+        }
+
+        let dealerScore = calcScore(game.dealerHand);
+        while (dealerScore < 17) {
+          game.dealerHand.push(game.deck.pop());
+          dealerScore = calcScore(game.dealerHand);
+        }
+
+        const dealerBusted = dealerScore > 21;
+        game.over = true;
+        
+        let winner = dealerBusted ? null : "dealer";
+        let highestScore = dealerBusted ? 0 : dealerScore;
+        
+        for (const pid of game.playerOrder) {
+          if (game.busted?.[pid]) continue;
+          
+          const playerScore = calcScore(game.playerHands[pid]);
+          
+          if (playerScore <= 21 && (playerScore > highestScore || dealerBusted)) {
+            winner = pid;
+            highestScore = playerScore;
+          }
+        }
+        
+        if (winner === "dealer") {
+          game.winnerMessage = `Dealer wins with ${dealerScore}!`;
+        } else if (winner) {
+          game.winnerMessage = `${winner} WON WITH ${highestScore}!`;
+        } else {
+          game.winnerMessage = "Everyone busted! No winner.";
+        }
+        
+        game.message = dealerBusted 
+          ? `Dealer BUSTED with ${dealerScore}!` 
+          : `Dealer has ${dealerScore}.`;
+        game.winner = winner;
+        
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
+
+    function calcScore(hand) {
+      let score = 0, aces = 0;
+      hand.forEach(c => {
+        if (['J','Q','K'].includes(c.v)) score += 10;
+        else if (c.v === 'A') { score += 11; aces++; }
+        else score += parseInt(c.v);
+      });
+      while (score > 21 && aces--) score -= 10;
+      return score;
+    }
   </script>
 </body>
 </html>
