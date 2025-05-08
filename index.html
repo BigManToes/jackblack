@@ -6,7 +6,7 @@
     <title>JackBlack</title>
     <style>
         :root {
-            --bg-color: #1e1e1e;
+            --bg-color: black;
             --text-color: white;
             --accent-color: #ff00ff;
             --card-bg: #f0f0f0;
@@ -213,6 +213,32 @@
             justify-content: center;
             gap: 10px;
         }
+
+        h2 {
+            color: #808080;
+        }
+
+        .error-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(40, 40, 40, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            border: 1px solid var(--accent-color);
+        }
+
+        .error-popup button {
+            background-color: #00ffff;
+            color: black;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -220,7 +246,7 @@
         <h1 class="game-title">JackBlack</h1>
         <div id="player-info">
             <span class="username-display">Guest</span>
-            <span class="coin-display">Coins: 0</span>
+            <span class="coin-display">Coins: 100</span>
         </div>
     </div>
 
@@ -304,22 +330,35 @@
             measurementId: "G-08KQXFNB5X"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        let app;
+        let db;
+        try {
+            // Initialize Firebase
+            app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            alert("Failed to connect to server. Please refresh the page.");
+        }
 
         // Game state
         let currentPlayer = {
-            id: generatePlayerId(),
-            username: "Guest",
-            coins: 100,
+            id: localStorage.getItem('playerId') || generatePlayerId(),
+            username: localStorage.getItem('username') || "Guest",
+            coins: parseInt(localStorage.getItem('coins')) || 100,
             currentTheme: "default"
         };
+
+        // Save player ID to localStorage
+        localStorage.setItem('playerId', currentPlayer.id);
+        localStorage.setItem('username', currentPlayer.username);
+        localStorage.setItem('coins', currentPlayer.coins);
 
         let currentRoom = null;
         let currentGame = null;
         let themes = {
-            default: { name: "Default", price: 0, colors: { bg: "#1e1e1e", text: "white", accent: "#ff00ff" } },
+            default: { name: "Default", price: 0, colors: { bg: "black", text: "white", accent: "#ff00ff" } },
             neon: { name: "Neon", price: 50, colors: { bg: "#000000", text: "#00ff00", accent: "#ff00ff" } },
             ocean: { name: "Ocean", price: 75, colors: { bg: "#001f3f", text: "#7FDBFF", accent: "#01FF70" } },
             sunset: { name: "Sunset", price: 100, colors: { bg: "#2c1810", text: "#ffd700", accent: "#ff4500" } },
@@ -327,8 +366,8 @@
         };
 
         // Event Listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            initializePlayer();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializePlayer();
             showMainMenu();
 
             // Main menu buttons
@@ -373,6 +412,8 @@
                 }
                 showMainMenu();
             });
+
+            updatePlayerDisplay();
         });
 
         // Initialize player data
@@ -385,20 +426,33 @@
                     await set(playerRef, currentPlayer);
                     console.log("New player created:", currentPlayer.id);
                 } else {
-                    currentPlayer = snapshot.val();
-                    console.log("Existing player loaded:", currentPlayer.id);
+                    const savedPlayer = snapshot.val();
+                    currentPlayer = {
+                        ...currentPlayer,
+                        ...savedPlayer,
+                        coins: savedPlayer.coins || 100  // Ensure coins exist
+                    };
+                    console.log("Existing player loaded:", currentPlayer);
+                    localStorage.setItem('coins', currentPlayer.coins);
                     updatePlayerDisplay();
                 }
 
                 // Listen for player updates
                 onValue(playerRef, (snapshot) => {
                     if (snapshot.exists()) {
-                        currentPlayer = snapshot.val();
+                        const updatedPlayer = snapshot.val();
+                        currentPlayer = {
+                            ...currentPlayer,
+                            ...updatedPlayer,
+                            coins: updatedPlayer.coins || currentPlayer.coins
+                        };
+                        localStorage.setItem('coins', currentPlayer.coins);
                         updatePlayerDisplay();
                     }
                 });
             } catch (error) {
                 console.error("Player initialization error:", error);
+                alert("Failed to initialize player data. Please refresh the page.");
             }
         }
 
@@ -434,11 +488,13 @@
                 }
 
                 currentPlayer.username = username;
+                localStorage.setItem('username', username);
                 await update(ref(db, `players/${currentPlayer.id}`), { username: username });
                 closeUsernameModal();
                 updatePlayerDisplay();
             } catch (error) {
                 console.error("Save username error:", error);
+                alert("Failed to save username. Please try again.");
             }
         }
 
@@ -472,13 +528,15 @@
                     players: [currentPlayer.id],
                     playerNames: {[currentPlayer.id]: currentPlayer.username},
                     status: 'waiting',
-                    game: null
+                    game: null,
+                    timestamp: Date.now()
                 };
 
                 await set(ref(db, `rooms/${roomId}`), room);
+                console.log("Room created successfully");
                 alert(`Room created! Your room ID is: ${roomId}`);
                 document.getElementById('room-id-input').value = roomId;
-                joinRoom(roomId);
+                await joinRoom(roomId);
             } catch (error) {
                 console.error("Create room error:", error);
                 alert("Failed to create room. Please try again.");
@@ -508,6 +566,9 @@
                         if (snapshot.exists()) {
                             currentRoom = snapshot.val();
                             updateRoomDisplay();
+                        } else {
+                            alert("Room was closed");
+                            showMainMenu();
                         }
                     });
 
@@ -706,8 +767,9 @@
         async function updatePlayerCoins(amount) {
             try {
                 const newCoins = currentPlayer.coins + amount;
-                await update(ref(db, `players/${currentPlayer.id}`), { coins: newCoins });
                 currentPlayer.coins = newCoins;
+                localStorage.setItem('coins', newCoins);
+                await update(ref(db, `players/${currentPlayer.id}`), { coins: newCoins });
                 updatePlayerDisplay();
             } catch (error) {
                 console.error("Update coins error:", error);
