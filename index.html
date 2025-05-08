@@ -159,6 +159,11 @@
             color: var(--accent-color);
         }
 
+        .cards-container {
+            margin: 30px 0;
+            min-height: 150px;
+        }
+
         .card {
             display: inline-block;
             margin: 10px;
@@ -171,10 +176,16 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.3);
             min-width: 50px;
             min-height: 80px;
+            vertical-align: middle;
+        }
+
+        .red-card {
+            color: red;
         }
 
         .hidden-card {
             background-image: linear-gradient(45deg, #ff0000 25%, #cc0000 25%, #cc0000 50%, #ff0000 50%, #ff0000 75%, #cc0000 75%, #cc0000 100%);
+            background-size: 56.57px 56.57px;
         }
 
         #theme-list {
@@ -262,6 +273,19 @@
             color: var(--accent-color);
             margin-bottom: 30px;
         }
+
+        #game-message {
+            font-size: 22px;
+            color: var(--accent-color);
+            margin: 20px 0;
+            min-height: 30px;
+        }
+
+        .score-display {
+            font-size: 18px;
+            margin-top: 5px;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -305,13 +329,26 @@
         <div class="game-container" id="game-container">
             <button class="back-to-menu" onclick="leaveGame()">Leave Game</button>
             <h2>Game Room: <span id="room-id-display"></span></h2>
-            <div id="dealer-cards"></div>
-            <div id="player-cards"></div>
+            
+            <div id="dealer-cards" class="cards-container">
+                <h3>Dealer's Cards</h3>
+                <div class="cards-display"></div>
+                <div class="score-display"></div>
+            </div>
+            
+            <div id="player-cards" class="cards-container">
+                <h3>Your Cards</h3>
+                <div class="cards-display"></div>
+                <div class="score-display"></div>
+            </div>
+            
+            <div id="game-message"></div>
+            
             <div id="game-controls">
                 <button class="menu-button" onclick="hit()">Hit</button>
                 <button class="menu-button" onclick="stand()">Stand</button>
             </div>
-            <div id="game-message"></div>
+            
             <div class="vote-container" id="replay-vote-container"></div>
         </div>
 
@@ -368,6 +405,7 @@
         let hasVoted = false;
         let ownedThemes = ["default"];
         let currentTheme = "default";
+        let isHost = false;
 
         // Theme definitions
         const themes = {
@@ -420,6 +458,7 @@
 
         // Initialize user data
         async function initializeUser() {
+            console.log("Initializing user...");
             const storedUsername = localStorage.getItem('username');
             if (storedUsername) {
                 currentUsername = storedUsername;
@@ -436,23 +475,28 @@
             }
 
             // Load user data from Firebase
-            const userRef = ref(db, `users/${currentUsername}`);
-            const snapshot = await get(userRef);
-            if (snapshot.exists()) {
-                const userData = snapshot.val();
-                userCoins = userData.coins || 0;
-                ownedThemes = userData.ownedThemes || ["default"];
-                currentTheme = userData.currentTheme || "default";
-            } else {
-                // Create new user
-                await set(userRef, {
-                    coins: 0,
-                    ownedThemes: ["default"],
-                    currentTheme: "default"
-                });
+            try {
+                const userRef = ref(db, `users/${currentUsername}`);
+                const snapshot = await get(userRef);
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    userCoins = userData.coins || 0;
+                    ownedThemes = userData.ownedThemes || ["default"];
+                    currentTheme = userData.currentTheme || "default";
+                } else {
+                    // Create new user
+                    await set(userRef, {
+                        coins: 0,
+                        ownedThemes: ["default"],
+                        currentTheme: "default"
+                    });
+                }
+                updateCoinsDisplay();
+                applyTheme(currentTheme);
+                console.log("User initialized successfully:", currentUsername, userCoins, ownedThemes);
+            } catch (error) {
+                console.error("Error initializing user:", error);
             }
-            updateCoinsDisplay();
-            applyTheme(currentTheme);
         }
 
         // Theme functions
@@ -481,6 +525,9 @@
 
                 updateCoinsDisplay();
                 showShop();
+                alert(`You purchased the ${theme.name} theme!`);
+            } else {
+                alert("Not enough coins to purchase this theme!");
             }
         }
 
@@ -494,6 +541,8 @@
                 await update(userRef, {
                     currentTheme: themeName
                 });
+                
+                alert(`${themes[themeName].name} theme selected!`);
             }
         }
 
@@ -503,83 +552,120 @@
         }
 
         async function createRoom() {
-            const roomCode = generateRoomCode();
-            currentRoom = roomCode;
-            
-            const roomRef = ref(db, `rooms/${roomCode}`);
-            await set(roomRef, {
-                host: currentUsername,
-                players: {
-                    [currentUsername]: {
-                        ready: false,
-                        cards: [],
-                        score: 0
-                    }
-                },
-                gameStarted: false,
-                dealerCards: [],
-                currentTurn: null,
-                votesToStart: {},
-                deck: []
-            });
-
-            document.getElementById('room-code').value = roomCode;
-            document.getElementById('room-id-display').textContent = roomCode;
-            
-            // Listen for room updates
-            onValue(roomRef, handleRoomUpdate);
-            showGameRoom();
-        }
-
-        async function joinRoom() {
-            const roomCode = document.getElementById('join-room-code').value.toUpperCase();
-            const roomRef = ref(db, `rooms/${roomCode}`);
-            const snapshot = await get(roomRef);
-
-            if (snapshot.exists()) {
-                const roomData = snapshot.val();
-                if (Object.keys(roomData.players || {}).length >= 4) {
-                    alert('Room is full!');
-                    return;
-                }
-
+            try {
+                const roomCode = generateRoomCode();
                 currentRoom = roomCode;
-                await update(roomRef, {
-                    [`players/${currentUsername}`]: {
-                        ready: false,
-                        cards: [],
-                        score: 0
-                    }
+                isHost = true;
+                
+                const roomRef = ref(db, `rooms/${roomCode}`);
+                await set(roomRef, {
+                    host: currentUsername,
+                    players: {
+                        [currentUsername]: {
+                            ready: false,
+                            cards: [],
+                            score: 0
+                        }
+                    },
+                    gameStarted: false,
+                    dealerCards: [],
+                    currentTurn: null,
+                    votesToStart: {}
                 });
 
+                document.getElementById('room-code').value = roomCode;
                 document.getElementById('room-id-display').textContent = roomCode;
-                showGameRoom();
                 
                 // Listen for room updates
                 onValue(roomRef, handleRoomUpdate);
-            } else {
-                alert('Room not found!');
+                showGameRoom();
+                console.log("Room created:", roomCode);
+            } catch (error) {
+                console.error("Error creating room:", error);
+                alert("Failed to create room. Please try again.");
+            }
+        }
+
+        async function joinRoom() {
+            try {
+                const roomCode = document.getElementById('join-room-code').value.toUpperCase();
+                if (!roomCode) {
+                    alert("Please enter a room code");
+                    return;
+                }
+                
+                const roomRef = ref(db, `rooms/${roomCode}`);
+                const snapshot = await get(roomRef);
+
+                if (snapshot.exists()) {
+                    const roomData = snapshot.val();
+                    if (roomData.gameStarted) {
+                        alert("Game already in progress. Please try another room.");
+                        return;
+                    }
+                    
+                    if (Object.keys(roomData.players || {}).length >= 4) {
+                        alert('Room is full! (Maximum 4 players)');
+                        return;
+                    }
+
+                    currentRoom = roomCode;
+                    isHost = roomData.host === currentUsername;
+                    hasVoted = false;
+                    
+                    await update(roomRef, {
+                        [`players/${currentUsername}`]: {
+                            ready: false,
+                            cards: [],
+                            score: 0
+                        }
+                    });
+
+                    document.getElementById('room-id-display').textContent = roomCode;
+                    showGameRoom();
+                    
+                    // Listen for room updates
+                    onValue(roomRef, handleRoomUpdate);
+                    console.log("Joined room:", roomCode);
+                } else {
+                    alert('Room not found!');
+                }
+            } catch (error) {
+                console.error("Error joining room:", error);
+                alert("Failed to join room. Please check the room code and try again.");
             }
         }
 
         async function leaveGame() {
             if (currentRoom) {
-                const roomRef = ref(db, `rooms/${currentRoom}`);
-                const snapshot = await get(roomRef);
-                
-                if (snapshot.exists()) {
-                    const roomData = snapshot.val();
+                try {
+                    const roomRef = ref(db, `rooms/${currentRoom}`);
+                    const snapshot = await get(roomRef);
                     
-                    // Remove player from room
-                    await remove(ref(db, `rooms/${currentRoom}/players/${currentUsername}`));
-                    
-                    // If room is empty, delete it
-                    if (Object.keys(roomData.players || {}).length <= 1) {
-                        await remove(roomRef);
+                    if (snapshot.exists()) {
+                        const roomData = snapshot.val();
+                        
+                        // Remove player from room
+                        await remove(ref(db, `rooms/${currentRoom}/players/${currentUsername}`));
+                        
+                        // If room empty or player is host, delete the room
+                        const remainingPlayers = Object.keys(roomData.players).filter(p => p !== currentUsername);
+                        if (remainingPlayers.length === 0 || roomData.host === currentUsername) {
+                            await remove(roomRef);
+                            console.log("Room deleted:", currentRoom);
+                        } else if (roomData.host === currentUsername && remainingPlayers.length > 0) {
+                            // Transfer host if current host is leaving
+                            await update(roomRef, {
+                                host: remainingPlayers[0]
+                            });
+                        }
                     }
+                } catch (error) {
+                    console.error("Error leaving room:", error);
                 }
                 
                 currentRoom = null;
+                isHost = false;
                 hasVoted = false;
                 gameStarted = false;
                 showMainMenu();
@@ -635,140 +721,232 @@
         }
 
         async function voteToStart() {
-            if (currentRoom && !hasVoted) {
-                const roomRef = ref(db, `rooms/${currentRoom}`);
-                const snapshot = await get(roomRef);
-                const roomData = snapshot.val();
-                
-                if (!roomData.gameStarted) {
+            if (currentRoom && !gameStarted && !hasVoted) {
+                try {
+                    const roomRef = ref(db, `rooms/${currentRoom}`);
+                    const snapshot = await get(roomRef);
+                    const roomData = snapshot.val();
+                    
                     await update(roomRef, {
                         [`votesToStart/${currentUsername}`]: true,
                         [`players/${currentUsername}/ready`]: true
                     });
 
                     hasVoted = true;
+                    console.log("Voted to start");
 
-                    // Check if all players have voted
+                    // If all players voted and current player is host, start game
                     const totalPlayers = Object.keys(roomData.players).length;
                     const totalVotes = Object.keys(roomData.votesToStart || {}).length + 1;
-
-                    // Start game if all players voted
-                    if (totalVotes === totalPlayers && roomData.host === currentUsername) {
+                    
+                    if (totalVotes === totalPlayers && currentUsername === roomData.host) {
+                        console.log("All players ready, starting game...");
                         startGame();
                     }
+                } catch (error) {
+                    console.error("Error voting to start:", error);
+                }
+            }
+        }
+
+        async function voteToReplay() {
+            if (currentRoom && !gameStarted && !hasVoted) {
+                try {
+                    const roomRef = ref(db, `rooms/${currentRoom}`);
+                    const snapshot = await get(roomRef);
+                    const roomData = snapshot.val();
+                    
+                    await update(roomRef, {
+                        [`votesToReplay/${currentUsername}`]: true,
+                        [`players/${currentUsername}/ready`]: true
+                    });
+
+                    hasVoted = true;
+                    
+                    // Check if all players have voted to replay
+                    const totalPlayers = Object.keys(roomData.players).length;
+                    const totalVotes = Object.keys(roomData.votesToReplay || {}).length + 1;
+                    
+                    if (totalVotes === totalPlayers && currentUsername === roomData.host) {
+                        // Reset and start new game
+                        startGame();
+                    }
+                } catch (error) {
+                    console.error("Error voting to replay:", error);
                 }
             }
         }
 
         async function startGame() {
-            const deck = createDeck();
-            const roomRef = ref(db, `rooms/${currentRoom}`);
-            const snapshot = await get(roomRef);
-            const roomData = snapshot.val();
-            const players = Object.keys(roomData.players);
+            try {
+                const deck = createDeck();
+                const roomRef = ref(db, `rooms/${currentRoom}`);
+                const snapshot = await get(roomRef);
+                const roomData = snapshot.val();
+                const players = Object.keys(roomData.players);
+                
+                // Deal initial cards
+                const initialState = {
+                    gameStarted: true,
+                    dealerCards: [deck.pop(), deck.pop()],
+                    currentTurn: players[0],
+                    deck: deck,
+                    votesToStart: {},
+                    votesToReplay: {}
+                };
 
-            const initialState = {
-                gameStarted: true,
-                dealerCards: [deck.pop(), deck.pop()],
-                currentTurn: players[0],
-                deck: deck,
-                votesToStart: {}
-            };
+                // Deal cards to each player
+                for (let player of players) {
+                    initialState[`players/${player}/cards`] = [deck.pop(), deck.pop()];
+                    initialState[`players/${player}/ready`] = false;
+                }
 
-            // Deal cards to players
-            for (let player of players) {
-                initialState[`players/${player}/cards`] = [deck.pop(), deck.pop()];
+                await update(roomRef, initialState);
+                console.log("Game started with deck:", deck.length, "cards");
+            } catch (error) {
+                console.error("Error starting game:", error);
             }
-
-            await update(roomRef, initialState);
         }
 
         async function hit() {
             if (currentRoom && gameStarted && currentTurn === currentUsername) {
-                const roomRef = ref(db, `rooms/${currentRoom}`);
-                const snapshot = await get(roomRef);
-                const roomData = snapshot.val();
-                
-                const deck = roomData.deck;
-                const newCard = deck.pop();
-                const updatedCards = [...playerCards, newCard];
-                const score = calculateScore(updatedCards);
+                try {
+                    const roomRef = ref(db, `rooms/${currentRoom}`);
+                    const snapshot = await get(roomRef);
+                    const roomData = snapshot.val();
+                    
+                    // Get deck and draw a card
+                    const deck = roomData.deck;
+                    const newCard = deck.pop();
+                    if (!newCard) {
+                        console.error("Deck is empty!");
+                        return;
+                    }
+                    
+                    // Add card to player's hand
+                    const updatedCards = [...playerCards, newCard];
+                    const score = calculateScore(updatedCards);
+                    
+                    const updates = {
+                        [`players/${currentUsername}/cards`]: updatedCards,
+                        deck: deck
+                    };
 
-                const updates = {
-                    [`players/${currentUsername}/cards`]: updatedCards,
-                    deck: deck
-                };
+                    // If bust, move to next player
+                    if (score > 21) {
+                        document.getElementById('game-message').textContent = "Bust! You went over 21.";
+                        
+                        const players = Object.keys(roomData.players);
+                        const currentIndex = players.indexOf(currentUsername);
+                        const nextPlayer = players[(currentIndex + 1) % players.length];
+                        updates.currentTurn = nextPlayer;
+                    }
 
-                if (score > 21) {
-                    // Move to next player
-                    const players = Object.keys(roomData.players);
-                    const currentIndex = players.indexOf(currentUsername);
-                    const nextPlayer = players[(currentIndex + 1) % players.length];
-                    updates.currentTurn = nextPlayer;
+                    await update(roomRef, updates);
+                } catch (error) {
+                    console.error("Error hitting:", error);
                 }
-
-                await update(roomRef, updates);
             }
         }
 
         async function stand() {
             if (currentRoom && gameStarted && currentTurn === currentUsername) {
-                const roomRef = ref(db, `rooms/${currentRoom}`);
-                const snapshot = await get(roomRef);
-                const roomData = snapshot.val();
-                
-                const players = Object.keys(roomData.players);
-                const currentIndex = players.indexOf(currentUsername);
-                const nextPlayer = players[(currentIndex + 1) % players.length];
+                try {
+                    const roomRef = ref(db, `rooms/${currentRoom}`);
+                    const snapshot = await get(roomRef);
+                    const roomData = snapshot.val();
+                    
+                    const players = Object.keys(roomData.players);
+                    const currentIndex = players.indexOf(currentUsername);
+                    const nextPlayer = players[(currentIndex + 1) % players.length];
 
-                if (nextPlayer === players[0]) {
-                    // All players done, dealer's turn
-                    dealerPlay();
-                } else {
-                    await update(roomRef, {
+                    const updates = {
                         currentTurn: nextPlayer
-                    });
+                    };
+
+                    // If we've gone through all players, it's dealer's turn
+                    if (nextPlayer === players[0] && isHost) {
+                        await update(roomRef, updates);
+                        setTimeout(() => dealerPlay(), 1000);
+                    } else {
+                        await update(roomRef, updates);
+                    }
+                } catch (error) {
+                    console.error("Error standing:", error);
                 }
             }
         }
 
         async function dealerPlay() {
-            const roomRef = ref(db, `rooms/${currentRoom}`);
-            const snapshot = await get(roomRef);
-            const roomData = snapshot.val();
-            
-            let dealerCards = roomData.dealerCards;
-            const deck = roomData.deck;
-
-            while (calculateScore(dealerCards) < 17) {
-                dealerCards.push(deck.pop());
-            }
-
-            const dealerScore = calculateScore(dealerCards);
-            const players = Object.keys(roomData.players);
-            const updates = {
-                dealerCards: dealerCards,
-                deck: deck,
-                gameStarted: false
-            };
-
-            // Determine winners and update coins
-            for (let player of players) {
-                const playerCards = roomData.players[player].cards;
-                const playerScore = calculateScore(playerCards);
+            try {
+                if (!isHost) return;
                 
-                if (playerScore <= 21 && (dealerScore > 21 || playerScore > dealerScore)) {
-                    // Player wins
-                    if (player === currentUsername) {
-                        userCoins += 5;
-                        const userRef = ref(db, `users/${currentUsername}`);
-                        await update(userRef, { coins: userCoins });
-                        updateCoinsDisplay();
+                const roomRef = ref(db, `rooms/${currentRoom}`);
+                const snapshot = await get(roomRef);
+                const roomData = snapshot.val();
+                
+                let currentDealerCards = [...roomData.dealerCards];
+                const currentDeck = [...roomData.deck];
+
+                // Dealer draws until 17 or higher
+                while (calculateScore(currentDealerCards) < 17) {
+                    const card = currentDeck.pop();
+                    if (!card) break;
+                    currentDealerCards.push(card);
+                }
+
+                const dealerScore = calculateScore(currentDealerCards);
+                const players = Object.keys(roomData.players);
+                
+                // Prepare updates
+                const updates = {
+                    dealerCards: currentDealerCards,
+                    deck: currentDeck,
+                    gameStarted: false,
+                    currentTurn: null
+                };
+
+                // Determine winners and update coins
+                for (let player of players) {
+                    const playerCards = roomData.players[player].cards;
+                    const playerScore = calculateScore(playerCards);
+                    
+                    let result = "lose";
+                    
+                    if (playerScore <= 21) {
+                        if (dealerScore > 21) {
+                            result = "win"; // Dealer busts
+                        } else if (playerScore > dealerScore) {
+                            result = "win"; // Player beats dealer
+                        } else if (playerScore === dealerScore) {
+                            result = "push"; // Tie
+                        }
+                    }
+                    
+                    updates[`players/${player}/result`] = result;
+                    
+                    // Award coins to winners
+                    if (result === "win") {
+                        const userRef = ref(db, `users/${player}`);
+                        const userSnapshot = await get(userRef);
+                        if (userSnapshot.exists()) {
+                            const userData = userSnapshot.val();
+                            const currentCoins = userData.coins || 0;
+                            await update(userRef, { coins: currentCoins + 5 });
+                            
+                            if (player === currentUsername) {
+                                userCoins += 5;
+                                updateCoinsDisplay();
+                            }
+                        }
                     }
                 }
-            }
 
-            await update(roomRef, updates);
+                await update(roomRef, updates);
+                console.log("Dealer play completed");
+            } catch (error) {
+                console.error("Error in dealer play:", error);
+            }
         }
 
         // UI functions
@@ -808,11 +986,16 @@
             for (const [themeName, theme] of Object.entries(themes)) {
                 const themeItem = document.createElement('div');
                 themeItem.className = 'theme-item';
+                
+                // Determine if theme is owned
+                const isOwned = ownedThemes.includes(themeName);
+                const isSelected = currentTheme === themeName;
+                
                 themeItem.innerHTML = `
                     <span>${theme.name}</span>
                     <div>
-                        ${ownedThemes.includes(themeName) 
-                            ? `<button class="menu-button" onclick="selectTheme('${themeName}')">Select</button>`
+                        ${isOwned 
+                            ? `<button class="menu-button" onclick="selectTheme('${themeName}')" ${isSelected ? 'disabled' : ''}>${isSelected ? 'Selected' : 'Select'}</button>`
                             : `<button class="menu-button" onclick="buyTheme('${themeName}')">${theme.price} Coins</button>`
                         }
                     </div>
@@ -827,23 +1010,25 @@
             
             const leaderboardRef = ref(db, 'users');
             onValue(leaderboardRef, (snapshot) => {
-                const users = snapshot.val();
-                const leaderboardList = document.getElementById('leaderboard-list');
-                leaderboardList.innerHTML = '';
-                
-                const sortedUsers = Object.entries(users)
-                    .sort(([,a], [,b]) => (b.coins || 0) - (a.coins || 0))
-                    .slice(0, 10);
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    const leaderboardList = document.getElementById('leaderboard-list');
+                    leaderboardList.innerHTML = '';
+                    
+                    const sortedUsers = Object.entries(users)
+                        .sort(([,a], [,b]) => (b.coins || 0) - (a.coins || 0))
+                        .slice(0, 10);
 
-                sortedUsers.forEach(([username, data], index) => {
-                    const item = document.createElement('div');
-                    item.className = 'leaderboard-item';
-                    item.innerHTML = `
-                        <span>#${index + 1} ${username}</span>
-                        <span>${data.coins || 0} Coins</span>
-                    `;
-                    leaderboardList.appendChild(item);
-                });
+                    sortedUsers.forEach(([username, data], index) => {
+                        const item = document.createElement('div');
+                        item.className = 'leaderboard-item';
+                        item.innerHTML = `
+                            <span>#${index + 1} ${username}</span>
+                            <span>${data.coins || 0} Coins</span>
+                        `;
+                        leaderboardList.appendChild(item);
+                    });
+                }
             });
         }
 
@@ -858,31 +1043,56 @@
         async function changeUsername() {
             const newUsername = document.getElementById('username-input').value.trim();
             if (newUsername && newUsername !== currentUsername) {
-                // Check if username is taken
-                const userRef = ref(db, `users/${newUsername}`);
-                const snapshot = await get(userRef);
-                
-                if (snapshot.exists()) {
-                    alert('Username already taken!');
-                    return;
-                }
+                try {
+                    // Check if username is taken
+                    const userRef = ref(db, `users/${newUsername}`);
+                    const snapshot = await get(userRef);
+                    
+                    if (snapshot.exists()) {
+                        alert('Username already taken!');
+                        return;
+                    }
 
-                // Transfer user data to new username
-                const oldUserRef = ref(db, `users/${currentUsername}`);
-                const oldUserData = (await get(oldUserRef)).val();
-                
-                await set(userRef, oldUserData);
-                await remove(oldUserRef);
-                
-                currentUsername = newUsername;
-                localStorage.setItem('username', newUsername);
-                document.getElementById('username-display').textContent = newUsername;
-                closeUsernameModal();
+                    // Transfer user data to new username
+                    const oldUserRef = ref(db, `users/${currentUsername}`);
+                    const oldUserSnapshot = await get(oldUserRef);
+                    
+                    if (oldUserSnapshot.exists()) {
+                        const oldUserData = oldUserSnapshot.val();
+                        await set(userRef, oldUserData);
+                        await remove(oldUserRef);
+                    } else {
+                        await set(userRef, {
+                            coins: userCoins,
+                            ownedThemes: ownedThemes,
+                            currentTheme: currentTheme
+                        });
+                    }
+                    
+                    currentUsername = newUsername;
+                    localStorage.setItem('username', newUsername);
+                    document.getElementById('username-display').textContent = newUsername;
+                    
+                    // If in a room, update the player name
+                    if (currentRoom) {
+                        alert("Please leave and rejoin the room with your new username.");
+                        leaveGame();
+                    }
+                    
+                    closeUsernameModal();
+                } catch (error) {
+                    console.error("Error changing username:", error);
+                    alert("Failed to change username. Please try again.");
+                }
             }
         }
 
         function updateCoinsDisplay() {
             document.getElementById('coins-display').textContent = `Coins: ${userCoins}`;
+        }
+
+        function getCardColorClass(suit) {
+            return ['♥', '♦'].includes(suit) ? 'red-card' : '';
         }
 
         function handleRoomUpdate(snapshot) {
@@ -908,48 +1118,128 @@
                 playerList.appendChild(playerDiv);
             });
 
-            // Update vote display
-            const voteContainer = document.getElementById('vote-container');
+            // Update host status
+            isHost = roomData.host === currentUsername;
+
+            // Update vote display and game controls based on game state
             if (!roomData.gameStarted) {
+                // Game not started - show ready button
+                const voteContainer = document.getElementById('vote-container');
                 const totalVotes = Object.keys(roomData.votesToStart || {}).length;
+                
+                const playerHasVoted = roomData.votesToStart && currentUsername in roomData.votesToStart;
+                hasVoted = playerHasVoted;
+                
                 voteContainer.innerHTML = `
                     <div class="vote-status">Players Ready: ${totalVotes}/${players.length}</div>
-                    ${!hasVoted ? `<button class="menu-button" onclick="voteToStart()">Ready</button>` : ''}
+                    ${!playerHasVoted ? `<button class="menu-button" onclick="voteToStart()">Ready</button>` : ''}
                 `;
+                
+                // Check for game results and show replay option
+                if (roomData.players[currentUsername]?.result) {
+                    const playerResult = roomData.players[currentUsername].result;
+                    const gameMessage = document.getElementById('game-message');
+                    
+                    if (playerResult === "win") {
+                        gameMessage.textContent = "You win! +5 coins";
+                    } else if (playerResult === "push") {
+                        gameMessage.textContent = "Push - it's a tie!";
+                    } else {
+                        gameMessage.textContent = "Dealer wins this round.";
+                    }
+                    
+                    // Show replay vote option
+                    const replayContainer = document.getElementById('replay-vote-container');
+                    const totalReplayVotes = Object.keys(roomData.votesToReplay || {}).length;
+                    const playerHasVotedReplay = roomData.votesToReplay && currentUsername in roomData.votesToReplay;
+                    
+                    replayContainer.innerHTML = `
+                        <div class="vote-status">Vote to play again: ${totalReplayVotes}/${players.length}</div>
+                        ${!playerHasVotedReplay ? `<button class="menu-button" onclick="voteToReplay()">Play Again</button>` : ''}
+                    `;
+                }
             } else {
-                voteContainer.innerHTML = '';
-            }
-
-            // Update game state
-            if (roomData.gameStarted) {
+                // Game in progress
+                document.getElementById('vote-container').innerHTML = '';
+                document.getElementById('replay-vote-container').innerHTML = '';
+                document.getElementById('game-message').textContent = '';
+                
+                // Update game state
                 gameStarted = true;
                 currentTurn = roomData.currentTurn;
-                playerCards = roomData.players[currentUsername].cards;
-                dealerCards = roomData.dealerCards;
+                playerCards = roomData.players[currentUsername]?.cards || [];
+                dealerCards = roomData.dealerCards || [];
 
-                // Update game display
-                const dealerCardsDiv = document.getElementById('dealer-cards');
-                const playerCardsDiv = document.getElementById('player-cards');
+                // Update card displays
+                updateCardDisplay(playerCards, dealerCards, roomData.gameStarted);
                 
-                dealerCardsDiv.innerHTML = `
-                    <h3>Dealer's Cards</h3>
-                    ${dealerCards.map((card, index) => `
-                        <div class="card ${index === 0 ? 'hidden-card' : ''}">${
-                            index === 0 ? '' : `${card.value}${card.suit}`
-                        }</div>
-                    `).join('')}
-                `;
-
-                playerCardsDiv.innerHTML = `
-                    <h3>Your Cards</h3>
-                    ${playerCards.map(card => `
-                        <div class="card">${card.value}${card.suit}</div>
-                    `).join('')}
-                `;
-
                 // Show/hide controls based on turn
                 const controls = document.getElementById('game-controls');
                 controls.style.display = currentTurn === currentUsername ? 'flex' : 'none';
+                
+                // Show whose turn it is
+                if (currentTurn) {
+                    document.getElementById('game-message').textContent = 
+                        currentTurn === currentUsername ? "Your turn" : `Waiting for ${currentTurn}`;
+                }
+            }
+        }
+
+        function updateCardDisplay(playerCards, dealerCards, gameInProgress) {
+            // Update dealer cards
+            const dealerCardsDiv = document.querySelector('#dealer-cards .cards-display');
+            const dealerScoreDiv = document.querySelector('#dealer-cards .score-display');
+            
+            dealerCardsDiv.innerHTML = '';
+            
+            // First card is hidden during game
+            dealerCards.forEach((card, index) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card ${gameInProgress && index === 0 ? 'hidden-card' : getCardColorClass(card.suit)}`;
+                
+                if (gameInProgress && index === 0) {
+                    cardDiv.innerHTML = '';
+                } else {
+                    cardDiv.innerHTML = `${card.value}${card.suit}`;
+                }
+                
+                dealerCardsDiv.appendChild(cardDiv);
+            });
+            
+            // Only show score when game is over
+            if (!gameInProgress && dealerCards.length > 0) {
+                dealerScoreDiv.textContent = `Score: ${calculateScore(dealerCards)}`;
+            } else {
+                dealerScoreDiv.textContent = '';
+            }
+
+                        // Update player cards
+            const playerCardsDiv = document.querySelector('#player-cards .cards-display');
+            const playerScoreDiv = document.querySelector('#player-cards .score-display');
+            
+            playerCardsDiv.innerHTML = '';
+            
+            // Show all player cards
+            playerCards.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card ${getCardColorClass(card.suit)}`;
+                cardDiv.innerHTML = `${card.value}${card.suit}`;
+                playerCardsDiv.appendChild(cardDiv);
+            });
+            
+            // Always show player score
+            if (playerCards.length > 0) {
+                const score = calculateScore(playerCards);
+                playerScoreDiv.textContent = `Score: ${score}`;
+                
+                // Add visual indication if bust
+                if (score > 21) {
+                    playerScoreDiv.style.color = 'red';
+                } else {
+                    playerScoreDiv.style.color = '';
+                }
+            } else {
+                playerScoreDiv.textContent = '';
             }
         }
 
@@ -966,6 +1256,7 @@
         window.joinRoom = joinRoom;
         window.leaveGame = leaveGame;
         window.voteToStart = voteToStart;
+        window.voteToReplay = voteToReplay;
         window.hit = hit;
         window.stand = stand;
         window.buyTheme = buyTheme;
@@ -975,6 +1266,17 @@
         window.onload = function() {
             initializeUser();
             showMainMenu();
+            
+            // Add click handler for game title to return to menu
+            document.querySelector('.game-title').addEventListener('click', () => {
+                if (confirm("Return to main menu? This will exit any current game.")) {
+                    if (currentRoom) {
+                        leaveGame();
+                    } else {
+                        showMainMenu();
+                    }
+                }
+            });
         };
     </script>
 </body>
