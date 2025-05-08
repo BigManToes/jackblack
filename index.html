@@ -242,6 +242,35 @@
             align-items: center;
         }
 
+        .error-message {
+            color: #ff4444;
+            background-color: rgba(255, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .loading-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--accent-color);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {transform: rotate(360deg);}
+        }
+
+        .loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         #dealer-hand, #player-hand {
             margin: 20px 0;
             min-height: 120px;
@@ -251,12 +280,6 @@
             font-size: 1.2em;
             color: var(--accent-color);
             margin-bottom: 10px;
-        }
-
-        .loading {
-            opacity: 0.7;
-            cursor: not-allowed;
-            pointer-events: none;
         }
     </style>
 </head>
@@ -301,7 +324,7 @@
 
         <div class="shop-container">
             <button class="back-to-menu" onclick="showMainMenu()">Back to Menu</button>
-            <h2>Shop</h2>
+            <h2>Theme Shop</h2>
             <div id="themes"></div>
         </div>
 
@@ -337,9 +360,28 @@
         appId: "1:1015611934052:web:e8d1d8459c93d0c5c71a71"
     };
 
-    // Initialize Firebase
+    // Initialize Firebase and add error logging
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+
+    // Add database connection check
+    const dbRef = ref(db);
+    get(dbRef).then((snapshot) => {
+        console.log("Database connection successful");
+    }).catch((error) => {
+        console.error("Database connection error:", error);
+        alert("Failed to connect to database. Please check your internet connection and refresh the page.");
+    });
+
+    // Add connection status listener
+    const connectedRef = ref(db, ".info/connected");
+    onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+            console.log("Connected to Firebase");
+        } else {
+            console.log("Not connected to Firebase");
+        }
+    });
 
     // Game state
     let playerId = localStorage.getItem('playerId') || generatePlayerId();
@@ -358,6 +400,32 @@
         'neon': { price: 50, bg: '#000000', text: '#00ff00', accent: '#ff00ff', cardBg: '#0000ff' },
         'desert': { price: 35, bg: '#8b4513', text: '#f4a460', accent: '#daa520', cardBg: '#ffe4b5' }
     };
+
+    // Initialize player
+    async function initializePlayer() {
+        try {
+            localStorage.setItem('playerId', playerId);
+            updateUsernameDisplay();
+            updateCoinsDisplay();
+
+            // Store player in database
+            const playerRef = ref(db, `players/${playerId}`);
+            await set(playerRef, {
+                id: playerId,
+                username: username,
+                coins: playerCoins,
+                selectedTheme: selectedTheme,
+                purchasedThemes: purchasedThemes,
+                createdAt: new Date().toISOString()
+            });
+
+            console.log("Player initialized successfully");
+            applyTheme(selectedTheme);
+        } catch (error) {
+            console.error("Error initializing player:", error);
+            alert("Failed to initialize player. Please refresh the page and try again.");
+        }
+    }
 
     // Game functions
     function createDeck() {
@@ -628,7 +696,6 @@
 
     // UI updates
     function updateGameState(roomData) {
-        // Update player list
         const playersList = document.getElementById('players-list');
         playersList.innerHTML = '<h3>Players in Room:</h3>';
         roomData.players.forEach(player => {
@@ -637,10 +704,8 @@
             playersList.appendChild(playerDiv);
         });
 
-        // Update room info
         document.getElementById('room-info').textContent = `Room: ${roomData.id}`;
 
-        // Update hands
         const dealerHand = document.getElementById('dealer-hand');
         const playerHand = document.getElementById('player-hand');
         
@@ -663,7 +728,6 @@
             playerHand.appendChild(cardElement);
         });
 
-        // Update buttons
         const isPlayerTurn = roomData.currentTurn === playerId;
         document.getElementById('hit-button').disabled = !isPlayerTurn;
         document.getElementById('stand-button').disabled = !isPlayerTurn;
@@ -841,24 +905,37 @@
 
     // Load data
     function loadRooms() {
-        const roomsRef = ref(db, 'rooms');
-        onValue(roomsRef, (snapshot) => {
-            const rooms = snapshot.val() || {};
-            const roomsContainer = document.getElementById('rooms');
-            roomsContainer.innerHTML = '';
+        try {
+            const roomsRef = ref(db, 'rooms');
+            onValue(roomsRef, (snapshot) => {
+                try {
+                    const rooms = snapshot.val() || {};
+                    const roomsContainer = document.getElementById('rooms');
+                    roomsContainer.innerHTML = '';
 
-            Object.values(rooms).forEach(room => {
-                const div = document.createElement('div');
-                div.className = 'room-item';
-                div.innerHTML = `
-                    Room: ${room.id}<br>
-                    Host: ${room.hostUsername}<br>
-                    Players: ${room.players.length}/4
-                `;
-                div.onclick = () => joinRoom(room.id);
-                roomsContainer.appendChild(div);
+                    Object.values(rooms).forEach(room => {
+                        const div = document.createElement('div');
+                        div.className = 'room-item';
+                        div.innerHTML = `
+                            Room: ${room.id}<br>
+                            Host: ${room.hostUsername || 'Unknown'}<br>
+                            Players: ${room.players ? room.players.length : 0}/4
+                        `;
+                        div.onclick = () => joinRoom(room.id);
+                        roomsContainer.appendChild(div);
+                    });
+                } catch (error) {
+                    console.error("Error processing rooms data:", error);
+                    alert("Error loading rooms. Please try again.");
+                }
+            }, (error) => {
+                console.error("Error loading rooms:", error);
+                alert("Failed to load rooms. Please check your connection and try again.");
             });
-        });
+        } catch (error) {
+            console.error("Error in loadRooms:", error);
+            alert("Failed to access rooms. Please refresh the page.");
+        }
     }
 
     function loadLeaderboard() {
