@@ -82,7 +82,7 @@
             transform: scale(1.05);
         }
 
-        .game-container {
+        .game-container, .shop-container, .leaderboard-container {
             background-color: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 15px;
@@ -163,6 +163,51 @@
             color: #00ff00;
             margin: 10px 0;
         }
+
+        .theme-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .theme-item button {
+            padding: 8px 15px;
+            background-color: var(--accent-color);
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .vote-container {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .vote-button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            background-color: var(--accent-color);
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -198,6 +243,22 @@
                 <button class="action-button" id="hit-button">Hit</button>
                 <button class="action-button" id="stand-button">Stand</button>
             </div>
+            <div class="vote-container" id="vote-container">
+                <p>Vote to start the game</p>
+                <button class="vote-button" id="vote-yes">Ready</button>
+            </div>
+        </div>
+
+        <div class="shop-container" id="shop">
+            <button class="back-to-menu">Back to Menu</button>
+            <h2>Theme Shop</h2>
+            <div id="theme-list"></div>
+        </div>
+
+        <div class="leaderboard-container" id="leaderboard">
+            <button class="back-to-menu">Back to Menu</button>
+            <h2>Leaderboard</h2>
+            <div id="leaderboard-list"></div>
         </div>
 
         <div class="game-info" id="game-info"></div>
@@ -230,20 +291,68 @@
         let dealerHand = [];
         let gameActive = false;
         let dealerCardHidden = true;
+        let hasVoted = false;
+
+        // Available themes
+        const themes = {
+            default: {
+                name: "Default Theme",
+                price: 0,
+                colors: {
+                    bg: "#000000",
+                    text: "#ffd700",
+                    accent: "#ffd700"
+                }
+            },
+            neon: {
+                name: "Neon Theme",
+                price: 100,
+                colors: {
+                    bg: "#0a0a2a",
+                    text: "#00ff00",
+                    accent: "#ff00ff"
+                }
+            },
+            ocean: {
+                name: "Ocean Theme",
+                price: 150,
+                colors: {
+                    bg: "#001f3f",
+                    text: "#00ffff",
+                    accent: "#0074D9"
+                }
+            }
+        };
 
         // DOM Elements
         const menuContainer = document.getElementById('menu');
         const gameContainer = document.getElementById('game');
+        const shopContainer = document.getElementById('shop');
+        const leaderboardContainer = document.getElementById('leaderboard');
         const usernameDisplay = document.getElementById('username-display');
         const coinsDisplay = document.getElementById('coins-display');
         const gameInfo = document.getElementById('game-info');
+        const themeList = document.getElementById('theme-list');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const voteContainer = document.getElementById('vote-container');
 
         // Update displays
         usernameDisplay.textContent = username;
         coinsDisplay.textContent = coins;
 
         // Event Listeners
-        document.getElementById('play-button').addEventListener('click', startGame);
+        document.getElementById('play-button').addEventListener('click', () => {
+            showContainer(gameContainer);
+            startGame();
+        });
+        document.getElementById('shop-button').addEventListener('click', () => {
+            showContainer(shopContainer);
+            loadThemeShop();
+        });
+        document.getElementById('leaderboard-button').addEventListener('click', () => {
+            showContainer(leaderboardContainer);
+            loadLeaderboard();
+        });
         document.querySelectorAll('.back-to-menu').forEach(button => {
             button.addEventListener('click', () => {
                 gameActive = false;
@@ -253,8 +362,66 @@
 
         document.getElementById('hit-button').addEventListener('click', handleHit);
         document.getElementById('stand-button').addEventListener('click', handleStand);
+        document.getElementById('vote-yes').addEventListener('click', handleVote);
 
-        // Game functions
+        // Theme Shop Functions
+        function loadThemeShop() {
+            themeList.innerHTML = '';
+            Object.entries(themes).forEach(([id, theme]) => {
+                const themeItem = document.createElement('div');
+                themeItem.className = 'theme-item';
+                themeItem.innerHTML = `
+                    <span>${theme.name} - ${theme.price} coins</span>
+                    <button onclick="purchaseTheme('${id}')">Purchase</button>
+                `;
+                themeList.appendChild(themeItem);
+            });
+        }
+
+        window.purchaseTheme = function(themeId) {
+            const theme = themes[themeId];
+            if (coins >= theme.price) {
+                coins -= theme.price;
+                localStorage.setItem('coins', coins);
+                coinsDisplay.textContent = coins;
+                applyTheme(themeId);
+                updateLeaderboard();
+            } else {
+                alert('Not enough coins!');
+            }
+        };
+
+        function applyTheme(themeId) {
+            const theme = themes[themeId];
+            document.documentElement.style.setProperty('--bg-color', theme.colors.bg);
+            document.documentElement.style.setProperty('--text-color', theme.colors.text);
+            document.documentElement.style.setProperty('--accent-color', theme.colors.accent);
+            localStorage.setItem('currentTheme', themeId);
+        }
+
+        // Leaderboard Functions
+        function loadLeaderboard() {
+            const leaderboardRef = ref(db, 'players');
+            onValue(leaderboardRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                const sortedPlayers = Object.entries(data)
+                    .sort(([,a], [,b]) => b.coins - a.coins)
+                    .slice(0, 10);
+
+                leaderboardList.innerHTML = '';
+                sortedPlayers.forEach(([name, data], index) => {
+                    const item = document.createElement('div');
+                    item.className = 'leaderboard-item';
+                    item.innerHTML = `
+                        <span>#${index + 1} ${name}</span>
+                        <span>${data.coins} coins</span>
+                    `;
+                    leaderboardList.appendChild(item);
+                });
+            });
+        }
+
+        // Game Functions
         function createDeck() {
             const suits = ['♠', '♥', '♣', '♦'];
             const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -345,16 +512,29 @@
         }
 
         function startGame() {
-            showContainer(gameContainer);
+            voteContainer.style.display = 'block';
+            document.getElementById('hit-button').disabled = true;
+            document.getElementById('stand-button').disabled = true;
+            hasVoted = false;
             deck = createDeck();
             playerHand = [drawCard(), drawCard()];
             dealerHand = [drawCard(), drawCard()];
-            gameActive = true;
+            gameActive = false;
             dealerCardHidden = true;
             updateDisplay();
+        }
 
-            if (calculateHandValue(playerHand) === 21) {
-                handleBlackjack();
+        function handleVote() {
+            if (!hasVoted) {
+                hasVoted = true;
+                voteContainer.style.display = 'none';
+                document.getElementById('hit-button').disabled = false;
+                document.getElementById('stand-button').disabled = false;
+                gameActive = true;
+
+                if (calculateHandValue(playerHand) === 21) {
+                    handleBlackjack();
+                }
             }
         }
 
@@ -434,7 +614,7 @@
         }
 
         function showContainer(container) {
-            [menuContainer, gameContainer].forEach(c => c.style.display = 'none');
+            [menuContainer, gameContainer, shopContainer, leaderboardContainer].forEach(c => c.style.display = 'none');
             container.style.display = 'block';
             gameInfo.textContent = '';
         }
@@ -446,6 +626,10 @@
                 lastUpdated: Date.now()
             });
         }
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('currentTheme') || 'default';
+        applyTheme(savedTheme);
     </script>
 </body>
 </html>
