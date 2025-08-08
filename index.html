@@ -175,7 +175,7 @@
       // Update cards display
       updateCards(el.playerCards, playerHand);
       updateCards(el.dealerCards, !game.over && game.turn !== "dealer" 
-        ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "??", s: "?" }))]
+        ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "???", s: "" }))]
         : dealerHand);
       
       // Update messages
