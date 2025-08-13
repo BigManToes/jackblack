@@ -255,7 +255,7 @@
         // Check for blackjack
         if (calcScore(gameState.playerHands[pid]) === 21) {
           gameState.message = `${pid} has blackjack (21)!`;
-          gameState.winnerMessage = `${pid} WON WITH BLACKJACK!`;
+          gameState.winnerMessage = `${pid} WON WITH JACKBLACK!`;
           gameState.winner = pid;
           gameState.over = true;
         }
