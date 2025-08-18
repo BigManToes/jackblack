@@ -1,1 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JackBlack Login</title>
+<style>
+body { font-family: Arial,sans-serif; background:#1e1e1e; color:white; text-align:center; padding:20px;}
+input,button{padding:8px; margin:5px; font-size:14px;}
+</style>
+</head>
+<body>
 
+<h1>JackBlack Login</h1>
+<input id="email-input" placeholder="Enter Email">
+<input id="nickname-input" placeholder="Enter Nickname">
+<button id="send-link-btn">Send Login Link</button>
+
+<script type="module">
+import { auth } from './firebase-config.js';
+import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+const actionCodeSettings = { url: window.location.origin + '/login.html', handleCodeInApp:true };
+const emailInput = document.getElementById('email-input');
+const nickInput = document.getElementById('nickname-input');
+const btn = document.getElementById('send-link-btn');
+
+btn.addEventListener('click', async () => {
+  const email = emailInput.value.trim();
+  const nickname = nickInput.value.trim() || "Player";
+  if(!email) return alert("Enter email");
+  try{
+    await setPersistence(auth, browserLocalPersistence);
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    localStorage.setItem("emailForSignIn", email);
+    localStorage.setItem("nicknameForSignIn", nickname);
+    alert("Check your email for the login link!");
+  }catch(e){alert(e.message);}
+});
+
+// Handle link sign-in
+(async function(){
+  if(isSignInWithEmailLink(auth, window.location.href)){
+    let email = localStorage.getItem("emailForSignIn") || prompt("Enter email to finish login");
+    try{
+      const result = await signInWithEmailLink(auth, email, window.location.href);
+      const nickname = localStorage.getItem("nicknameForSignIn") || "Player";
+      localStorage.setItem("nickname", nickname);
+      localStorage.removeItem("emailForSignIn");
+      localStorage.removeItem("nicknameForSignIn");
+      window.location.href = "/index.html"; // redirect to game
+    }catch(e){alert(e.message);}
+  }
+})();
+</script>
+
+</body>
+</html>
