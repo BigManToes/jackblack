@@ -1,135 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JackBlack</title>
-  <link rel="icon" type="image/x-icon" href="/logo.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JackBlack</title>
+<link rel="icon" type="image/x-icon" href="/logo.ico">
+<style>
+  /* General page setup */
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #1e1e1e;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+  h1 { margin: 0 0 5px; font-size: 2rem; }
 
-    h1 {
-      margin: 0 0 15px;
-      font-size: 36px;
-      color: #ffffff;
-      letter-spacing: 2px;
-    }
+  #player-id-display {
+    display: inline-block;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #00ffff;
+    background-color: rgba(0,0,0,0.3);
+    padding: 5px 10px;
+    border-radius: 10px;
+    margin: 5px 0;
+  }
 
-    #player-id-display {
-      color: #00ffff;
-      font-weight: bold;
-      background-color: rgba(0,0,0,0.3);
-      padding: 5px 12px;
-      border-radius: 12px;
-      font-size: 16px;
-      display: inline-block;
-    }
+  input, button {
+    padding: 10px;
+    font-size: 1rem;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
+  }
 
-    input {
-      padding: 10px;
-      font-size: 14px;
-      border-radius: 6px;
-      border: none;
-      margin-right: 5px;
-    }
+  button {
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #00ffff;
+    color: #1e1e1e;
+    transition: transform 0.1s;
+  }
 
-    button {
-      padding: 10px 15px;
-      font-size: 14px;
-      margin: 5px;
-      cursor: pointer;
-      border-radius: 6px;
-      border: none;
-      background-color: #00ffff;
-      color: #1e1e1e;
-      font-weight: bold;
-      transition: transform 0.1s;
-    }
+  button:hover { transform: scale(1.05); }
 
-    button:hover {
-      transform: scale(1.05);
-    }
+  /* Game areas */
+  .game-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 600px;
+  }
 
-    #controls, #player-cards-container, #dealer-cards-container {
-      display: none;
-    }
+  #player-info, #players-voting, #turn-indicator, #game-message, #winner-message {
+    font-size: 1rem;
+    margin: 3px 0;
+    word-wrap: break-word;
+  }
 
-    .card-container {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 10px 0;
-    }
+  #winner-message { font-size: 1.5rem; color: #ffd700; font-weight: bold; }
 
-    .card {
-      display: inline-block;
-      padding: 20px 25px;
-      background-color: #f0f0f0;
-      border-radius: 12px;
-      color: black;
-      font-size: 24px;
-      font-weight: bold;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
-      min-width: 50px;
-      min-height: 70px;
-      text-align: center;
-      transition: transform 0.2s;
-    }
+  #controls { display: none; margin: 5px 0; }
 
-    .card:hover {
-      transform: translateY(-5px);
-    }
+  /* Card container */
+  .cards-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 5px 0;
+    width: 100%;
+    min-height: 80px;
+  }
 
-    .section-title {
-      font-weight: bold;
-      font-size: 18px;
-      margin-top: 15px;
-    }
+  .card {
+    background-color: #f0f0f0;
+    color: black;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    min-width: 50px;
+    min-height: 70px;
+    flex: 1 0 20%; /* Cards will shrink/grow dynamically */
+    text-align: center;
+  }
 
-    #game-message, #winner-message, #turn-indicator {
-      margin: 10px 0;
-      font-size: 18px;
-    }
+  .card-title { font-weight: bold; margin: 5px 0; }
 
-    #winner-message {
-      font-size: 24px;
-      font-weight: bold;
-      color: #ffd700;
-    }
-
-    #turn-indicator {
-      font-weight: bold;
-      color: #ffd700;
-      font-size: 20px;
-    }
-
-    #player-info, #players-voting {
-      font-size: 14px;
-      margin: 5px 0;
-    }
-  </style>
+  /* Responsive adjustments */
+  @media (max-width: 480px) {
+    .card { font-size: 1rem; padding: 10px 12px; flex: 1 0 40%; }
+    h1 { font-size: 1.5rem; }
+    input, button { font-size: 0.9rem; padding: 8px; }
+  }
+</style>
 </head>
 <body>
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-    <h1>JackBlack</h1>
-    <div id="player-id-display">You are: waiting...</div>
-  </div>
 
+<h1>JackBlack</h1>
+<div id="player-id-display">You are: waiting to join...</div>
+
+<div class="game-area">
   <div id="player-info"></div>
   <div id="players-voting"></div>
 
   <div>
-    <input id="room-id" placeholder="Enter Room ID" style="width: 150px;">
+    <input id="room-id" placeholder="Enter Room ID">
     <button onclick="joinRoom()">Join Room</button>
     <button id="vote-button" onclick="voteToStart()" style="display:none;">Vote to Start</button>
   </div>
@@ -141,31 +126,135 @@
     <button onclick="stand()">Stand</button>
   </div>
 
-  <div id="player-cards-container">
-    <div class="section-title">Your Cards:</div>
-    <div id="player-cards" class="card-container"></div>
+  <div id="player-cards-section" style="display:none;">
+    <div class="card-title">Your Cards:</div>
+    <div id="player-cards" class="cards-container"></div>
   </div>
 
-  <div id="dealer-cards-container">
-    <div class="section-title">Dealer Cards:</div>
-    <div id="dealer-cards" class="card-container"></div>
+  <div id="dealer-cards-section" style="display:none;">
+    <div class="card-title">Dealer Cards:</div>
+    <div id="dealer-cards" class="cards-container"></div>
   </div>
 
   <div id="game-message"></div>
   <div id="winner-message"></div>
+</div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
-  <script>
-    // Firebase config and game logic goes here (keep your original functions)
-    // Just make sure to add:
-    function showCards() {
-      document.getElementById("player-cards-container").style.display = "block";
-      document.getElementById("dealer-cards-container").style.display = "block";
-    }
-    
-    // Call showCards() inside startGame() so the cards appear when the game starts
-  </script>
+<script>
+  // Initialize Firebase
+  const firebaseConfig = { /* your config here */ };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let roomId = "";
+  let playerId = "player" + Math.floor(Math.random()*1000);
+  document.getElementById("player-id-display").textContent = `You are: ${playerId}`;
+
+  const el = {
+    controls: document.getElementById("controls"),
+    voteBtn: document.getElementById("vote-button"),
+    playerCardsSection: document.getElementById("player-cards-section"),
+    dealerCardsSection: document.getElementById("dealer-cards-section"),
+    playerCards: document.getElementById("player-cards"),
+    dealerCards: document.getElementById("dealer-cards"),
+    playerInfo: document.getElementById("player-info"),
+    playersVoting: document.getElementById("players-voting"),
+    turnIndicator: document.getElementById("turn-indicator"),
+    gameMsg: document.getElementById("game-message"),
+    winnerMsg: document.getElementById("winner-message"),
+    roomIdInput: document.getElementById("room-id"),
+    playerIdDisplay: document.getElementById("player-id-display")
+  };
+
+  function joinRoom() {
+    roomId = el.roomIdInput.value.trim();
+    if(!roomId) return alert("Enter room ID!");
+    const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
+    playerRef.set({ joined: Date.now(), vote: false });
+    playerRef.onDisconnect().remove();
+    el.voteBtn.style.display = "inline-block";
+    el.playerIdDisplay.textContent = `You: ${playerId} (Room: ${roomId})`;
+    db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
+    db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
+  }
+
+  function voteToStart() {
+    db.ref(`rooms/${roomId}/players/${playerId}`).update({ vote: true });
+    el.voteBtn.style.display = "none";
+  }
+
+  function updatePlayers(snap) {
+    const players = snap.val() || {};
+    const ids = Object.keys(players);
+    const votedCount = Object.values(players).filter(p => p.vote).length;
+    el.playerInfo.innerText = "Players: " + ids.map(id => id===playerId?"YOU":id).join(", ");
+    el.playersVoting.innerText = `Votes: ${votedCount}/${ids.length}`;
+    if(ids.length && votedCount===ids.length && playerId===ids.sort()[0]) startGame(ids);
+  }
+
+  function startGame(playerIds) {
+    el.playerCardsSection.style.display = "block";
+    el.dealerCardsSection.style.display = "block";
+    el.controls.style.display = "block";
+    const suits=['♠','♣','♦','♥'], values=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    let deck = [];
+    for(let s of suits) for(let v of values) deck.push({v,s});
+    deck.sort(()=>Math.random()-0.5);
+    const gameState = { deck, playerHands:{}, dealerHand:[deck.pop(),deck.pop()], turn: playerIds[0], over:false, message:"Game started!", stood:{}, busted:{} };
+    for(let pid of playerIds) gameState.playerHands[pid] = [deck.pop(),deck.pop()];
+    db.ref(`rooms/${roomId}/game`).set(gameState);
+  }
+
+  function updateGameState(snap) {
+    const game = snap.val();
+    if(!game) return;
+    function renderCards(container, cards){ container.innerHTML=""; cards.forEach(c=>{ const el=document.createElement("div"); el.className="card"; el.innerText=`${c.v} ${c.s}`; container.appendChild(el); }); }
+    renderCards(el.playerCards, game.playerHands[playerId]||[]);
+    renderCards(el.dealerCards, game.turn==="dealer"?game.dealerHand:[game.dealerHand[0],...game.dealerHand.slice(1).map(()=>({v:"???",s:""}))]);
+    el.gameMsg.innerText=game.message||"";
+    el.turnIndicator.innerText=game.over?"Game Over":(game.turn===playerId?"YOUR TURN":game.turn+"'s turn");
+    el.winnerMsg.innerText=game.winnerMessage||"";
+    el.controls.style.display=(game.turn===playerId && !game.over)?"flex":"none";
+  }
+
+  function hit() { modifyHand("hit"); }
+  function stand() { modifyHand("stand"); }
+
+  function modifyHand(action){
+    db.ref(`rooms/${roomId}/game`).once('value').then(snap=>{
+      const game = snap.val();
+      if(!game||game.turn!==playerId||game.over) return;
+      game.stood=game.stood||{}; game.busted=game.busted||{};
+      if(action==="hit"){ const card=game.deck.pop(); game.playerHands[playerId].push(card); const score=calcScore(game.playerHands[playerId]); if(score>21) game.busted[playerId]=true,game.message=`${playerId} BUSTED!`; else if(score===21) game.stood[playerId]=true,game.message=`${playerId} hits 21!`; else game.message=`${playerId} hits.`; }
+      else if(action==="stand"){ game.stood[playerId]=true; game.message=`${playerId} stands.`; }
+      nextTurn(game); db.ref(`rooms/${roomId}/game`).set(game);
+    });
+  }
+
+  function nextTurn(game){
+    if(Object.keys(game.playerHands).every(pid=>game.stood[pid]||game.busted[pid])) { game.turn="dealer"; setTimeout(()=>dealerPlay(),500); return; }
+    const ids=Object.keys(game.playerHands); const idx=ids.indexOf(game.turn);
+    for(let i=1;i<=ids.length;i++){ const next=ids[(idx+i)%ids.length]; if(!game.stood[next]&&!game.busted[next]&&calcScore(game.playerHands[next])<21){ game.turn=next; return; } }
+  }
+
+  function dealerPlay(){
+    db.ref(`rooms/${roomId}/game`).once('value').then(snap=>{
+      const game=snap.val(); if(!game||game.over||game.turn!=="dealer") return;
+      let dealerScore=calcScore(game.dealerHand);
+      while(dealerScore<17){ game.dealerHand.push(game.deck.pop()); dealerScore=calcScore(game.dealerHand); }
+      game.over=true; game.message=dealerScore>21?"Dealer BUSTED!":"Dealer finished"; let winner=null; let highest=dealerScore>21?0:dealerScore;
+      for(const pid of Object.keys(game.playerHands)){
+        if(game.busted[pid]) continue; const ps=calcScore(game.playerHands[pid]);
+        if(ps<=21 && (ps>highest||dealerScore>21)){ winner=pid; highest=ps; }
+      }
+      game.winner=winner||"dealer"; game.winnerMessage=winner?`${winner} WON!`:`Dealer wins!`; db.ref(`rooms/${roomId}/game`).set(game);
+    });
+  }
+
+  function calcScore(hand){ let s=0,a=0; hand.forEach(c=>{ if(['J','Q','K'].includes(c.v)) s+=10; else if(c.v==='A') s+=11,a++; else s+=parseInt(c.v); }); while(s>21&&a--) s-=10; return s; }
+</script>
 </body>
 </html>
