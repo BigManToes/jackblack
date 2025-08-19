@@ -4,55 +4,86 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JackBlack Login</title>
+<link rel="icon" type="image/x-icon" href="/logo.ico">
 <style>
-body { font-family: Arial,sans-serif; background:#1e1e1e; color:white; text-align:center; padding:20px;}
-input,button{padding:8px; margin:5px; font-size:14px;}
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  h1 { margin-bottom: 20px; }
+  input { width: 90%; padding: 10px; margin: 10px 0; font-size: 16px; }
+  button { padding: 10px 20px; margin: 10px 5px; font-size: 16px; cursor: pointer; }
+  .link-btn { background:none; border:none; color:#00ffff; cursor:pointer; text-decoration:underline; }
+  #message { margin-top:10px; font-size:14px; color:#ff6666; }
 </style>
 </head>
 <body>
-
 <h1>JackBlack Login</h1>
-<input id="email-input" placeholder="Enter Email">
-<input id="nickname-input" placeholder="Enter Nickname">
-<button id="send-link-btn">Send Login Link</button>
+
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<div>
+  <button onclick="login()">Login</button>
+  <button onclick="register()">Register</button>
+</div>
+<div>
+  <button class="link-btn" onclick="forgotPassword()">Forgot Password?</button>
+</div>
+<div id="message"></div>
 
 <script type="module">
-import { auth } from './firebase-config.js';
-import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-const actionCodeSettings = { url: window.location.origin + '/login.html', handleCodeInApp:true };
-const emailInput = document.getElementById('email-input');
-const nickInput = document.getElementById('nickname-input');
-const btn = document.getElementById('send-link-btn');
+const firebaseConfig = {
+  apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
+  authDomain: "jackblack-95dbd.firebaseapp.com",
+  databaseURL: "https://jackblack-95dbd-default-rtdb.firebaseio.com",
+  projectId: "jackblack-95dbd",
+  storageBucket: "jackblack-95dbd.firebasestorage.app",
+  messagingSenderId: "321007761489",
+  appId: "1:321007761489:web:e62d122547783bd86ea070",
+  measurementId: "G-08KQXFNB5X"
+};
 
-btn.addEventListener('click', async () => {
-  const email = emailInput.value.trim();
-  const nickname = nickInput.value.trim() || "Player";
-  if(!email) return alert("Enter email");
-  try{
-    await setPersistence(auth, browserLocalPersistence);
-    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    localStorage.setItem("emailForSignIn", email);
-    localStorage.setItem("nicknameForSignIn", nickname);
-    alert("Check your email for the login link!");
-  }catch(e){alert(e.message);}
-});
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-// Handle link sign-in
-(async function(){
-  if(isSignInWithEmailLink(auth, window.location.href)){
-    let email = localStorage.getItem("emailForSignIn") || prompt("Enter email to finish login");
-    try{
-      const result = await signInWithEmailLink(auth, email, window.location.href);
-      const nickname = localStorage.getItem("nicknameForSignIn") || "Player";
-      localStorage.setItem("nickname", nickname);
-      localStorage.removeItem("emailForSignIn");
-      localStorage.removeItem("nicknameForSignIn");
-      window.location.href = "/index.html"; // redirect to game
-    }catch(e){alert(e.message);}
-  }
-})();
+const msg = document.getElementById("message");
+
+function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  if(!email || !password) { msg.textContent = "Fill in all fields."; return; }
+
+  signInWithEmailAndPassword(auth, email, password)
+    .then(() => { window.location.href = "/"; })
+    .catch(err => { msg.textContent = err.message; });
+}
+
+function register() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  if(!email || !password) { msg.textContent = "Fill in all fields."; return; }
+
+  createUserWithEmailAndPassword(auth, email, password)
+    .then(() => { window.location.href = "/"; })
+    .catch(err => { msg.textContent = err.message; });
+}
+
+function forgotPassword() {
+  const email = document.getElementById("email").value.trim();
+  if(!email) { msg.textContent = "Enter your email to reset password."; return; }
+
+  sendPasswordResetEmail(auth, email)
+    .then(() => { msg.textContent = "Password reset email sent."; })
+    .catch(err => { msg.textContent = err.message; });
+}
 </script>
-
 </body>
 </html>
