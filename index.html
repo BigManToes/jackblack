@@ -12,11 +12,11 @@
       background-color: #1e1e1e;
       color: white;
       text-align: center;
-      padding: 20px;
+      padding: 10px;
       max-width: 1200px;
       margin: 0 auto;
     }
-    h1 { margin: 0 0 5px; }
+    h1 { margin: 0 0 5px; font-size: 2em; }
     #game-message { margin-top: 10px; font-size: 18px; }
     #winner-message {
       margin-top: 5px;
@@ -32,33 +32,29 @@
     }
     #player-id-display {
       display: inline-block;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
       color: #00ffff;
       background-color: rgba(0,0,0,0.3);
       padding: 3px 10px;
       border-radius: 10px;
       margin: 5px 0;
+      word-break: break-word;
     }
     .card {
       display: inline-block;
       margin: 5px;
-      padding: 20px 25px;
+      padding: 15px 20px;
       background-color: #f0f0f0;
       border-radius: 10px;
       color: black;
-      font-size: 24px;
+      font-size: 20px;
       font-weight: bold;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       border: 2px solid #ccc;
       min-width: 40px;
       min-height: 60px;
-    }
-    button {
-      padding: 8px 15px;
-      font-size: 14px;
-      margin: 5px;
-      cursor: pointer;
+      flex: 0 0 auto;
     }
     #dealer-cards, #player-cards {
       display: flex;
@@ -68,9 +64,14 @@
       flex-wrap: wrap;
     }
     input { padding: 8px; font-size: 14px; }
-    .game-area { display: flex; flex-direction: column; gap: 5px; }
+    .game-area { display: flex; flex-direction: column; gap: 10px; }
     .card-title { font-weight: bold; margin-top: 5px; }
-    #player-info, #players-voting { font-size: 14px; margin: 5px 0; }
+    #player-info, #players-voting { font-size: 14px; margin: 5px 0; word-break: break-word; }
+    button { padding: 8px 15px; font-size: 14px; margin: 5px; cursor: pointer; }
+    @media (max-width: 600px) {
+      .card { font-size: 16px; padding: 10px 15px; }
+      h1 { font-size: 1.5em; }
+    }
   </style>
 </head>
 <body>
@@ -114,7 +115,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
   <script>
-    // Initialize Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
       authDomain: "jackblack-95dbd.firebaseapp.com",
@@ -128,10 +128,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Game state variables
     let roomId = "";
-    // playerId will be generated on join
-    // store globally for functions
     window.playerId = "";
 
     const el = {
@@ -148,14 +145,17 @@
       roomIdInput: document.getElementById("room-id")
     };
 
+    // Ensure Room ID input starts empty
+    el.roomIdInput.value = "";
+    el.roomIdInput.placeholder = "Enter Room ID";
+
     function joinRoom() {
       roomId = el.roomIdInput.value.trim();
       if (!roomId) return alert("Enter room ID!");
 
-      // Generate random playerId on join
+      // Generate random player ID
       const randomNum = Math.floor(Math.random() * 10000);
       window.playerId = "player" + randomNum;
-
       el.playerIdDisplay.textContent = `You: ${window.playerId} (Room: ${roomId})`;
 
       const playerRef = db.ref(`rooms/${roomId}/players/${window.playerId}`);
