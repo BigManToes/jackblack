@@ -1,93 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JackBlack</title>
-<link rel="icon" type="image/x-icon" href="/logo.ico">
-<style>
-body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: white; text-align: center; padding: 20px; max-width: 1200px; margin: 0 auto; }
-h1 { margin: 0 0 5px; }
-#player-id-display { display: inline-block; font-size: 18px; font-weight: bold; color: #00ffff; background-color: rgba(0,0,0,0.3); padding: 3px 10px; border-radius: 10px; margin: 5px 0; }
-.card { display: inline-block; margin: 5px; padding: 20px 25px; background-color: #f0f0f0; border-radius: 10px; color: black; font-size: 24px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border: 2px solid #ccc; min-width: 40px; min-height: 60px; }
-button { padding: 8px 15px; font-size: 14px; margin: 5px; cursor: pointer; }
-#dealer-cards, #player-cards { display: flex; justify-content: center; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-input { padding: 8px; font-size: 14px; }
-.game-area { display: flex; flex-direction: column; gap: 5px; }
-.card-title { font-weight: bold; margin-top: 5px; }
-#player-info, #players-voting { font-size: 14px; margin: 5px 0; }
-#winner-message { margin-top: 5px; font-size: 28px; font-weight: bold; color: #ffd700; }
-#turn-indicator { margin: 5px 0; font-size: 20px; font-weight: bold; color: #ffd700; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JackBlack</title>
+  <link rel="icon" type="image/x-icon" href="/logo.ico">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { margin: 0 0 5px; }
+    #game-message { margin-top: 10px; font-size: 18px; }
+    #winner-message { margin-top: 5px; font-size: 28px; font-weight: bold; color: #ffd700; }
+    #turn-indicator { margin: 5px 0; font-size: 20px; font-weight: bold; color: #ffd700; }
+    #player-id-display {
+      display: inline-block;
+      font-size: 18px;
+      font-weight: bold;
+      color: #00ffff;
+      background-color: rgba(0,0,0,0.3);
+      padding: 3px 10px;
+      border-radius: 10px;
+      margin: 5px 0;
+    }
+    .card {
+      display: inline-block;
+      margin: 5px;
+      padding: 20px 25px;
+      background-color: #f0f0f0;
+      border-radius: 10px;
+      color: black;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      border: 2px solid #ccc;
+      min-width: 40px;
+      min-height: 60px;
+    }
+    button {
+      padding: 8px 15px;
+      font-size: 14px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    #dealer-cards, #player-cards {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+    input { padding: 8px; font-size: 14px; }
+    .game-area { display: flex; flex-direction: column; gap: 5px; }
+    .card-title { font-weight: bold; margin-top: 5px; }
+    #player-info, #players-voting { font-size: 14px; margin: 5px 0; }
+  </style>
 </head>
 <body>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+    <h1>JackBlack</h1>
+    <div id="player-id-display">Loading player...</div>
+  </div>
 
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-<h1>JackBlack</h1>
-<div id="player-id-display">Loading player...</div>
-</div>
+  <div class="game-area">
+    <div id="player-info"></div>
+    <div id="players-voting"></div>
 
-<div class="game-area" id="game-area" style="display:none;">
-<div id="player-info"></div>
-<div id="players-voting"></div>
+    <div style="margin: 5px 0;">
+      <input id="room-id" placeholder="Enter Room ID" style="width: 150px;">
+      <button onclick="joinRoom()">Join Room</button>
+      <button id="vote-button" onclick="voteToStart()" style="display:none;">Vote to Start</button>
+    </div>
 
-<div style="margin: 5px 0;">
-<input id="room-id" placeholder="Enter Room ID" style="width: 150px;">
-<button onclick="joinRoom()">Join Room</button>
-<button id="vote-button" onclick="voteToStart()" style="display:none;">Vote to Start</button>
-</div>
+    <div id="turn-indicator"></div>
 
-<div id="turn-indicator"></div>
+    <div id="controls" style="display:none;">
+      <button onclick="hit()">Hit</button>
+      <button onclick="stand()">Stand</button>
+    </div>
 
-<div id="controls" style="display:none;">
-<button onclick="hit()">Hit</button>
-<button onclick="stand()">Stand</button>
-</div>
+    <div>
+      <div class="card-title">Your Cards:</div>
+      <div id="player-cards"></div>
+    </div>
 
-<div>
-<div class="card-title">Your Cards:</div>
-<div id="player-cards"></div>
-</div>
+    <div>
+      <div class="card-title">Dealer Cards:</div>
+      <div id="dealer-cards"></div>
+    </div>
 
-<div>
-<div class="card-title">Dealer Cards:</div>
-<div id="dealer-cards"></div>
-</div>
+    <div id="game-message"></div>
+    <div id="winner-message"></div>
+  </div>
 
-<div id="game-message"></div>
-<div id="winner-message"></div>
-</div>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
-  authDomain: "jackblack-95dbd.firebaseapp.com",
-  databaseURL: "https://jackblack-95dbd-default-rtdb.firebaseio.com",
-  projectId: "jackblack-95dbd",
-  storageBucket: "jackblack-95dbd.firebasestorage.app",
-  messagingSenderId: "321007761489",
-  appId: "1:321007761489:web:e62d122547783bd86ea070",
-  measurementId: "G-08KQXFNB5X"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+    let nickname = localStorage.getItem("nickname") || "Player";
+    let playerId = null;
+    let roomId = "";
 
-let playerId = null;
-let nickname = null;
-
-auth.onAuthStateChanged(user => {
-  if(user){
-    playerId = user.uid;
-    nickname = user.email.split('@')[0];
-    document.getElementById("player-id-display").textContent = `You are: ${nickname}`;
-    document.getElementById("game-area").style.display = "block";
-
-    // --- All Game Functions ---
     const el = {
       playerCards: document.getElementById("player-cards"),
       dealerCards: document.getElementById("dealer-cards"),
@@ -102,92 +126,195 @@ auth.onAuthStateChanged(user => {
       roomIdInput: document.getElementById("room-id")
     };
 
-    let roomId = "";
+    // AUTHENTICATION
+    onAuthStateChanged(auth, user => {
+      if(user){
+        playerId = user.uid;
+        nickname = user.displayName || nickname;
+        el.playerIdDisplay.textContent = `You are: ${nickname}`;
+        document.querySelector(".game-area").style.display = "flex";
+      } else {
+        window.location.href = "/login";
+      }
+    });
 
-    function joinRoom(){
+    // --- GAME FUNCTIONS ---
+    function joinRoom() {
       roomId = el.roomIdInput.value.trim();
-      if(!roomId) return alert("Enter room ID!");
+      if (!roomId) return alert("Enter room ID!");
+
       const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-      playerRef.set({ joined: Date.now(), vote: false, nickname });
+      playerRef.set({ joined: Date.now(), vote: false });
       playerRef.onDisconnect().remove();
+
       el.controls.style.display = "block";
       el.voteBtn.style.display = "inline-block";
       el.playerIdDisplay.textContent = `You: ${nickname} (Room: ${roomId})`;
+
       db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
       db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
     }
 
-    function updateGameState(snap){
+    function updateGameState(snap) {
       const game = snap.val();
-      if(!game) return;
+      if (!game) return;
+
       const playerHand = game.playerHands?.[playerId] || [];
       const dealerHand = game.dealerHand || [];
+
       updateCards(el.playerCards, playerHand);
       updateCards(el.dealerCards, !game.over && game.turn !== "dealer" 
-        ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({v:"???", s:""}))]
+        ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "???", s: "" }))]
         : dealerHand);
+
       el.gameMsg.innerText = game.message || "";
-      if(game.winner === playerId){
+
+      if (game.winner === playerId) {
         const score = calcScore(game.playerHands[playerId]);
         el.winnerMsg.innerText = `🏆 YOU WON WITH ${score}! 🏆`;
-      } else if(game.winner && game.winner !== "dealer"){
+      } else if (game.winner && game.winner !== "dealer") {
         const score = game.playerHands[game.winner] ? calcScore(game.playerHands[game.winner]) : "";
         el.winnerMsg.innerText = `🏆 ${game.winner} WON WITH ${score}! 🏆`;
-      } else el.winnerMsg.innerText = game.winnerMessage || "";
+      } else {
+        el.winnerMsg.innerText = game.winnerMessage || "";
+      }
+
       el.controls.style.display = game.turn === playerId && !game.over ? "block" : "none";
-      if(game.over) el.turnIndicator.innerText = "Game Over";
-      else if(game.turn === "dealer") el.turnIndicator.innerText = "Dealer's Turn";
-      else if(game.turn) el.turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${game.turn}'s turn`;
+
+      if (game.over) el.turnIndicator.innerText = "Game Over";
+      else if (game.turn === "dealer") el.turnIndicator.innerText = "Dealer's Turn";
+      else if (game.turn) el.turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${game.turn}'s turn`;
     }
 
-    function updatePlayers(snap){
+    function updatePlayers(snap) {
       const players = snap.val() || {};
       const playerIds = Object.keys(players);
+
       el.playerInfo.innerText = "Players: " + playerIds.map(pid => 
-        `${pid===playerId?"YOU":players[pid].nickname} [${players[pid].vote?"✓":"✗"}]`
+        `${pid === playerId ? "YOU" : pid} [${players[pid].vote ? "✓" : "✗"}]`
       ).join(", ");
-      const votesCount = Object.values(players).filter(p=>p.vote).length;
+
+      const votesCount = Object.values(players).filter(p => p.vote).length;
       el.playersVoting.innerText = `${votesCount}/${playerIds.length} voted to start.`;
-      if(playerIds.length>=1 && votesCount===playerIds.length){
+
+      if (playerIds.length >= 1 && votesCount === playerIds.length) {
         const sortedIds = [...playerIds].sort();
-        if(playerId===sortedIds[0]) startGame(playerIds);
+        if (playerId === sortedIds[0]) startGame(playerIds);
       }
     }
 
-    function startGame(playerIds){
-      const suits=['♠','♣','♦','♥'], values=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-      let deck=[]; for(let s of suits) for(let v of values) deck.push({v,s}); deck.sort(()=>Math.random()-0.5);
-      const shuffledIds=[...playerIds].sort(()=>Math.random()-0.5);
-      const gameState={deck, playerHands:{}, dealerHand:[deck.pop(),deck.pop()], turn:shuffledIds[0], message:"Game started!", winnerMessage:"", stood:{}, busted:{}, over:false, playerOrder:shuffledIds};
-      for(let pid of shuffledIds){
-        gameState.playerHands[pid]=[deck.pop(),deck.pop()];
-        if(calcScore(gameState.playerHands[pid])===21){gameState.message=`${pid} has blackjack (21)!`; gameState.winnerMessage=`${pid} WON WITH JACKBLACK!`; gameState.winner=pid; gameState.over=true;}
+    function startGame(playerIds) {
+      const suits = ['♠', '♣', '♦', '♥'];
+      const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+      let deck = [];
+      for (let s of suits) for (let v of values) deck.push({v,s});
+      deck.sort(() => Math.random() - 0.5);
+
+      const shuffledIds = [...playerIds].sort(() => Math.random() - 0.5);
+
+      const gameState = {
+        deck,
+        playerHands: {},
+        dealerHand: [deck.pop(), deck.pop()],
+        turn: shuffledIds[0],
+        message: "Game started!",
+        winnerMessage: "",
+        stood: {},
+        busted: {},
+        over: false,
+        playerOrder: shuffledIds
+      };
+
+      for (let pid of shuffledIds) {
+        gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+        if (calcScore(gameState.playerHands[pid]) === 21) {
+          gameState.message = `${pid} has blackjack (21)!`;
+          gameState.winnerMessage = `${pid} WON WITH JACKBLACK!`;
+          gameState.winner = pid;
+          gameState.over = true;
+        }
       }
+
       db.ref(`rooms/${roomId}/game`).set(gameState);
-      el.voteBtn.style.display="none";
+      el.voteBtn.style.display = "none";
     }
 
-    function voteToStart(){db.ref(`rooms/${roomId}/players/${playerId}`).update({vote:true}); el.voteBtn.style.display="none";}
+    function voteToStart() {
+      db.ref(`rooms/${roomId}/players/${playerId}`).update({ vote: true });
+      el.voteBtn.style.display = "none";
+    }
 
-    function updateCards(container,cards){container.innerHTML=""; cards.forEach(card=>{const cardEl=document.createElement("div"); cardEl.className="card"; cardEl.innerText=`${card.v} ${card.s}`; container.appendChild(cardEl);});}
+    function updateCards(container, cards) {
+      container.innerHTML = "";
+      cards.forEach(card => {
+        const cardEl = document.createElement("div");
+        cardEl.className = "card";
+        cardEl.innerText = `${card.v} ${card.s}`;
+        container.appendChild(cardEl);
+      });
+    }
 
-    function hit(){db.ref(`rooms/${roomId}/game`).once('value',snap=>{const game=snap.val(); if(game.turn!==playerId||game.over) return; if(game.stood?.[playerId]||game.busted?.[playerId]) return; const newCard=game.deck.pop(); game.playerHands[playerId].push(newCard); const score=calcScore(game.playerHands[playerId]); if(score>21){game.busted=game.busted||{}; game.busted[playerId]=true; game.message=`${nickname} BUSTED with ${score}!`; } else if(score===21){game.message=`${nickname} hits 21!`; game.stood=game.stood||{}; game.stood[playerId]=true;} else game.message=`${nickname} hits. Score: ${score}`; nextTurn(game); db.ref(`rooms/${roomId}/game`).set(game);});}
+    function hit() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (game.turn !== playerId || game.over) return;
+        if (game.stood?.[playerId] || game.busted?.[playerId]) return;
 
-    function stand(){db.ref(`rooms/${roomId}/game`).once('value',snap=>{const game=snap.val(); if(game.turn!==playerId||game.over) return; game.stood=game.stood||{}; game.stood[playerId]=true; game.message=`${nickname} stands.`; nextTurn(game); db.ref(`rooms/${roomId}/game`).set(game);});}
+        const newCard = game.deck.pop();
+        game.playerHands[playerId].push(newCard);
+        const score = calcScore(game.playerHands[playerId]);
 
-    function nextTurn(game){if(allPlayersDone(game)){game.turn="dealer"; game.message+=" Dealer's turn!"; setTimeout(()=>dealerPlay(),1000);} else {const ids=game.playerOrder, idx=ids.indexOf(game.turn); for(let i=1;i<=ids.length;i++){const nextId=ids[(idx+i)%ids.length]; if(!game.stood?.[nextId]&&!game.busted?.[nextId]&&calcScore(game.playerHands[nextId])<21){game.turn=nextId; return;}}}}
+        if (score > 21) { game.busted = game.busted || {}; game.busted[playerId]=true; game.message=`${playerId} BUSTED with ${score}!`; }
+        else if(score === 21){ game.stood = game.stood || {}; game.stood[playerId]=true; game.message=`${playerId} hits 21!`; }
+        else { game.message=`${playerId} hits. Score: ${score}`; }
 
-    function allPlayersDone(game){return Object.keys(game.playerHands).every(pid=>game.stood?.[pid]||game.busted?.[pid]||calcScore(game.playerHands[pid])===21);}
+        nextTurn(game);
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
 
-    function dealerPlay(){db.ref(`rooms/${roomId}/game`).once('value',snap=>{const game=snap.val(); if(!game||game.over||game.turn!=="dealer") return; if(Object.keys(game.playerHands).every(pid=>game.busted?.[pid])){game.winnerMessage="Dealer wins - all players busted!"; game.over=true; game.winner="dealer"; db.ref(`rooms/${roomId}/game`).set(game); return;} let dealerScore=calcScore(game.dealerHand); while(dealerScore<17){game.dealerHand.push(game.deck.pop()); dealerScore=calcScore(game.dealerHand);} const dealerBusted=dealerScore>21; game.over=true; let winner=dealerBusted?null:"dealer"; let highScore=dealerBusted?0:dealerScore; for(const pid of game.playerOrder){if(game.busted?.[pid]) continue; const playerScore=calcScore(game.playerHands[pid]); if(playerScore<=21&&(playerScore>highScore||dealerBusted)){winner=pid; highScore=playerScore;}} if(winner==="dealer") game.winnerMessage=`Dealer wins with ${dealerScore}!`; else if(winner) game.winnerMessage=`${winner} WON WITH ${highScore}!`; else game.winnerMessage="Everyone busted! No winner."; game.message=dealerBusted?`Dealer BUSTED with ${dealerScore}!`:`Dealer has ${dealerScore}.`; game.winner=winner; db.ref(`rooms/${roomId}/game`).set(game);});}
+    function stand() {
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const game = snap.val();
+        if (game.turn !== playerId || game.over) return;
+        game.stood = game.stood || {}; game.stood[playerId] = true; game.message = `${playerId} stands.`;
+        nextTurn(game);
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
 
-    function calcScore(hand){let score=0, aces=0; hand.forEach(c=>{if(['J','Q','K'].includes(c.v)) score+=10; else if(c.v==='A'){score+=11; aces++;} else score+=parseInt(c.v);}); while(score>21&&aces--) score-=10; return score;}
-    
-  } else {
-    window.location.href="/login";
-  }
-});
-</script>
+    function nextTurn(game) {
+      if (allPlayersDone(game)) { game.turn="dealer"; game.message+=" Dealer's turn!"; setTimeout(dealerPlay,1000); return; }
+      const ids = game.playerOrder; const idx = ids.indexOf(game.turn);
+      for(let i=1;i<=ids.length;i++){ const next=ids[(idx+i)%ids.length]; if(!game.stood?.[next] && !game.busted?.[next] && calcScore(game.playerHands[next])<21){ game.turn=next; return; } }
+    }
 
+    function allPlayersDone(game){
+      return Object.keys(game.playerHands).every(pid=>game.stood?.[pid]||game.busted?.[pid]||calcScore(game.playerHands[pid])===21);
+    }
+
+    function dealerPlay(){
+      db.ref(`rooms/${roomId}/game`).once('value', snap=>{
+        const game=snap.val(); if(!game||game.over||game.turn!=="dealer") return;
+        if(Object.keys(game.playerHands).every(pid=>game.busted?.[pid])){ game.winner="dealer"; game.winnerMessage="Dealer wins - all players busted!"; game.over=true; db.ref(`rooms/${roomId}/game`).set(game); return; }
+        let dealerScore = calcScore(game.dealerHand);
+        while(dealerScore<17){ game.dealerHand.push(game.deck.pop()); dealerScore=calcScore(game.dealerHand);}
+        game.over=true;
+        let winner=dealerScore>21?null:"dealer"; let highest=dealerScore>21?0:dealerScore;
+        for(const pid of game.playerOrder){ if(game.busted?.[pid]) continue; const ps=calcScore(game.playerHands[pid]); if(ps<=21&&(ps>highest||dealerScore>21)){ winner=pid; highest=ps; } }
+        game.winner=winner;
+        game.winnerMessage=winner==="dealer"?`Dealer wins with ${dealerScore}!`:`${winner} WON WITH ${highest}!`;
+        game.message=dealerScore>21?`Dealer BUSTED with ${dealerScore}!`:`Dealer has ${dealerScore}.`;
+        db.ref(`rooms/${roomId}/game`).set(game);
+      });
+    }
+
+    function calcScore(hand){
+      let score=0,aces=0;
+      hand.forEach(c=>{ if(['J','Q','K'].includes(c.v)) score+=10; else if(c.v==='A'){ score+=11; aces++; } else score+=parseInt(c.v); });
+      while(score>21 && aces--) score-=10;
+      return score;
+    }
+  </script>
 </body>
 </html>
