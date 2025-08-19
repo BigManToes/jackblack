@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JackBlack Login</title>
+  <title>JackBlack Login/Register</title>
   <link rel="icon" type="image/x-icon" href="/logo.ico">
   <style>
     body {
@@ -23,7 +23,7 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      width: 300px;
+      width: 320px;
       text-align: center;
     }
     input {
@@ -56,14 +56,20 @@
       font-size: 14px;
     }
     #message { margin-top: 10px; font-size: 14px; color: #ffd700; }
+    .mode-switch { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+    .mode-switch button { width: 120px; padding: 8px; font-size: 14px; }
   </style>
 </head>
 <body>
-  <h1>JackBlack Login</h1>
+  <h1>JackBlack</h1>
   <div class="login-box">
+    <div class="mode-switch">
+      <button id="login-mode" style="background-color:#00ffff;">Login</button>
+      <button id="register-mode">Register</button>
+    </div>
     <input type="email" id="email" placeholder="Email" required>
     <input type="password" id="password" placeholder="Password" required>
-    <button id="login-btn">Login</button>
+    <button id="action-btn">Login</button>
     <button class="link-btn" id="forgot-btn">Forgot Password?</button>
     <div id="message"></div>
   </div>
@@ -87,28 +93,55 @@
 
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const loginBtn = document.getElementById('login-btn');
+    const actionBtn = document.getElementById('action-btn');
     const forgotBtn = document.getElementById('forgot-btn');
     const messageEl = document.getElementById('message');
+    const loginModeBtn = document.getElementById('login-mode');
+    const registerModeBtn = document.getElementById('register-mode');
 
-    loginBtn.addEventListener('click', () => {
+    let mode = 'login'; // default
+
+    function updateMode() {
+      if(mode === 'login'){
+        actionBtn.textContent = 'Login';
+        loginModeBtn.style.backgroundColor = '#00ffff';
+        registerModeBtn.style.backgroundColor = '';
+      } else {
+        actionBtn.textContent = 'Register';
+        loginModeBtn.style.backgroundColor = '';
+        registerModeBtn.style.backgroundColor = '#00ffff';
+      }
+      messageEl.textContent = '';
+    }
+
+    loginModeBtn.addEventListener('click', () => { mode = 'login'; updateMode(); });
+    registerModeBtn.addEventListener('click', () => { mode = 'register'; updateMode(); });
+
+    actionBtn.addEventListener('click', () => {
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
       if(!email || !password){
-        messageEl.textContent = "Please enter email and password!";
+        messageEl.textContent = "Enter email and password!";
         return;
       }
-      auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          messageEl.textContent = "Login successful! Redirecting...";
-          // Save username in localStorage for game
-          localStorage.setItem("nickname", email.split('@')[0]);
-          // Redirect to game page
-          window.location.href = "/index.html";
-        })
-        .catch((error) => {
-          messageEl.textContent = error.message;
-        });
+
+      if(mode === 'login'){
+        auth.signInWithEmailAndPassword(email, password)
+          .then(userCredential => {
+            messageEl.textContent = "Login successful! Redirecting...";
+            localStorage.setItem("nickname", email.split('@')[0]);
+            window.location.href = "/index.html";
+          })
+          .catch(error => { messageEl.textContent = error.message; });
+      } else {
+        auth.createUserWithEmailAndPassword(email, password)
+          .then(userCredential => {
+            messageEl.textContent = "Registered successfully! Logging in...";
+            localStorage.setItem("nickname", email.split('@')[0]);
+            window.location.href = "/index.html";
+          })
+          .catch(error => { messageEl.textContent = error.message; });
+      }
     });
 
     forgotBtn.addEventListener('click', () => {
@@ -118,21 +151,19 @@
         return;
       }
       auth.sendPasswordResetEmail(email)
-        .then(() => {
-          messageEl.textContent = "Password reset email sent!";
-        })
-        .catch((error) => {
-          messageEl.textContent = error.message;
-        });
+        .then(() => { messageEl.textContent = "Password reset email sent!"; })
+        .catch(error => { messageEl.textContent = error.message; });
     });
 
-    // Optional: redirect logged-in users automatically
+    // Auto redirect if logged in
     auth.onAuthStateChanged(user => {
       if(user){
         localStorage.setItem("nickname", user.email.split('@')[0]);
         window.location.href = "/index.html";
       }
     });
+
+    updateMode();
   </script>
 </body>
 </html>
