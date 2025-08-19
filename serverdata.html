@@ -28,12 +28,12 @@
 
     .credits-text {
       position: absolute;
-      bottom: -100%;
       width: 100%;
       text-align: center;
       font-size: 1.5rem;
       line-height: 2rem;
       animation: rollCredits 25s linear forwards;
+      transform: translateY(100%); /* Start fully below container */
     }
 
     .credits-text p {
@@ -41,8 +41,8 @@
     }
 
     @keyframes rollCredits {
-      0% { bottom: -100%; }
-      100% { bottom: 100%; }
+      0% { transform: translateY(100%); }
+      100% { transform: translateY(-100%); }
     }
   </style>
 </head>
