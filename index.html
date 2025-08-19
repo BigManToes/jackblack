@@ -182,8 +182,39 @@ function joinRoom() {
   roomId = el.roomIdInput.value.trim();
   if (!roomId) return alert("Enter room ID!");
   
-  // generate random player ID only when joining room
-  playerId = "PLAYER" + Math.floor(Math.random() * 1000);
+ <script>
+// --- Player ID setup removed from page load ---
+let roomId = "";
+let playerId = "PLAYER" + Math.floor(Math.random() * 1000); // auto-generated immediately
+
+const el = {
+  playerCards: document.getElementById("player-cards"),
+  dealerCards: document.getElementById("dealer-cards"),
+  playerCardsContainer: document.getElementById("player-cards-container"),
+  dealerCardsContainer: document.getElementById("dealer-cards-container"),
+  gameMsg: document.getElementById("game-message"),
+  winnerMsg: document.getElementById("winner-message"),
+  turnIndicator: document.getElementById("turn-indicator"),
+  controls: document.getElementById("controls"),
+  voteBtn: document.getElementById("vote-button"),
+  playerInfo: document.getElementById("player-info"),
+  playersVoting: document.getElementById("players-voting"),
+  playerIdDisplay: document.getElementById("player-id-display"),
+  roomIdInput: document.getElementById("room-id")
+};
+
+// --- Room input starts empty ---
+el.roomIdInput.value = "";
+
+// --- Display player ID immediately ---
+el.playerIdDisplay.textContent = `You are: ${playerId}`;
+
+// --- Join Room ---
+function joinRoom() {
+  roomId = el.roomIdInput.value.trim();
+  if (!roomId) return alert("Enter room ID!");
+  
+  // Display player info with room
   el.playerIdDisplay.textContent = `You are: ${playerId} (Room: ${roomId})`;
 
   const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
@@ -193,12 +224,23 @@ function joinRoom() {
   el.controls.style.display = "block";
   el.voteBtn.style.display = "inline-block";
 
-  db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
-  db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
-
-  // hide cards until game starts
+  // Hide cards until game starts
   el.playerCardsContainer.style.display = "none";
   el.dealerCardsContainer.style.display = "none";
+
+  db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
+  db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
+}
+
+// --- Keep your existing functions ---
+function updateGameState(snapshot) {
+  const game = snapshot.val();
+  // your original game state logic
+}
+
+function updatePlayers(snapshot) {
+  const players = snapshot.val();
+  // your original player update logic
 }
 
 
