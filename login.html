@@ -1,89 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JackBlack Login</title>
-<link rel="icon" type="image/x-icon" href="/logo.ico">
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #1e1e1e;
-    color: white;
-    text-align: center;
-    padding: 20px;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  h1 { margin-bottom: 20px; }
-  input { width: 90%; padding: 10px; margin: 10px 0; font-size: 16px; }
-  button { padding: 10px 20px; margin: 10px 5px; font-size: 16px; cursor: pointer; }
-  .link-btn { background:none; border:none; color:#00ffff; cursor:pointer; text-decoration:underline; }
-  #message { margin-top:10px; font-size:14px; color:#ff6666; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JackBlack Login</title>
+  <link rel="icon" type="image/x-icon" href="/logo.ico">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 { margin-bottom: 20px; }
+    .login-box {
+      background: #2c2c2c;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      width: 300px;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #00ffff;
+      color: #000;
+      cursor: pointer;
+    }
+    button:hover { background-color: #00cccc; }
+    .link-btn {
+      background: none;
+      color: #00ffff;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 5px;
+      border: none;
+      font-size: 14px;
+    }
+    #message { margin-top: 10px; font-size: 14px; color: #ffd700; }
+  </style>
 </head>
 <body>
-<h1>JackBlack Login</h1>
+  <h1>JackBlack Login</h1>
+  <div class="login-box">
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button id="login-btn">Login</button>
+    <button class="link-btn" id="forgot-btn">Forgot Password?</button>
+    <div id="message"></div>
+  </div>
 
-<input id="email" type="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<div>
-  <button onclick="login()">Login</button>
-  <button onclick="register()">Register</button>
-</div>
-<div>
-  <button class="link-btn" onclick="forgotPassword()">Forgot Password?</button>
-</div>
-<div id="message"></div>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
+      authDomain: "jackblack-95dbd.firebaseapp.com",
+      databaseURL: "https://jackblack-95dbd-default-rtdb.firebaseio.com",
+      projectId: "jackblack-95dbd",
+      storageBucket: "jackblack-95dbd.firebasestorage.app",
+      messagingSenderId: "321007761489",
+      appId: "1:321007761489:web:e62d122547783bd86ea070",
+      measurementId: "G-08KQXFNB5X"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('login-btn');
+    const forgotBtn = document.getElementById('forgot-btn');
+    const messageEl = document.getElementById('message');
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
-  authDomain: "jackblack-95dbd.firebaseapp.com",
-  databaseURL: "https://jackblack-95dbd-default-rtdb.firebaseio.com",
-  projectId: "jackblack-95dbd",
-  storageBucket: "jackblack-95dbd.firebasestorage.app",
-  messagingSenderId: "321007761489",
-  appId: "1:321007761489:web:e62d122547783bd86ea070",
-  measurementId: "G-08KQXFNB5X"
-};
+    loginBtn.addEventListener('click', () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      if(!email || !password){
+        messageEl.textContent = "Please enter email and password!";
+        return;
+      }
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          messageEl.textContent = "Login successful! Redirecting...";
+          // Save username in localStorage for game
+          localStorage.setItem("nickname", email.split('@')[0]);
+          // Redirect to game page
+          window.location.href = "/index.html";
+        })
+        .catch((error) => {
+          messageEl.textContent = error.message;
+        });
+    });
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+    forgotBtn.addEventListener('click', () => {
+      const email = emailInput.value.trim();
+      if(!email){
+        messageEl.textContent = "Enter your email to reset password!";
+        return;
+      }
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          messageEl.textContent = "Password reset email sent!";
+        })
+        .catch((error) => {
+          messageEl.textContent = error.message;
+        });
+    });
 
-const msg = document.getElementById("message");
-
-function login() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-  if(!email || !password) { msg.textContent = "Fill in all fields."; return; }
-
-  signInWithEmailAndPassword(auth, email, password)
-    .then(() => { window.location.href = "/"; })
-    .catch(err => { msg.textContent = err.message; });
-}
-
-function register() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-  if(!email || !password) { msg.textContent = "Fill in all fields."; return; }
-
-  createUserWithEmailAndPassword(auth, email, password)
-    .then(() => { window.location.href = "/"; })
-    .catch(err => { msg.textContent = err.message; });
-}
-
-function forgotPassword() {
-  const email = document.getElementById("email").value.trim();
-  if(!email) { msg.textContent = "Enter your email to reset password."; return; }
-
-  sendPasswordResetEmail(auth, email)
-    .then(() => { msg.textContent = "Password reset email sent."; })
-    .catch(err => { msg.textContent = err.message; });
-}
-</script>
+    // Optional: redirect logged-in users automatically
+    auth.onAuthStateChanged(user => {
+      if(user){
+        localStorage.setItem("nickname", user.email.split('@')[0]);
+        window.location.href = "/index.html";
+      }
+    });
+  </script>
 </body>
 </html>
