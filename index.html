@@ -57,11 +57,14 @@
       flex: 0 0 auto;
     }
     #dealer-cards, #player-cards {
-      display: none; /* hidden initially */
+      display: flex;
       justify-content: center;
       align-items: center;
       margin: 10px 0;
       flex-wrap: wrap;
+    }
+    #player-cards-section, #dealer-cards-section {
+      display: none; /* hidden until game starts */
     }
     input { padding: 8px; font-size: 14px; }
     .game-area { display: flex; flex-direction: column; gap: 10px; }
@@ -77,7 +80,7 @@
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
     <h1>JackBlack</h1>
-    <div id="player-id-display">You are: no one...</div>
+    <div id="player-id-display">You are: waiting to join...</div>
   </div>
   
   <div class="game-area">
@@ -97,12 +100,12 @@
       <button onclick="stand()">Stand</button>
     </div>
     
-    <div>
+    <div id="player-cards-section">
       <div class="card-title">Your Cards:</div>
       <div id="player-cards"></div>
     </div>
     
-    <div>
+    <div id="dealer-cards-section">
       <div class="card-title">Dealer Cards:</div>
       <div id="dealer-cards"></div>
     </div>
@@ -142,10 +145,12 @@
       playerInfo: document.getElementById("player-info"),
       playersVoting: document.getElementById("players-voting"),
       playerIdDisplay: document.getElementById("player-id-display"),
-      roomIdInput: document.getElementById("room-id")
+      roomIdInput: document.getElementById("room-id"),
+      playerSection: document.getElementById("player-cards-section"),
+      dealerSection: document.getElementById("dealer-cards-section")
     };
 
-    // Ensure Room ID input starts empty
+    // Start with empty Room ID input
     el.roomIdInput.value = "";
     el.roomIdInput.placeholder = "Enter Room ID";
 
@@ -153,7 +158,6 @@
       roomId = el.roomIdInput.value.trim();
       if (!roomId) return alert("Enter room ID!");
 
-      // Generate random player ID
       const randomNum = Math.floor(Math.random() * 10000);
       window.playerId = "player" + randomNum;
       el.playerIdDisplay.textContent = `You: ${window.playerId} (Room: ${roomId})`;
@@ -173,12 +177,13 @@
       const game = snap.val();
       if (!game) return;
 
-      // Show cards once game exists
-      el.playerCards.style.display = "flex";
-      el.dealerCards.style.display = "flex";
-
       const playerHand = game.playerHands?.[window.playerId] || [];
       const dealerHand = game.dealerHand || [];
+
+      // Only show sections if cards exist
+      if (playerHand.length) el.playerSection.style.display = "block";
+      if (dealerHand.length) el.dealerSection.style.display = "block";
+
       updateCards(el.playerCards, playerHand);
       updateCards(el.dealerCards, !game.over && game.turn !== "dealer" 
         ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "???", s: "" }))]
