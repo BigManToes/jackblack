@@ -57,7 +57,7 @@
       flex: 0 0 auto;
     }
     #dealer-cards, #player-cards {
-      display: flex;
+      display: none; /* hidden initially */
       justify-content: center;
       align-items: center;
       margin: 10px 0;
@@ -77,7 +77,7 @@
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
     <h1>JackBlack</h1>
-    <div id="player-id-display">You are: waiting to join...</div>
+    <div id="player-id-display">You are: no one...</div>
   </div>
   
   <div class="game-area">
@@ -172,12 +172,18 @@
     function updateGameState(snap) {
       const game = snap.val();
       if (!game) return;
+
+      // Show cards once game exists
+      el.playerCards.style.display = "flex";
+      el.dealerCards.style.display = "flex";
+
       const playerHand = game.playerHands?.[window.playerId] || [];
       const dealerHand = game.dealerHand || [];
       updateCards(el.playerCards, playerHand);
       updateCards(el.dealerCards, !game.over && game.turn !== "dealer" 
         ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "???", s: "" }))]
         : dealerHand);
+
       el.gameMsg.innerText = game.message || "";
       if (game.winner === window.playerId) {
         const score = calcScore(game.playerHands[window.playerId]);
