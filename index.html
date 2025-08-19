@@ -80,7 +80,7 @@
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
     <h1>JackBlack</h1>
-    <div id="player-id-display">You are: waiting to join...</div>
+    <div id="player-id-display">You are: waiting...</div>
   </div>
   
   <div class="game-area">
@@ -132,8 +132,6 @@
     const db = firebase.database();
 
     let roomId = "";
-    window.playerId = "";
-
     const el = {
       playerCards: document.getElementById("player-cards"),
       dealerCards: document.getElementById("dealer-cards"),
@@ -150,24 +148,21 @@
       dealerSection: document.getElementById("dealer-cards-section")
     };
 
-    // Start with empty Room ID input
-    el.roomIdInput.value = "";
-    el.roomIdInput.placeholder = "Enter Room ID";
+    // Generate player ID instantly on page load
+    window.playerId = "player" + Math.floor(Math.random() * 10000);
+    el.playerIdDisplay.textContent = `You are: ${window.playerId}`;
 
     function joinRoom() {
       roomId = el.roomIdInput.value.trim();
       if (!roomId) return alert("Enter room ID!");
-
-      const randomNum = Math.floor(Math.random() * 10000);
-      window.playerId = "player" + randomNum;
-      el.playerIdDisplay.textContent = `You: ${window.playerId} (Room: ${roomId})`;
-
+      
       const playerRef = db.ref(`rooms/${roomId}/players/${window.playerId}`);
       playerRef.set({ joined: Date.now(), vote: false });
       playerRef.onDisconnect().remove();
 
       el.controls.style.display = "block";
       el.voteBtn.style.display = "inline-block";
+      el.playerIdDisplay.textContent = `You: ${window.playerId} (Room: ${roomId})`;
 
       db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
       db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
@@ -180,7 +175,6 @@
       const playerHand = game.playerHands?.[window.playerId] || [];
       const dealerHand = game.dealerHand || [];
 
-      // Only show sections if cards exist
       if (playerHand.length) el.playerSection.style.display = "block";
       if (dealerHand.length) el.dealerSection.style.display = "block";
 
@@ -225,30 +219,40 @@
       let deck = [];
       for (let s of suits) for (let v of values) deck.push({ v, s });
       deck.sort(() => Math.random() - 0.5);
+
       const shuffledIds = [...playerIds].sort(() => Math.random() - 0.5);
-      const gameState = {
-        deck,
-        playerHands: {},
-        dealerHand: [deck.pop(), deck.pop()],
-        turn: shuffledIds[0],
-        message: "Game started!",
-        winnerMessage: "",
-        stood: {},
-        busted: {},
-        over: false,
-        playerOrder: shuffledIds
-      };
-      for (let pid of shuffledIds) {
-        gameState.playerHands[pid] = [deck.pop(), deck.pop()];
-        if (calcScore(gameState.playerHands[pid]) === 21) {
-          gameState.message = `${pid} has blackjack (21)!`;
-          gameState.winnerMessage = `${pid} WON WITH JACKBLACK!`;
-          gameState.winner = pid;
-          gameState.over = true;
+
+      db.ref(`rooms/${roomId}/game`).once('value', snap => {
+        const existingGame = snap.val() || {};
+        const gameState = {
+          deck,
+          playerHands: existingGame.playerHands || {},
+          dealerHand: existingGame.dealerHand || [deck.pop(), deck.pop()],
+          turn: shuffledIds[0],
+          message: "Game started!",
+          winnerMessage: "",
+          stood: {},
+          busted: {},
+          over: false,
+          playerOrder: shuffledIds
+        };
+
+        // Only assign hands to players who don't already have one
+        for (let pid of shuffledIds) {
+          if (!gameState.playerHands[pid]) {
+            gameState.playerHands[pid] = [deck.pop(), deck.pop()];
+            if (calcScore(gameState.playerHands[pid]) === 21) {
+              gameState.message = `${pid} has blackjack (21)!`;
+              gameState.winnerMessage = `${pid} WON WITH JACKBLACK!`;
+              gameState.winner = pid;
+              gameState.over = true;
+            }
+          }
         }
-      }
-      db.ref(`rooms/${roomId}/game`).set(gameState);
-      el.voteBtn.style.display = "none";
+
+        db.ref(`rooms/${roomId}/game`).set(gameState);
+        el.voteBtn.style.display = "none";
+      });
     }
 
     function voteToStart() {
