@@ -68,17 +68,13 @@ button {
   margin: 10px 0;
   flex-wrap: wrap;
 }
-
-/* hide cards sections until game starts */
 #player-cards-section, #dealer-cards-section {
   display: none;
 }
-
 input { padding: 8px; font-size: 14px; }
 .game-area { display: flex; flex-direction: column; gap: 10px; }
 .card-title { font-weight: bold; margin-top: 5px; }
 #player-info, #players-voting { font-size: 14px; margin: 5px 0; word-break: break-word; }
-
 @media (max-width: 600px) {
   .card { font-size: 16px; padding: 10px 15px; }
   h1 { font-size: 1.5em; }
@@ -89,6 +85,17 @@ input { padding: 8px; font-size: 14px; }
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
   <h1>JackBlack</h1>
   <div id="player-id-display">You are: waiting to join...</div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+
+<!-- Auth buttons -->
+<div>
+  <button onclick="signIn()">Sign in with Google</button>
+  <button onclick="signOut()">Sign out</button>
 </div>
 
 <div class="game-area">
@@ -122,11 +129,7 @@ input { padding: 8px; font-size: 14px; }
   <div id="winner-message"></div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
-
 <script>
-// Initialize Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDxjT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
   authDomain: "jackblack-95dbd.firebaseapp.com",
@@ -138,14 +141,37 @@ const firebaseConfig = {
   measurementId: "G-08KQXFNB5X"
 };
 firebase.initializeApp(firebaseConfig);
+
+// --- Auth logic ---
+let currentUser = null;
+firebase.auth().onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById("player-id-display").textContent = `Signed in as: ${user.displayName}`;
+  } else {
+    document.getElementById("player-id-display").textContent = "You are not signed in.";
+  }
+});
+
+function signIn() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
+    .catch(error => alert("Sign-in failed: " + error.message));
+}
+function signOut() {
+  firebase.auth().signOut();
+}
+
+// --- Game logic ---
+// Only allow playing if signed-in!
 const db = firebase.database();
+function validateRoomId(roomId) {
+  return typeof roomId === "string" && /^[a-zA-Z0-9]{3,20}$/.test(roomId);
+}
 
-// Game state variables
 let roomId = "";
-let playerId = "player" + Math.floor(Math.random() * 1000);
-document.getElementById("player-id-display").textContent = `You are: ${playerId}`;
+let playerId = "";
 
-// DOM elements
 const el = {
   playerCards: document.getElementById("player-cards"),
   dealerCards: document.getElementById("dealer-cards"),
@@ -161,18 +187,20 @@ const el = {
 };
 
 function joinRoom() {
+  if (!currentUser) return alert("Please sign in first!");
   roomId = el.roomIdInput.value.trim();
-  if (!roomId) return alert("Enter room ID!");
+  if (!validateRoomId(roomId)) return alert("Enter a valid Room ID (3-20 alphanumeric)!");
+  // Use Firebase UID for playerId (prevents spoofing)
+  playerId = currentUser.uid;
 
   const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-  playerRef.set({ joined: Date.now(), vote: false });
+  playerRef.set({ joined: Date.now(), vote: false, name: currentUser.displayName });
   playerRef.onDisconnect().remove();
 
   el.controls.style.display = "block";
   el.voteBtn.style.display = "inline-block";
-  el.playerIdDisplay.textContent = `You: ${playerId} (Room: ${roomId})`;
+  el.playerIdDisplay.textContent = `You: ${currentUser.displayName} (Room: ${roomId})`;
 
-  // Listen for game updates
   db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
   db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
 }
@@ -180,17 +208,13 @@ function joinRoom() {
 function updateGameState(snap) {
   const game = snap.val();
   if (!game) return;
-
-  // reveal sections when a game exists
   document.getElementById("player-cards-section").style.display = "block";
   document.getElementById("dealer-cards-section").style.display = "block";
 
   const playerHand = game.playerHands?.[playerId] || [];
   const dealerHand = game.dealerHand || [];
-
-  // Update cards display with hidden dealer logic
   updateCards(el.playerCards, playerHand);
-  updateCards(el.dealerCards, !game.over && game.turn !== "dealer" 
+  updateCards(el.dealerCards, !game.over && game.turn !== "dealer"
     ? [dealerHand[0], ...dealerHand.slice(1).map(() => ({ v: "???", s: "" }))]
     : dealerHand);
 
@@ -219,8 +243,8 @@ function updatePlayers(snap) {
   const players = snap.val() || {};
   const playerIds = Object.keys(players);
 
-  el.playerInfo.innerText = "Players: " + playerIds.map(pid => 
-    `${pid === playerId ? "YOU" : pid} [${players[pid].vote ? "✓" : "✗"}]`
+  el.playerInfo.innerText = "Players: " + playerIds.map(pid =>
+    `${players[pid].name || pid} [${players[pid].vote ? "✓" : "✗"}]`
   ).join(", ");
 
   const votesCount = Object.values(players).filter(p => p.vote).length;
@@ -337,7 +361,7 @@ function nextTurn(game) {
 
     for (let i = 1; i <= playerIds.length; i++) {
       const nextId = playerIds[(currentIdx + i) % playerIds.length];
-      if (!game.stood?.[nextId] && !game.busted?.[nextId] && 
+      if (!game.stood?.[nextId] && !game.busted?.[nextId] &&
       calcScore(game.playerHands[nextId]) < 21) {
         game.turn = nextId;
         return;
@@ -347,7 +371,7 @@ function nextTurn(game) {
 }
 
 function allPlayersDone(game) {
-  return Object.keys(game.playerHands).every(pid => 
+  return Object.keys(game.playerHands).every(pid =>
     game.stood?.[pid] || game.busted?.[pid] || calcScore(game.playerHands[pid]) === 21
   );
 }
@@ -380,7 +404,6 @@ function dealerPlay() {
     for (const pid of game.playerOrder) {
       if (game.busted?.[pid]) continue;
       const playerScore = calcScore(game.playerHands[pid]);
-
       if (playerScore <= 21 && (playerScore > highestScore || dealerBusted)) {
         winner = pid;
         highestScore = playerScore;
@@ -395,8 +418,8 @@ function dealerPlay() {
       game.winnerMessage = "Everyone busted! No winner.";
     }
 
-    game.message = dealerBusted 
-      ? `Dealer BUSTED with ${dealerScore}!` 
+    game.message = dealerBusted
+      ? `Dealer BUSTED with ${dealerScore}!`
       : `Dealer has ${dealerScore}.`;
     game.winner = winner;
 
