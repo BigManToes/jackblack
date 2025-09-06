@@ -199,8 +199,9 @@ function startGame(playerIds){
   for(let pid of shuffledIds){
     gameState.playerHands[pid]=[deck.pop(),deck.pop()];
     if(calcScore(gameState.playerHands[pid])===21){
-      gameState.message=`${playerNames[pid]||pid} has blackjack!`;
-      gameState.winnerMessage=`${playerNames[pid]||pid} WON WITH JACKBLACK!`;
+      const pname = playerNames[pid] || "Player";
+      gameState.message=`${pname} has blackjack!`;
+      gameState.winnerMessage=`🏆 ${pname} WON WITH JACKBLACK! 🏆`;
       gameState.winner=pid;
       gameState.over=true;
     }
@@ -217,16 +218,15 @@ function updateGameState(snap){
   const dealerHand=game.dealerHand||[];
   updateCards(el.playerCards, playerHand);
   updateCards(el.dealerCards, !game.over && game.turn!=="dealer"?[dealerHand[0], ...dealerHand.slice(1).map(()=>({v:"???",s:""}))]:dealerHand);
- el.gameMsg.innerText = game.message || "";
-if (game.winner) {
-  const winnerName = playerNames[game.winner]; // simple username grab vro
-  if (game.winner === playerId) {
-    el.winnerMsg.innerText = `🏆 YOU WON! 🏆`;
-  } else {
-    el.winnerMsg.innerText = `🏆 ${winnerName} WON! 🏆`;
-  }
-}
-  else el.winnerMsg.innerText=game.winnerMessage||"";
+  el.gameMsg.innerText = game.message || "";
+  if (game.winner) {
+    const winnerName = playerNames[game.winner] || "Player";
+    if (game.winner === playerId) {
+      el.winnerMsg.innerText = `🏆 YOU WON! 🏆`;
+    } else {
+      el.winnerMsg.innerText = `🏆 ${winnerName} WON! 🏆`;
+    }
+  } else el.winnerMsg.innerText=game.winnerMessage||"";
   el.controls.style.display=game.turn===playerId&&!game.over?"block":"none";
   if(game.over) el.turnIndicator.innerText="Game Over";
   else if(game.turn==="dealer") el.turnIndicator.innerText="Dealer's Turn";
@@ -248,7 +248,7 @@ function hit(){ db.ref(`rooms/${roomId}/game`).once('value', snap=>{
   if(game.stood?.[playerId]||game.busted?.[playerId]) return;
   const newCard=game.deck.pop(); game.playerHands[playerId].push(newCard);
   const score=calcScore(game.playerHands[playerId]);
-  const playerName=playerNames[playerId]||playerId;
+  const playerName=playerNames[playerId]||"Player";
   if(score>21){ game.busted=game.busted||{}; game.busted[playerId]=true; game.message=`${playerName} busted!`; }
   else if(score===21){ game.message=`${playerName} hit 21!`; game.stood=game.stood||{}; game.stood[playerId]=true; }
   else game.message=`${playerName} hits.`;
@@ -258,7 +258,7 @@ function hit(){ db.ref(`rooms/${roomId}/game`).once('value', snap=>{
 
 function stand(){ db.ref(`rooms/${roomId}/game`).once('value',snap=>{
   const game=snap.val(); if(game.turn!==playerId||game.over) return;
-  const playerName=playerNames[playerId]||playerId;
+  const playerName=playerNames[playerId]||"Player";
   game.stood=game.stood||{}; game.stood[playerId]=true;
   game.message=`${playerName} stands.`;
   nextTurn(game);
@@ -291,7 +291,9 @@ function dealerPlay(){ db.ref(`rooms/${roomId}/game`).once('value', snap=>{
     const playerScore=calcScore(game.playerHands[pid]);
     if(playerScore<=21&&(playerScore>highestScore||dealerBusted)){ winner=pid; highestScore=playerScore; }
   }
-  game.winnerMessage=winner==="dealer"?"Dealer wins!":winner?`${playerNames[winner]||winner} WON!`:"Everyone busted! No winner.";
+  if(winner==="dealer"){ game.winnerMessage="Dealer wins!"; }
+  else if(winner){ game.winnerMessage=`🏆 ${playerNames[winner]||"Player"} WON! 🏆`; }
+  else{ game.winnerMessage="Everyone busted! No winner."; }
   game.message=dealerBusted?"Dealer busted!":"Dealer finished.";
   game.winner=winner;
   db.ref(`rooms/${roomId}/game`).set(game);
