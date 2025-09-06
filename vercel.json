@@ -1,5 +1,6 @@
 {
   "rewrites": [
     { "source": "/rules", "destination": "/rules.html" }
+    { "source": "/jarvis", "destination": "/jarvis.html" }
   ]
 }
