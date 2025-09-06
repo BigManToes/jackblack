@@ -187,9 +187,9 @@ const el = {
 };
 
 function joinRoom() {
-  if (!currentUser) return alert("Please sign in first!");
+  if (!currentUser) return alert("Please sign in first. Isaac said");
   roomId = el.roomIdInput.value.trim();
-  if (!validateRoomId(roomId)) return alert("Enter a valid Room ID (3-20 alphanumeric)!");
+  if (!validateRoomId(roomId)) return alert("Enter a valid Room ID (3-20 alphanumeric) Tip: read the rules...");
   playerId = currentUser.uid;
 
   const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
