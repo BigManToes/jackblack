@@ -87,12 +87,12 @@ input { padding: 8px; font-size: 14px; }
   <div id="player-id-display">You are: waiting to join...</div>
 </div>
 
-<!-- Firebase SDKs -->
+<!-- Firebase sdk's -->
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
-<!-- Auth buttons -->
+<!-- auth system -->
 <div>
   <button onclick="signIn()">Sign in with Google</button>
   <button onclick="signOut()">Sign out</button>
@@ -162,8 +162,7 @@ function signOut() {
   firebase.auth().signOut();
 }
 
-// --- Game logic ---
-// Only allow playing if signed-in!
+//  Thy game
 const db = firebase.database();
 function validateRoomId(roomId) {
   return typeof roomId === "string" && /^[a-zA-Z0-9]{3,20}$/.test(roomId);
@@ -171,6 +170,7 @@ function validateRoomId(roomId) {
 
 let roomId = "";
 let playerId = "";
+let playerNames = {};
 
 const el = {
   playerCards: document.getElementById("player-cards"),
@@ -190,7 +190,6 @@ function joinRoom() {
   if (!currentUser) return alert("Please sign in first!");
   roomId = el.roomIdInput.value.trim();
   if (!validateRoomId(roomId)) return alert("Enter a valid Room ID (3-20 alphanumeric)!");
-  // Use Firebase UID for playerId (prevents spoofing)
   playerId = currentUser.uid;
 
   const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
@@ -221,11 +220,9 @@ function updateGameState(snap) {
   el.gameMsg.innerText = game.message || "";
 
   if (game.winner === playerId) {
-    const score = calcScore(game.playerHands[playerId]);
-    el.winnerMsg.innerText = `🏆 YOU WON WITH ${score}! 🏆`;
+    el.winnerMsg.innerText = `🏆 YOU WON! 🏆`;
   } else if (game.winner && game.winner !== "dealer") {
-    const score = game.playerHands[game.winner] ? calcScore(game.playerHands[game.winner]) : "";
-    el.winnerMsg.innerText = `🏆 ${game.winner} WON WITH ${score}! 🏆`;
+    el.winnerMsg.innerText = `🏆 ${playerNames[game.winner] || game.winner} WON! 🏆`;
   } else {
     el.winnerMsg.innerText = game.winnerMessage || "";
   }
@@ -235,16 +232,20 @@ function updateGameState(snap) {
   if (game.over) el.turnIndicator.innerText = "Game Over";
   else if (game.turn === "dealer") el.turnIndicator.innerText = "Dealer's Turn";
   else if (game.turn) {
-    el.turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${game.turn}'s turn`;
+    el.turnIndicator.innerText = game.turn === playerId ? "YOUR TURN!" : `${playerNames[game.turn] || game.turn}'s turn`;
   }
 }
 
 function updatePlayers(snap) {
   const players = snap.val() || {};
-  const playerIds = Object.keys(players);
+  playerNames = {};
+  for (const pid in players) {
+    playerNames[pid] = players[pid].name || pid;
+  }
 
+  const playerIds = Object.keys(players);
   el.playerInfo.innerText = "Players: " + playerIds.map(pid =>
-    `${players[pid].name || pid} [${players[pid].vote ? "✓" : "✗"}]`
+    `${playerNames[pid]} [${players[pid].vote ? "✓" : "✗"}]`
   ).join(", ");
 
   const votesCount = Object.values(players).filter(p => p.vote).length;
@@ -281,11 +282,12 @@ function startGame(playerIds) {
   for (let pid of shuffledIds) {
     gameState.playerHands[pid] = [deck.pop(), deck.pop()];
 
-if (calcScore(gameState.playerHands[pid]) === 21) {
-  gameState.message = `${user.displayName} has blackjack (21)!`;
-  gameState.winnerMessage = `${pid} WON WITH JACKBLACK!`;
-  gameState.winner = pid;
-  gameState.over = true;
+    if (calcScore(gameState.playerHands[pid]) === 21) {
+      const playerName = playerNames[pid] || pid;
+      gameState.message = `${playerName} has blackjack!`;
+      gameState.winnerMessage = `${playerName} WON WITH JACKBLACK!`;
+      gameState.winner = pid;
+      gameState.over = true;
     }
   }
 
@@ -318,17 +320,18 @@ function hit() {
     game.playerHands[playerId].push(newCard);
 
     const score = calcScore(game.playerHands[playerId]);
+    const playerName = playerNames[playerId] || playerId;
 
     if (score > 21) {
       game.busted = game.busted || {};
       game.busted[playerId] = true;
-      game.message = `${playerId} BUSTED with ${score}!`;
+      game.message = `${playerName} busted!`;
     } else if (score === 21) {
-      game.message = `${playerId} hits 21!`;
+      game.message = `${playerName} hit 21!`;
       game.stood = game.stood || {};
       game.stood[playerId] = true;
     } else {
-      game.message = `${playerId} hits. Score: ${score}`;
+      game.message = `${playerName} hits.`;
     }
 
     nextTurn(game);
@@ -341,9 +344,10 @@ function stand() {
     const game = snap.val();
     if (game.turn !== playerId || game.over) return;
 
+    const playerName = playerNames[playerId] || playerId;
     game.stood = game.stood || {};
     game.stood[playerId] = true;
-    game.message = `${playerId} stands.`;
+    game.message = `${playerName} stands.`;
 
     nextTurn(game);
     db.ref(`rooms/${roomId}/game`).set(game);
@@ -411,16 +415,16 @@ function dealerPlay() {
     }
 
     if (winner === "dealer") {
-      game.winnerMessage = `Dealer wins with ${dealerScore}!`;
+      game.winnerMessage = `Dealer wins!`;
     } else if (winner) {
-      game.winnerMessage = `${winner} WON WITH ${highestScore}!`;
+      game.winnerMessage = `${playerNames[winner] || winner} WON!`;
     } else {
       game.winnerMessage = "Everyone busted! No winner.";
     }
 
     game.message = dealerBusted
-      ? `Dealer BUSTED with ${dealerScore}!`
-      : `Dealer has ${dealerScore}.`;
+      ? `Dealer busted!`
+      : `Dealer finished.`;
     game.winner = winner;
 
     db.ref(`rooms/${roomId}/game`).set(game);
