@@ -217,9 +217,15 @@ function updateGameState(snap){
   const dealerHand=game.dealerHand||[];
   updateCards(el.playerCards, playerHand);
   updateCards(el.dealerCards, !game.over && game.turn!=="dealer"?[dealerHand[0], ...dealerHand.slice(1).map(()=>({v:"???",s:""}))]:dealerHand);
-  el.gameMsg.innerText=game.message||"";
-  if(game.winner===playerId) el.winnerMsg.innerText=`🏆 YOU WON! 🏆`;
-  else if(game.winner && game.winner!=="dealer") el.winnerMsg.innerText=`🏆 ${playerNames[game.winner]||game.winner} WON! 🏆`;
+ el.gameMsg.innerText = game.message || "";
+if (game.winner) {
+  const winnerName = playerNames[game.winner]; // simple username grab vro
+  if (game.winner === playerId) {
+    el.winnerMsg.innerText = `🏆 YOU WON! 🏆`;
+  } else {
+    el.winnerMsg.innerText = `🏆 ${winnerName} WON! 🏆`;
+  }
+}
   else el.winnerMsg.innerText=game.winnerMessage||"";
   el.controls.style.display=game.turn===playerId&&!game.over?"block":"none";
   if(game.over) el.turnIndicator.innerText="Game Over";
