@@ -281,11 +281,11 @@ function startGame(playerIds) {
   for (let pid of shuffledIds) {
     gameState.playerHands[pid] = [deck.pop(), deck.pop()];
 
-    if (calcScore(gameState.playerHands[pid]) === 21) {
-      gameState.message = ${user.displayName}` has blackjack (21)!`;
-      gameState.winnerMessage = `${pid} WON WITH JACKBLACK!`;
-      gameState.winner = pid;
-      gameState.over = true;
+if (calcScore(gameState.playerHands[pid]) === 21) {
+  gameState.message = `${user.displayName} has blackjack (21)!`;
+  gameState.winnerMessage = `${pid} WON WITH JACKBLACK!`;
+  gameState.winner = pid;
+  gameState.over = true;
     }
   }
 
