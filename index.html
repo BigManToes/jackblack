@@ -142,12 +142,21 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 
-// --- Auth logic ---
+// --- Auth Log ---
 let currentUser = null;
+const OWNER_UID = "qjapXZWARTfcosFi8sA5nC79jLq2";
+
 firebase.auth().onAuthStateChanged(user => {
   currentUser = user;
   if (user) {
-    document.getElementById("player-id-display").textContent = `Signed in as: ${user.displayName}`;
+    let displayText = `Signed in as: ${user.displayName}`;
+
+
+    if (user.uid === OWNER_UID) {
+      displayText = `👑 Owner: ${user.displayName}`;
+    }
+
+    document.getElementById("player-id-display").textContent = displayText;
   } else {
     document.getElementById("player-id-display").textContent = "You are not signed in.";
   }
