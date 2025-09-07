@@ -220,7 +220,7 @@ function updateGameState(snap){
   updateCards(el.dealerCards, !game.over && game.turn!=="dealer"?[dealerHand[0], ...dealerHand.slice(1).map(()=>({v:"???",s:""}))]:dealerHand);
   el.gameMsg.innerText = game.message || "";
   if (game.winner) {
-    const winnerName = playerNames[game.winner] || "Player";
+    const winnerName = playerNames[game.winner] || "Dealer";
     if (game.winner === playerId) {
       el.winnerMsg.innerText = `🏆 YOU WON! 🏆`;
     } else {
