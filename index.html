@@ -199,7 +199,7 @@ function startGame(playerIds){
   for(let pid of shuffledIds){
     gameState.playerHands[pid]=[deck.pop(),deck.pop()];
     if(calcScore(gameState.playerHands[pid])===21){
-      const pname = playerNames[pid] || "Player";
+      const pname = playerNames[pid] || "Dealer";
       gameState.message=`${pname} has blackjack!`;
       gameState.winnerMessage=`🏆 ${pname} WON WITH JACKBLACK! 🏆`;
       gameState.winner=pid;
