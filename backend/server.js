@@ -1,46 +1,23 @@
-import express from 'express';
-import cors from 'cors';
-import admin from 'firebase-admin';
-import fetch from 'node-fetch';
+import express from "express";
+import cors from "cors";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Firebase Admin with environment variables
-admin.initializeApp({
-  credential: admin.credential.cert({
+// Serve Firebase config securely
+app.get("/firebaseConfig", (req, res) => {
+  res.json({
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    databaseURL: process.env.FIREBASE_DATABASE_URL,
     projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  }),
-  databaseURL: process.env.FIREBASE_DATABASE_URL
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
+  });
 });
 
-// Endpoint to exchange Google ID token for Firebase custom token
-app.post('/signIn', async (req, res) => {
-  try {
-    const { idToken } = req.body;
-    if (!idToken) return res.status(400).json({ error: 'No ID token provided' });
-
-    // Verify Google token
-    const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
-    const googleUser = await googleRes.json();
-
-    if (!googleUser || googleUser.aud !== process.env.GOOGLE_CLIENT_ID) {
-      return res.status(401).json({ error: 'Invalid Google ID token' });
-    }
-
-    // Create Firebase custom token
-    const customToken = await admin.auth().createCustomToken(googleUser.sub, {
-      name: googleUser.name,
-      email: googleUser.email
-    });
-
-    res.json({ customToken });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Sign-in failed' });
-  }
-});
-
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
