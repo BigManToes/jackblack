@@ -7,30 +7,38 @@
 <link rel="icon" type="image/x-icon" href="/thumbnail.ico">
 <link rel="icon" type="image/x-icon" href="/logo.ico">
 <style>
-  body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: white; text-align: center; padding: 10px; max-width: 1000px; margin: 0 auto; }
-  h1 { margin: 0 0 5px; font-size: 2em; }
-  #game-message, #winner-message, #turn-indicator, #player-info, #players-voting { word-wrap: break-word; }
-  #player-id-display { display: inline-block; font-size: 16px; font-weight: bold; color: #00ffff; background-color: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 10px; margin: 5px 0; max-width: 45%; overflow-wrap: break-word; }
-  .card { display: inline-block; margin: 4px; padding: 15px 18px; background-color: #f0f0f0; border-radius: 10px; color: black; font-size: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid #ccc; min-width: 35px; min-height: 50px; word-wrap: break-word; }
-  button { padding: 8px 15px; font-size: 14px; margin: 4px; cursor: pointer; }
-  #dealer-cards, #player-cards { display: flex; justify-content: center; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-  #player-cards-section, #dealer-cards-section { display: none; }
-  input { padding: 8px; font-size: 14px; width: 130px; max-width: 80%; }
-  .game-area { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-  .card-title { font-weight: bold; margin-top: 5px; }
-  @media (max-width: 700px) {
-    body { padding: 5px; }
-    h1 { font-size: 1.5em; }
-    .card { font-size: 16px; padding: 10px 12px; min-width: 30px; min-height: 45px; }
-    #player-id-display { font-size: 14px; max-width: 60%; }
-    button { font-size: 12px; padding: 6px 10px; }
-    input { font-size: 12px; width: 100px; }
-    #game-message, #winner-message, #turn-indicator { font-size: 14px; }
-  }
+body {
+  font-family: Arial, sans-serif;
+  background-color: #1e1e1e;
+  color: white;
+  text-align: center;
+  padding: 10px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+h1 { margin: 0 0 5px; font-size: 2em; }
+#game-message, #winner-message, #turn-indicator { margin-top: 5px; word-wrap: break-word; }
+#player-id-display { display: inline-block; font-size: 16px; font-weight: bold; color: #00ffff; background-color: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 10px; margin: 5px 0; max-width: 45%; overflow-wrap: break-word; }
+.card { display: inline-block; margin: 4px; padding: 15px 18px; background-color: #f0f0f0; border-radius: 10px; color: black; font-size: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid #ccc; min-width: 35px; min-height: 50px; word-wrap: break-word; }
+button { padding: 8px 15px; font-size: 14px; margin: 4px; cursor: pointer; }
+#dealer-cards, #player-cards { display: flex; justify-content: center; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+#player-cards-section, #dealer-cards-section { display: none; }
+input { padding: 8px; font-size: 14px; width: 130px; max-width: 80%; }
+.game-area { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.card-title { font-weight: bold; margin-top: 5px; }
+#player-info, #players-voting { font-size: 14px; margin: 5px 0; word-break: break-word; text-align:center;}
+@media (max-width: 700px) {
+  body { padding: 5px; }
+  h1 { font-size: 1.5em; }
+  .card { font-size: 16px; padding: 10px 12px; min-width: 30px; min-height: 45px; }
+  #player-id-display { font-size: 14px; max-width: 60%; }
+  button { font-size: 12px; padding: 6px 10px; }
+  input { font-size: 12px; width: 100px; }
+  #game-message, #winner-message, #turn-indicator { font-size: 14px; }
+}
 </style>
 </head>
 <body>
-
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 5px;">
   <h1>JackBlack</h1>
   <div id="player-id-display">You are: waiting to join...</div>
@@ -81,7 +89,7 @@ let currentUser = null;
 let firebaseInitialized = false;
 
 async function initFirebase() {
-  if (firebaseInitialized) return;
+  if(firebaseInitialized) return;
   try {
     const res = await fetch("https://your-vercel-backend.vercel.app/firebaseConfig");
     const config = await res.json();
@@ -93,7 +101,6 @@ async function initFirebase() {
   }
 }
 
-// Authentication
 firebase.auth().onAuthStateChanged(user => {
   currentUser = user;
   if(user){
@@ -103,19 +110,22 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
-function signIn() {
-  initFirebase().then(() => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider).catch(e=>alert("Sign-in failed: "+e.message));
-  });
+async function signIn() {
+  await initFirebase();
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
+    .then(result => console.log("Signed in as", result.user.displayName))
+    .catch(e => alert("Sign-in failed: " + e.message));
 }
 
-function signOut() { firebase.auth().signOut(); }
+function signOut() { 
+  firebase.auth().signOut(); 
+}
 
-// Game logic variables
+// ----------- Game Logic -----------
+const db = firebase.database();
 let roomId="", playerId="", playerNames={};
-const db = () => firebase.database();
-const el = {
+const el={
   playerCards:document.getElementById("player-cards"),
   dealerCards:document.getElementById("dealer-cards"),
   gameMsg:document.getElementById("game-message"),
@@ -129,50 +139,46 @@ const el = {
   roomIdInput:document.getElementById("room-id")
 };
 
-// ------------------ Game Functions ------------------ //
 function validateRoomId(rid){ return /^[a-zA-Z0-9]{3,20}$/.test(rid); }
 
-function joinRoom(){
+async function joinRoom(){
   if(!currentUser) return alert("Sign in first");
+  await initFirebase();
   roomId = el.roomIdInput.value.trim();
   if(!validateRoomId(roomId)) return alert("Room ID 3-20 chars");
   playerId = currentUser.uid;
-  const playerRef = db().ref(`rooms/${roomId}/players/${playerId}`);
-  playerRef.set({joined: Date.now(), vote:false, name:currentUser.displayName});
+  const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
+  playerRef.set({joined:Date.now(), vote:false, name:currentUser.displayName});
   playerRef.onDisconnect().remove();
   el.controls.style.display="block";
   el.voteBtn.style.display="inline-block";
-  db().ref(`rooms/${roomId}/game`).on('value', updateGameState);
-  db().ref(`rooms/${roomId}/players`).on('value', updatePlayers);
+  db.ref(`rooms/${roomId}/game`).on('value', updateGameState);
+  db.ref(`rooms/${roomId}/players`).on('value', updatePlayers);
 }
 
-// Voting
 function updatePlayers(snap){
   const players = snap.val()||{};
   playerNames = {};
-  for(const pid in players) playerNames[pid] = players[pid].name||pid;
+  for(const pid in players) playerNames[pid] = players[pid].name || pid;
   const playerIds = Object.keys(players);
   el.playerInfo.innerText = "Players: "+playerIds.map(pid=>`${playerNames[pid]} [${players[pid].vote?"✓":"✗"}]`).join(", ");
   const votesCount = Object.values(players).filter(p=>p.vote).length;
   el.playersVoting.innerText = `${votesCount}/${playerIds.length} voted to start.`;
-  if(playerIds.length>0 && votesCount===playerIds.length){
-    if(playerId === [...playerIds].sort()[0]) startGame(playerIds);
-  }
+  if(playerIds.length>0 && votesCount===playerIds.length){ const sortedIds=[...playerIds].sort(); if(playerId===sortedIds[0]) startGame(playerIds);}
 }
 
-function voteToStart(){ db().ref(`rooms/${roomId}/players/${playerId}`).update({vote:true}); el.voteBtn.style.display="none"; }
+function voteToStart(){ db.ref(`rooms/${roomId}/players/${playerId}`).update({vote:true}); el.voteBtn.style.display="none"; }
 
-// ------------------ Game Logic ------------------ //
 function startGame(playerIds){
   const suits=['♠','♣','♦','♥'], values=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
   let deck=[];
   for(let s of suits) for(let v of values) deck.push({v,s});
   deck.sort(()=>Math.random()-0.5);
   const shuffledIds=[...playerIds].sort(()=>Math.random()-0.5);
-  const gameState = {
+  const gameState={
     deck,
     playerHands:{},
-    dealerHand:[deck.pop(), deck.pop()],
+    dealerHand:[deck.pop(),deck.pop()],
     turn:shuffledIds[0],
     message:"Game started!",
     winnerMessage:"",
@@ -181,10 +187,8 @@ function startGame(playerIds){
     over:false,
     playerOrder:shuffledIds
   };
-  for(let pid of shuffledIds){
-    gameState.playerHands[pid] = [deck.pop(), deck.pop()];
-  }
-  db().ref(`rooms/${roomId}/game`).set(gameState);
+  for(let pid of shuffledIds) gameState.playerHands[pid]=[deck.pop(),deck.pop()];
+  db.ref(`rooms/${roomId}/game`).set(gameState);
   el.voteBtn.style.display="none";
 }
 
@@ -192,64 +196,83 @@ function updateGameState(snap){
   const game = snap.val(); if(!game) return;
   document.getElementById("player-cards-section").style.display="block";
   document.getElementById("dealer-cards-section").style.display="block";
-  el.playerCards.innerHTML = game.playerHands[playerId].map(c=>`<div class="card">${c.v}${c.s}</div>`).join("");
-  el.dealerCards.innerHTML = game.dealerHand.map(c=>`<div class="card">${c.v}${c.s}</div>`).join("");
-  el.turnIndicator.innerText = "Current turn: "+playerNames[game.turn];
+  const playerHand = game.playerHands?.[playerId]||[];
+  const dealerHand = game.dealerHand||[];
+  updateCards(el.playerCards, playerHand);
+  updateCards(el.dealerCards, !game.over && game.turn!=="dealer"?[dealerHand[0], ...dealerHand.slice(1).map(()=>({v:"?",s:"?"}))]:dealerHand);
   el.gameMsg.innerText = game.message;
   el.winnerMsg.innerText = game.winnerMessage;
+  el.turnIndicator.innerText = game.over? "Game Over" : `Turn: ${playerNames[game.turn]||game.turn}`;
+  el.controls.style.display = game.turn===playerId && !game.over ? "block" : "none";
 }
 
-// Player actions
+function updateCards(container, cards){
+  container.innerHTML = "";
+  for(let c of cards){
+    const div = document.createElement("div"); div.className="card"; div.textContent=`${c.v}${c.s}`;
+    container.appendChild(div);
+  }
+}
+
 function hit(){
-  const gameRef = db().ref(`rooms/${roomId}/game`);
-  gameRef.once('value').then(snap=>{
-    const game = snap.val(); if(!game || game.over) return;
-    if(game.turn !== playerId) return alert("Not your turn!");
+  db.ref(`rooms/${roomId}/game`).transaction(game=>{
+    if(!game || game.turn!==playerId || game.over) return;
     const card = game.deck.pop();
     game.playerHands[playerId].push(card);
-    // simple bust check
-    const handValue = game.playerHands[playerId].reduce((sum,c)=>sum+['J','Q','K'].includes(c.v)?10:c.v==='A'?11:parseInt(c.v),0);
-    if(handValue>21) { game.busted[playerId]=true; game.message="You busted!"; nextTurn(game); }
-    else game.message=`You drew ${card.v}${card.s}`;
-    gameRef.set(game);
+    if(handValue(game.playerHands[playerId])>21){ game.busted[playerId]=true; nextTurn(game);}
+    return game;
   });
 }
 
 function stand(){
-  const gameRef = db().ref(`rooms/${roomId}/game`);
-  gameRef.once('value').then(snap=>{
-    const game = snap.val(); if(!game || game.over) return;
-    if(game.turn !== playerId) return alert("Not your turn!");
+  db.ref(`rooms/${roomId}/game`).transaction(game=>{
+    if(!game || game.turn!==playerId || game.over) return;
     game.stood[playerId]=true;
-    game.message="You stood.";
     nextTurn(game);
-    gameRef.set(game);
+    return game;
   });
 }
 
 function nextTurn(game){
-  const order = game.playerOrder;
-  const idx = order.indexOf(game.turn);
-  for(let i=1;i<=order.length;i++){
-    const nextIdx = (idx+i)%order.length;
-    const nextPlayer = order[nextIdx];
-    if(!game.stood[nextPlayer] && !game.busted[nextPlayer]){
-      game.turn = nextPlayer;
-      return;
-    }
+  const idx = game.playerOrder.indexOf(game.turn);
+  let nextIdx=(idx+1)%game.playerOrder.length;
+  while(game.stood[game.playerOrder[nextIdx]] || game.busted[game.playerOrder[nextIdx]]){
+    nextIdx=(nextIdx+1)%game.playerOrder.length;
+    if(nextIdx===idx){ dealerTurn(game); return; }
   }
-  // dealer turn and simple winner logic (example)
-  game.turn = "dealer";
-  let dealerValue = game.dealerHand.reduce((sum,c)=>sum+['J','Q','K'].includes(c.v)?10:c.v==='A'?11:parseInt(c.v),0);
-  let winners = [];
-  for(const pid of order){
-    const handValue = game.playerHands[pid].reduce((sum,c)=>sum+['J','Q','K'].includes(c.v)?10:c.v==='A'?11:parseInt(c.v),0);
-    if(handValue<=21 && handValue>dealerValue) winners.push(playerNames[pid]);
+  game.turn=game.playerOrder[nextIdx];
+}
+
+function dealerTurn(game){
+  while(handValue(game.dealerHand)<17){
+    game.dealerHand.push(game.deck.pop());
   }
-  game.over = true;
-  game.winnerMessage = winners.length?`Winners: ${winners.join(", ")}`:"Dealer wins!";
+  determineWinner(game);
+  game.over=true;
+  game.turn=null;
+}
+
+function handValue(hand){
+  let sum=0, aces=0;
+  for(let c of hand){
+    if(c.v==="A"){ aces++; sum+=11; } 
+    else if(["K","Q","J"].includes(c.v)) sum+=10;
+    else sum+=parseInt(c.v);
+  }
+  while(sum>21 && aces>0){ sum-=10; aces--; }
+  return sum;
+}
+
+function determineWinner(game){
+  const results={};
+  for(let pid of game.playerOrder){
+    results[pid] = handValue(game.playerHands[pid])>21 ? 0 : handValue(game.playerHands[pid]);
+  }
+  const dealerVal = handValue(game.dealerHand)>21 ? 0 : handValue(game.dealerHand);
+  let maxVal = dealerVal, winners=[];
+  for(let pid in results){ if(results[pid]>maxVal){ maxVal=results[pid]; winners=[pid];} else if(results[pid]===maxVal){ winners.push(pid); } }
+  game.winnerMessage = winners.length ? `Winner(s): ${winners.map(w=>playerNames[w]||w).join(", ")}` : `Dealer wins!`;
 }
 </script>
-
 </body>
 </html>
