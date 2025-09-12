@@ -4,42 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JackBlack</title>
+<link rel="icon" type="image/x-icon" href="/thumbnail.ico">
+<link rel="icon" type="image/x-icon" href="/logo.ico">
 <style>
-body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: white; text-align: center; padding: 10px; max-width: 1000px; margin: 0 auto; }
-h1 { margin: 0 0 5px; font-size: 2em; }
-#game-message, #winner-message, #turn-indicator { margin-top: 10px; font-size: 16px; word-wrap: break-word; }
-#player-id-display { display: inline-block; font-size: 16px; font-weight: bold; color: #00ffff; background-color: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 10px; margin: 5px 0; max-width: 45%; overflow-wrap: break-word;}
-.card { display: inline-block; margin: 4px; padding: 15px 18px; background-color: #f0f0f0; border-radius: 10px; color: black; font-size: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid #ccc; min-width: 35px; min-height: 50px; word-wrap: break-word; }
-button { padding: 8px 15px; font-size: 14px; margin: 4px; cursor: pointer; }
-#dealer-cards, #player-cards { display: flex; justify-content: center; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-.game-area { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-.card-title { font-weight: bold; margin-top: 5px; }
-#player-info, #players-voting { font-size: 14px; margin: 5px 0; word-break: break-word; text-align:center;}
-@media (max-width: 700px) {
-  body { padding: 5px; }
-  h1 { font-size: 1.5em; }
-  .card { font-size: 16px; padding: 10px 12px; min-width: 30px; min-height: 45px; }
-  #player-id-display { font-size: 14px; max-width: 60%; }
-  button { font-size: 12px; padding: 6px 10px; }
-}
+  body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: white; text-align: center; padding: 10px; max-width: 1000px; margin: 0 auto; }
+  h1 { margin: 0 0 5px; font-size: 2em; }
+  #game-message, #winner-message, #turn-indicator, #player-info, #players-voting { word-wrap: break-word; }
+  #player-id-display { display: inline-block; font-size: 16px; font-weight: bold; color: #00ffff; background-color: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 10px; margin: 5px 0; max-width: 45%; overflow-wrap: break-word; }
+  .card { display: inline-block; margin: 4px; padding: 15px 18px; background-color: #f0f0f0; border-radius: 10px; color: black; font-size: 20px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid #ccc; min-width: 35px; min-height: 50px; word-wrap: break-word; }
+  button { padding: 8px 15px; font-size: 14px; margin: 4px; cursor: pointer; }
+  #dealer-cards, #player-cards { display: flex; justify-content: center; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+  #player-cards-section, #dealer-cards-section { display: none; }
+  input { padding: 8px; font-size: 14px; width: 130px; max-width: 80%; }
+  .game-area { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .card-title { font-weight: bold; margin-top: 5px; }
+  @media (max-width: 700px) {
+    body { padding: 5px; }
+    h1 { font-size: 1.5em; }
+    .card { font-size: 16px; padding: 10px 12px; min-width: 30px; min-height: 45px; }
+    #player-id-display { font-size: 14px; max-width: 60%; }
+    button { font-size: 12px; padding: 6px 10px; }
+    input { font-size: 12px; width: 100px; }
+    #game-message, #winner-message, #turn-indicator { font-size: 14px; }
+  }
 </style>
 </head>
 <body>
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:5px;">
-<h1>JackBlack</h1>
-<div id="player-id-display">You are: waiting to join...</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 5px;">
+  <h1>JackBlack</h1>
+  <div id="player-id-display">You are: waiting to join...</div>
 </div>
 
 <div>
-<button onclick="signIn()">Sign in with Google</button>
-<button onclick="signOut()">Sign out</button>
+  <button onclick="signIn()">Sign in with Google</button>
+  <button onclick="signOut()">Sign out</button>
 </div>
 
 <div class="game-area">
   <div id="player-info"></div>
   <div id="players-voting"></div>
 
-  <div style="margin:5px 0;">
+  <div style="margin: 5px 0;">
     <input id="room-id" placeholder="Enter Room ID">
     <button onclick="joinRoom()">Join Room</button>
     <button id="vote-button" onclick="voteToStart()" style="display:none;">Vote to Start</button>
@@ -52,12 +58,12 @@ button { padding: 8px 15px; font-size: 14px; margin: 4px; cursor: pointer; }
     <button onclick="stand()">Stand</button>
   </div>
 
-  <div id="player-cards-section" style="display:none;">
+  <div id="player-cards-section">
     <div class="card-title">Your Cards:</div>
     <div id="player-cards"></div>
   </div>
 
-  <div id="dealer-cards-section" style="display:none;">
+  <div id="dealer-cards-section">
     <div class="card-title">Dealer Cards:</div>
     <div id="dealer-cards"></div>
   </div>
@@ -71,50 +77,45 @@ button { padding: 8px 15px; font-size: 14px; margin: 4px; cursor: pointer; }
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
 <script>
-// Only initialize Firebase App with minimal config
-firebase.initializeApp({});
-
 let currentUser = null;
-const OWNER_UID = "qjapXZWARTfcosFi8sA5nC79jLq2";
+let firebaseInitialized = false;
 
+async function initFirebase() {
+  if (firebaseInitialized) return;
+  try {
+    const res = await fetch("https://your-vercel-backend.vercel.app/firebaseConfig");
+    const config = await res.json();
+    firebase.initializeApp(config);
+    firebaseInitialized = true;
+    console.log("Firebase initialized from backend!");
+  } catch(e) {
+    console.error("Failed to fetch Firebase config:", e);
+  }
+}
+
+// Authentication
 firebase.auth().onAuthStateChanged(user => {
   currentUser = user;
   if(user){
-    document.getElementById("player-id-display").textContent = user.uid===OWNER_UID ? `👑 Owner: ${user.displayName}` : `Signed in as: ${user.displayName}`;
+    document.getElementById("player-id-display").textContent = `Signed in as: ${user.displayName}`;
   } else {
     document.getElementById("player-id-display").textContent = "You are not signed in.";
   }
 });
 
-async function signIn(){
-  try {
+function signIn() {
+  initFirebase().then(() => {
     const provider = new firebase.auth.GoogleAuthProvider();
-    const result = await firebase.auth().signInWithPopup(provider);
-    const idToken = await result.user.getIdToken();
-
-    // Send ID token to backend for Firebase custom token
-    const res = await fetch('/signIn', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
-    });
-    const data = await res.json();
-    if(data.customToken){
-      await firebase.auth().signInWithCustomToken(data.customToken);
-    } else {
-      alert('Sign-in failed: ' + (data.error || 'Unknown error'));
-    }
-  } catch(err) {
-    alert('Sign-in failed: ' + err.message);
-  }
+    firebase.auth().signInWithPopup(provider).catch(e=>alert("Sign-in failed: "+e.message));
+  });
 }
 
-function signOut(){ firebase.auth().signOut(); }
+function signOut() { firebase.auth().signOut(); }
 
-// === GAME LOGIC ===
-const db = firebase.database();
+// Game logic variables
 let roomId="", playerId="", playerNames={};
-const el={
+const db = () => firebase.database();
+const el = {
   playerCards:document.getElementById("player-cards"),
   dealerCards:document.getElementById("dealer-cards"),
   gameMsg:document.getElementById("game-message"),
@@ -128,68 +129,62 @@ const el={
   roomIdInput:document.getElementById("room-id")
 };
 
+// ------------------ Game Functions ------------------ //
 function validateRoomId(rid){ return /^[a-zA-Z0-9]{3,20}$/.test(rid); }
 
 function joinRoom(){
-  if(!currentUser)return alert("Sign in first");
+  if(!currentUser) return alert("Sign in first");
   roomId = el.roomIdInput.value.trim();
   if(!validateRoomId(roomId)) return alert("Room ID 3-20 chars");
   playerId = currentUser.uid;
-  const playerRef = db.ref(`rooms/${roomId}/players/${playerId}`);
-  playerRef.set({joined:Date.now(), vote:false, name:currentUser.displayName});
+  const playerRef = db().ref(`rooms/${roomId}/players/${playerId}`);
+  playerRef.set({joined: Date.now(), vote:false, name:currentUser.displayName});
   playerRef.onDisconnect().remove();
   el.controls.style.display="block";
   el.voteBtn.style.display="inline-block";
-  db.ref(`rooms/${roomId}/game`).on('value',updateGameState);
-  db.ref(`rooms/${roomId}/players`).on('value',updatePlayers);
+  db().ref(`rooms/${roomId}/game`).on('value', updateGameState);
+  db().ref(`rooms/${roomId}/players`).on('value', updatePlayers);
 }
 
+// Voting
 function updatePlayers(snap){
   const players = snap.val()||{};
-  playerNames={};
-  for(const pid in players) playerNames[pid] = pid===OWNER_UID ? `👑 ${players[pid].name}` : players[pid].name||pid;
+  playerNames = {};
+  for(const pid in players) playerNames[pid] = players[pid].name||pid;
   const playerIds = Object.keys(players);
   el.playerInfo.innerText = "Players: "+playerIds.map(pid=>`${playerNames[pid]} [${players[pid].vote?"✓":"✗"}]`).join(", ");
   const votesCount = Object.values(players).filter(p=>p.vote).length;
   el.playersVoting.innerText = `${votesCount}/${playerIds.length} voted to start.`;
   if(playerIds.length>0 && votesCount===playerIds.length){
-    const sortedIds=[...playerIds].sort();
-    if(playerId===sortedIds[0]) startGame(playerIds);
+    if(playerId === [...playerIds].sort()[0]) startGame(playerIds);
   }
 }
 
-function voteToStart(){ db.ref(`rooms/${roomId}/players/${playerId}`).update({vote:true}); el.voteBtn.style.display="none"; }
+function voteToStart(){ db().ref(`rooms/${roomId}/players/${playerId}`).update({vote:true}); el.voteBtn.style.display="none"; }
 
-// === START GAME & CARD LOGIC ===
+// ------------------ Game Logic ------------------ //
 function startGame(playerIds){
   const suits=['♠','♣','♦','♥'], values=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
   let deck=[];
   for(let s of suits) for(let v of values) deck.push({v,s});
   deck.sort(()=>Math.random()-0.5);
-  const shuffledIds = [...playerIds].sort(()=>Math.random()-0.5);
-
+  const shuffledIds=[...playerIds].sort(()=>Math.random()-0.5);
   const gameState = {
     deck,
     playerHands:{},
-    dealerHand:[deck.pop(),deck.pop()],
+    dealerHand:[deck.pop(), deck.pop()],
     turn:shuffledIds[0],
     message:"Game started!",
     winnerMessage:"",
-    stood:{}, busted:{}, over:false,
+    stood:{},
+    busted:{},
+    over:false,
     playerOrder:shuffledIds
   };
-
   for(let pid of shuffledIds){
     gameState.playerHands[pid] = [deck.pop(), deck.pop()];
-    if(calcScore(gameState.playerHands[pid])===21){
-      const pname = playerNames[pid] || "Dealer";
-      gameState.message=`${pname} has blackjack!`;
-      gameState.winnerMessage=`🏆 ${pname} WON WITH JACKBLACK! 🏆`;
-      gameState.winner=pid;
-      gameState.over=true;
-    }
   }
-  db.ref(`rooms/${roomId}/game`).set(gameState);
+  db().ref(`rooms/${roomId}/game`).set(gameState);
   el.voteBtn.style.display="none";
 }
 
@@ -197,95 +192,64 @@ function updateGameState(snap){
   const game = snap.val(); if(!game) return;
   document.getElementById("player-cards-section").style.display="block";
   document.getElementById("dealer-cards-section").style.display="block";
-
-  const playerHand = game.playerHands?.[playerId]||[];
-  const dealerHand = game.dealerHand||[];
-
-  updateCards(el.playerCards, playerHand);
-  updateCards(el.dealerCards, !game.over && game.turn!=="dealer" ? [dealerHand[0], ...dealerHand.slice(1).map(()=>({v:"???",s:""}))] : dealerHand);
-
-  el.gameMsg.innerText = game.message || "";
-
-  el.winnerMsg.innerText = game.winnerMessage || "";
-
-  el.turnIndicator.innerText = game.over ? "Game Over" : `Turn: ${playerNames[game.turn]||game.turn}`;
-
-  el.controls.style.display = (game.turn===playerId && !game.over) ? "block" : "none";
+  el.playerCards.innerHTML = game.playerHands[playerId].map(c=>`<div class="card">${c.v}${c.s}</div>`).join("");
+  el.dealerCards.innerHTML = game.dealerHand.map(c=>`<div class="card">${c.v}${c.s}</div>`).join("");
+  el.turnIndicator.innerText = "Current turn: "+playerNames[game.turn];
+  el.gameMsg.innerText = game.message;
+  el.winnerMsg.innerText = game.winnerMessage;
 }
 
-function updateCards(container, cards){
-  container.innerHTML="";
-  cards.forEach(c=>{
-    const div = document.createElement("div");
-    div.className="card";
-    div.innerText=`${c.v}${c.s}`;
-    container.appendChild(div);
-  });
-}
-
-function calcScore(hand){
-  let total=0, aces=0;
-  for(let c of hand){
-    if(c.v==="A") aces++;
-    else if(["J","Q","K"].includes(c.v)) total+=10;
-    else total+=parseInt(c.v);
-  }
-  for(let i=0;i<aces;i++){
-    total+= (total+11>21?1:11);
-  }
-  return total;
-}
-
+// Player actions
 function hit(){
-  db.ref(`rooms/${roomId}/game`).transaction(game=>{
-    if(!game || game.over || game.turn!==playerId) return game;
+  const gameRef = db().ref(`rooms/${roomId}/game`);
+  gameRef.once('value').then(snap=>{
+    const game = snap.val(); if(!game || game.over) return;
+    if(game.turn !== playerId) return alert("Not your turn!");
     const card = game.deck.pop();
     game.playerHands[playerId].push(card);
-    const score = calcScore(game.playerHands[playerId]);
-    if(score>21){ game.message=`${playerNames[playerId]} busted!`; game.busted[playerId]=true; nextTurn(game); }
-    else if(score===21){ game.message=`${playerNames[playerId]} hit 21!`; nextTurn(game); }
-    return game;
+    // simple bust check
+    const handValue = game.playerHands[playerId].reduce((sum,c)=>sum+['J','Q','K'].includes(c.v)?10:c.v==='A'?11:parseInt(c.v),0);
+    if(handValue>21) { game.busted[playerId]=true; game.message="You busted!"; nextTurn(game); }
+    else game.message=`You drew ${card.v}${card.s}`;
+    gameRef.set(game);
   });
 }
 
 function stand(){
-  db.ref(`rooms/${roomId}/game`).transaction(game=>{
-    if(!game || game.over || game.turn!==playerId) return game;
+  const gameRef = db().ref(`rooms/${roomId}/game`);
+  gameRef.once('value').then(snap=>{
+    const game = snap.val(); if(!game || game.over) return;
+    if(game.turn !== playerId) return alert("Not your turn!");
     game.stood[playerId]=true;
-    game.message=`${playerNames[playerId]} stands.`;
+    game.message="You stood.";
     nextTurn(game);
-    return game;
+    gameRef.set(game);
   });
 }
 
 function nextTurn(game){
   const order = game.playerOrder;
-  let idx = order.indexOf(game.turn);
-  while(true){
-    idx = (idx+1)%order.length;
-    const nextPlayer = order[idx];
-    if(!game.stood[nextPlayer] && !game.busted[nextPlayer]){ game.turn = nextPlayer; break; }
-    if(idx===order.indexOf(game.turn)){ game.turn="dealer"; break; }
-  }
-
-  if(game.turn==="dealer"){
-    let dealerScore = calcScore(game.dealerHand);
-    const activePlayers = Object.keys(game.playerHands).filter(pid=>!game.stood[pid] && !game.busted[pid]);
-    for(let card of game.deck){
-      if(dealerScore<17){ game.dealerHand.push(card); dealerScore = calcScore(game.dealerHand); }
-      else break;
+  const idx = order.indexOf(game.turn);
+  for(let i=1;i<=order.length;i++){
+    const nextIdx = (idx+i)%order.length;
+    const nextPlayer = order[nextIdx];
+    if(!game.stood[nextPlayer] && !game.busted[nextPlayer]){
+      game.turn = nextPlayer;
+      return;
     }
-    let winner=null, maxScore=0;
-    for(let pid in game.playerHands){
-      const score = calcScore(game.playerHands[pid]);
-      if(score<=21 && score>maxScore){ maxScore=score; winner=pid; }
-    }
-    const dealerScoreFinal = calcScore(game.dealerHand);
-    if(dealerScoreFinal<=21 && dealerScoreFinal>maxScore){ winner="dealer"; maxScore=dealerScoreFinal; }
-    game.over=true;
-    game.winnerMessage = winner==="dealer" ? "Dealer wins!" : `🏆 ${playerNames[winner]} WON! 🏆`;
   }
+  // dealer turn and simple winner logic (example)
+  game.turn = "dealer";
+  let dealerValue = game.dealerHand.reduce((sum,c)=>sum+['J','Q','K'].includes(c.v)?10:c.v==='A'?11:parseInt(c.v),0);
+  let winners = [];
+  for(const pid of order){
+    const handValue = game.playerHands[pid].reduce((sum,c)=>sum+['J','Q','K'].includes(c.v)?10:c.v==='A'?11:parseInt(c.v),0);
+    if(handValue<=21 && handValue>dealerValue) winners.push(playerNames[pid]);
+  }
+  game.over = true;
+  game.winnerMessage = winners.length?`Winners: ${winners.join(", ")}`:"Dealer wins!";
 }
 </script>
+
 </body>
 </html>
