@@ -1,1 +1,1 @@
-Yo... Wanna feel alive... Jackblack is way!
+Yo... Wanna feel alive... JackBlack is way!
