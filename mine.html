@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Minesweeper</title>
+<title>JacksMines</title>
 <style>
   body {
     margin: 0;
@@ -24,7 +24,7 @@
     color: #ff4444;
   }
 
-  #frameWrap iframe {
+  iframe {
     width: 80%;
     height: 80vh;
     border: 2px solid #00ff00;
@@ -32,40 +32,28 @@
 </style>
 </head>
 <body>
-  <div id="message">Loading JacksMines...</div>
-  <div id="frameWrap"></div>
+<div id="message">Loading JacksMines...</div>
+<iframe id="mineFrame"></iframe>
 
 <script>
-const REMOTE_URL = "https://files.catbox.moe/29xjhe.html"; // Catbox Minesweeper URL
-const frameWrap = document.getElementById('frameWrap');
+const iframe = document.getElementById('mineFrame');
 const message = document.getElementById('message');
 
-async function loadMinesweeper() {
-  try {
-    const res = await fetch(REMOTE_URL, { cache:'no-store' });
-    if (!res.ok) throw new Error(res.statusText);
-    const text = await res.text();
+// Updated Catbox Minesweeper URL
+const REMOTE_URL = "https://files.catbox.moe/29xjhe.html";
 
-   
-    const blob = new Blob([text], { type:'text/html' });
-    const url = URL.createObjectURL(blob);
-
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = '0';
-
-    frameWrap.innerHTML = '';
-    frameWrap.appendChild(iframe);
+// Fetch HTML and load as blob to hide URL
+fetch(REMOTE_URL, { cache: 'no-store' })
+  .then(res => res.text())
+  .then(html => {
+    const blob = new Blob([html], { type: 'text/html' });
+    iframe.src = URL.createObjectURL(blob);
     message.style.display = 'none';
-  } catch(err) {
-    message.innerHTML = 'Failed to load Minesweeper. <br>Open <a href="'+REMOTE_URL+'" target="_blank">direct link</a>';
+  })
+  .catch(err => {
+    message.innerHTML = 'Failed to load JacksMines.<br>Open <a href="' + REMOTE_URL + '" target="_blank">direct link</a>';
     console.error(err);
-  }
-}
-
-loadMinesweeper();
+  });
 </script>
 </body>
 </html>
