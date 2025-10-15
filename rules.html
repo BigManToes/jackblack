@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Intense Rules + Minesweeper</title>
+  <title>Intense Rules.</title>
   <style>
     body {
       margin: 0;
@@ -12,7 +12,6 @@
       overflow: hidden;
       height: 100vh;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
     }
@@ -20,48 +19,34 @@
     .credits-container {
       position: relative;
       width: 80%;
-      height: 40vh; /* smaller so Minesweeper fits below */
+      height: 80vh;
       overflow: hidden;
       border: 2px solid #00ff00;
       padding: 20px;
       box-sizing: border-box;
-      margin-bottom: 10px;
     }
 
     .credits-text {
       position: absolute;
       width: 100%;
       text-align: center;
-      font-size: 1.2rem;
-      line-height: 1.8rem;
-      animation: rollCredits 20s linear infinite;
-      transform: translateY(100%);
+      font-size: 1.5rem;
+      line-height: 2rem;
+      animation: rollCredits 10s linear forwards;
+      transform: translateY(100%); /* Start fully below container */
     }
 
-    .credits-text p { margin: 8px 0; }
+    .credits-text p {
+      margin: 10px 0;
+    }
 
     @keyframes rollCredits {
       0% { transform: translateY(100%); }
       100% { transform: translateY(-100%); }
     }
-
-    /* Minesweeper iframe styling */
-    #minesweeper-frame {
-      width: 80%;
-      height: 50vh;
-      border: 2px solid #00ff00;
-    }
-
-    #message {
-      text-align: center;
-      margin-bottom: 5px;
-      font-size: 1rem;
-      color: #ff4444;
-    }
   </style>
 </head>
 <body>
-
   <div class="credits-container">
     <div class="credits-text">
       <p>Credits</p>
@@ -92,39 +77,5 @@
       <p>Pretty simple...</p>
     </div>
   </div>
-
-  <div id="message">Loading Minesweeper...</div>
-  <div id="frameWrap"></div>
-
-  <script>
-    // Your Catbox Minesweeper URL
-    const REMOTE_URL = "https://files.catbox.moe/1wokf4.html";
-    const frameWrap = document.getElementById('frameWrap');
-    const message = document.getElementById('message');
-
-    async function loadMinesweeper() {
-      try {
-        const res = await fetch(REMOTE_URL, { cache:'no-store' });
-        if (!res.ok) throw new Error(res.statusText);
-        const text = await res.text();
-
-        const blob = new Blob([text], { type:'text/html' });
-        const url = URL.createObjectURL(blob);
-        const iframe = document.createElement('iframe');
-        iframe.src = url;
-        iframe.id = "minesweeper-frame";
-
-        frameWrap.innerHTML = '';
-        frameWrap.appendChild(iframe);
-        message.style.display = 'none';
-      } catch(err) {
-        message.innerHTML = 'Failed to load Minesweeper. <br>Open <a href="'+REMOTE_URL+'" target="_blank">direct link</a>';
-        console.error(err);
-      }
-    }
-
-    loadMinesweeper();
-  </script>
-
 </body>
 </html>
