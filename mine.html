@@ -7,14 +7,25 @@
   body {
     margin: 0;
     background: black;
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100vh;
-    font-family: 'Courier New', Courier, monospace;
-    color: white;
-    overflow: hidden;
+    justify-content: flex-start;
+    min-height: 100vh;
+  }
+
+  h1 { margin: 10px 0; }
+
+  #gameContainer {
+    width: 90%;
+    flex-grow: 1;
+    border: 2px solid #00ff00;
+    overflow: auto;
+    padding: 10px;
+    box-sizing: border-box;
+    background: #111;
   }
 
   #message {
@@ -23,35 +34,38 @@
     font-size: 1.2rem;
     color: #ff4444;
   }
-
-  iframe {
-    width: 80%;
-    height: 80vh;
-    border: 2px solid #00ff00;
-  }
 </style>
 </head>
 <body>
-<div id="message">Loading JacksMines...</div>
-<iframe id="mineFrame"></iframe>
+<h1>💣 JacksMines 💣</h1>
+<div id="message">Loading Minesweeper...</div>
+<div id="gameContainer"></div>
 
 <script>
-const iframe = document.getElementById('mineFrame');
+const gameContainer = document.getElementById('gameContainer');
 const message = document.getElementById('message');
 
-// Updated Catbox Minesweeper URL
+// Your Catbox Minesweeper URL
 const REMOTE_URL = "https://files.catbox.moe/29xjhe.html";
 
-// Fetch HTML and load as blob to hide URL
+// Fetch the HTML dynamically
 fetch(REMOTE_URL, { cache: 'no-store' })
   .then(res => res.text())
   .then(html => {
-    const blob = new Blob([html], { type: 'text/html' });
-    iframe.src = URL.createObjectURL(blob);
+    // Create a temporary div to parse the fetched HTML
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    // Move all children into our game container
+    while (temp.firstChild) {
+      gameContainer.appendChild(temp.firstChild);
+    }
+
+    // Hide the loading message
     message.style.display = 'none';
   })
   .catch(err => {
-    message.innerHTML = 'Failed to load JacksMines.<br>Open <a href="' + REMOTE_URL + '" target="_blank">direct link</a>';
+    message.innerHTML = 'Failed to load Minesweeper.<br><a href="' + REMOTE_URL + '" target="_blank">Direct link</a>';
     console.error(err);
   });
 </script>
