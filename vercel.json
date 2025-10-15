@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/rules", "destination": "/rules.html" },
     { "source": "/jarvis", "destination": "https://files.catbox.moe/zlnaww.mp4" },
-    { "source": "/phonk", "destination": "https://files.catbox.moe/4il963.mp3" }
+    { "source": "/phonk", "destination": "https://files.catbox.moe/4il963.mp3" },
+    { "source": "/mine", "destination": "https://freeminesweeper.org" }
   ]
 }
