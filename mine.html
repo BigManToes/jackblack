@@ -68,9 +68,10 @@ function init(){
     const row=[],tr=document.createElement("tr");
     for(let c=0;c<size;c++){
       const td=document.createElement("td");
+      td.oncontextmenu=(e)=>{e.preventDefault(); flag(r,c);};
       td.onclick=()=>reveal(r,c);
       tr.appendChild(td);
-      row.push({mine:mineSet.has(r+","+c),revealed:false,td});
+      row.push({mine:mineSet.has(r+","+c),revealed:false,flagged:false,td});
     }
     table.appendChild(tr);
     board.push(row);
@@ -88,7 +89,8 @@ function count(r,c){
 function reveal(r,c){
   if(gameOver) return;
   const cell=board[r][c];
-  if(cell.revealed) return;
+  if(cell.revealed || cell.flagged) return;
+
   cell.revealed=true;
 
   if(cell.mine){
@@ -114,6 +116,14 @@ function reveal(r,c){
   let revealed=0;
   for(let row of board) for(let x of row) if(x.revealed) revealed++;
   if(revealed === size*size - mines){ status.textContent="You Win!"; gameOver=true; }
+}
+
+function flag(r,c){
+  if(gameOver) return;
+  const cell=board[r][c];
+  if(cell.revealed) return;
+  cell.flagged = !cell.flagged;
+  cell.td.textContent = cell.flagged ? "🚩" : "";
 }
 
 resetBtn.onclick=init;
