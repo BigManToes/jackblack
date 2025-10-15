@@ -12,31 +12,113 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  height: 100vh;
+  min-height: 100vh;
 }
-
 h1 { margin: 10px 0; }
-
-#container {
-  width: 90%;
-  height: 80vh;
-  border: 2px solid #00ff00;
-  overflow: hidden;
-  background: #111;
+table { border-collapse: collapse; margin-top: 20px; }
+td {
+  width: 40px; height: 40px;
+  background: #555; border: 1px solid #333;
+  text-align: center; vertical-align: middle;
+  font-size: 18px; cursor: pointer;
 }
-
-iframe {
-  width: 100%;
-  height: 100%;
-  border: none; /* removes boxy border */
-}
+td.revealed { background: #aaa; cursor: default; }
+td.mine { background: red; }
+select, button { margin-top: 10px; padding: 5px 10px; font-size: 1rem; cursor: pointer; }
+#status{margin-top:8px;}
 </style>
 </head>
 <body>
 <h1>💣 JacksMines 💣</h1>
-<div id="container">
-  <iframe id="mineFrame" src="https://files.catbox.moe/29xjhe.html"></iframe>
-</div>
+
+<label for="sizeSelect">Grid size:</label>
+<select id="sizeSelect">
+  <option value="5">5x5</option>
+  <option value="10">10x10</option>
+  <option value="20">20x20</option>
+  <option value="32">32x32</option>
+</select>
+<button id="resetBtn">Reset</button>
+
+<table id="board"></table>
+<p id="status"></p>
+
+<script>
+let board=[],mineSet=new Set(),size=5,mines=3,gameOver=false;
+const table=document.getElementById("board"),
+      status=document.getElementById("status"),
+      sizeSelect=document.getElementById("sizeSelect"),
+      resetBtn=document.getElementById("resetBtn");
+
+function rand(n){return Math.floor(Math.random()*n);}
+
+function init(){
+  gameOver=false;
+  size=parseInt(sizeSelect.value);
+  if(size===5) mines=3;
+  else if(size===10) mines=15;
+  else if(size===20) mines=60;
+  else if(size===32) mines=150;
+
+  board=[]; mineSet=new Set(); table.innerHTML=""; status.textContent="";
+
+  while(mineSet.size<mines) mineSet.add(rand(size)+","+rand(size));
+
+  for(let r=0;r<size;r++){
+    const row=[],tr=document.createElement("tr");
+    for(let c=0;c<size;c++){
+      const td=document.createElement("td");
+      td.onclick=()=>reveal(r,c);
+      tr.appendChild(td);
+      row.push({mine:mineSet.has(r+","+c),revealed:false,td});
+    }
+    table.appendChild(tr);
+    board.push(row);
+  }
+}
+
+function count(r,c){
+  let n=0;
+  for(let i=-1;i<=1;i++)
+    for(let j=-1;j<=1;j++)
+      if(board[r+i]?.[c+j]?.mine) n++;
+  return n;
+}
+
+function reveal(r,c){
+  if(gameOver) return;
+  const cell=board[r][c];
+  if(cell.revealed) return;
+  cell.revealed=true;
+
+  if(cell.mine){
+    cell.td.className="mine";
+    cell.td.textContent="💣";
+    status.textContent="Game Over!";
+    gameOver=true;
+    for(let row of board) for(let x of row) if(x.mine){x.td.textContent="💣";x.td.className="mine";}
+    return;
+  }
+
+  const num=count(r,c);
+  cell.td.textContent=num?num:"";
+  cell.td.className="revealed";
+
+  if(num===0){
+    for(let i=-1;i<=1;i++)
+      for(let j=-1;j<=1;j++)
+        if(board[r+i]?.[c+j]) reveal(r+i,c+j);
+  }
+
+  // Check win
+  let revealed=0;
+  for(let row of board) for(let x of row) if(x.revealed) revealed++;
+  if(revealed === size*size - mines){ status.textContent="You Win!"; gameOver=true; }
+}
+
+resetBtn.onclick=init;
+sizeSelect.onchange=init;
+init();
+</script>
 </body>
 </html>
