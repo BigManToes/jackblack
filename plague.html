@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Plague Balls Simulation - Massive</title>
+<style>
+  body { margin:0; overflow:hidden; background:#111; color:white; font-family:sans-serif; }
+  #counter { position:absolute; top:10px; left:10px; font-size:18px; }
+  canvas { display:block; margin:auto; background:#222; }
+</style>
+</head>
+<body>
+<div id="counter"></div>
+<canvas id="canvas"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Canvas
+canvas.width = 800;
+canvas.height = 600;
+
+const BALLS_COUNT = 6000;
+const balls = [];
+const infectionRadius = 10;
+const infectionChance = 0.03; // chance to infect on contact
+const deathChance = 0.001;    // much lower, infected last longer
+const recoveryChance = 0.002; // small chance to heal
+
+for (let i = 0; i < BALLS_COUNT; i++) {
+    balls.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        dx: (Math.random() - 0.5) * 1.5,
+        dy: (Math.random() - 0.5) * 1.5,
+        radius: 2 + Math.random() * 2,
+        state: i === 0 ? 'infected' : 'healthy'
+    });
+}
+
+function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let healthyCount = 0, infectedCount = 0, deadCount = 0;
+
+    // Move balls
+    for (let b of balls) {
+        if (b.state !== 'dead') {
+            b.x += b.dx;
+            b.y += b.dy;
+
+            if (b.x - b.radius < 0 || b.x + b.radius > canvas.width) b.dx *= -1;
+            if (b.y - b.radius < 0 || b.y + b.radius > canvas.height) b.dy *= -1;
+        }
+    }
+
+    // Check infections
+    for (let i = 0; i < balls.length; i++) {
+        const a = balls[i];
+        if (a.state === 'dead') continue;
+        for (let j = i + 1; j < balls.length; j++) {
+            const b = balls[j];
+            if (b.state === 'dead') continue;
+
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < infectionRadius) {
+                if ((a.state === 'infected' && b.state === 'healthy' && Math.random() < infectionChance)) {
+                    b.state = 'infected';
+                }
+                if ((b.state === 'infected' && a.state === 'healthy' && Math.random() < infectionChance)) {
+                    a.state = 'infected';
+                }
+            }
+        }
+    }
+
+    // Check deaths and recoveries
+    for (let b of balls) {
+        if (b.state === 'infected') {
+            if (Math.random() < deathChance) b.state = 'dead';
+            else if (Math.random() < recoveryChance) b.state = 'healthy';
+        }
+        if (b.state === 'healthy') healthyCount++;
+        else if (b.state === 'infected') infectedCount++;
+        else if (b.state === 'dead') deadCount++;
+    }
+
+    // Draw balls
+    for (let b of balls) {
+        ctx.fillStyle = b.state === 'healthy' ? 'lime' : b.state === 'infected' ? 'orange' : 'red';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Update counter
+    document.getElementById('counter').innerHTML = 
+        `Healthy: ${healthyCount} | Infected: ${infectedCount} | Dead: ${deadCount}`;
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+</body>
+</html>
