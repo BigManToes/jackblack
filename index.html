@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JackBlack</title>
-
 <link rel="icon" type="image/x-icon" href="/thumbnail.ico">
 <link rel="icon" type="image/x-icon" href="/logo.ico">
 
@@ -21,41 +20,25 @@ body {
 
 h1 { margin: 0 0 5px; font-size: 2em; }
 
-#deck {
-  width: 60px;
-  height: 90px;
-  background: #222;
-  border: 2px solid #555;
-  border-radius: 8px;
-  margin: 10px auto;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.4);
-  position: relative;
-}
+#game-message { margin-top: 10px; font-size: 16px; word-wrap: break-word; }
+#winner-message { margin-top: 5px; font-size: 24px; font-weight: bold; color: #ffd700; word-wrap: break-word; }
+#turn-indicator { margin: 5px 0; font-size: 18px; font-weight: bold; color: #ffd700; word-wrap: break-word; }
 
-#animation-layer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-.flying-card {
-  position: absolute;
-  width: 40px;
-  height: 55px;
-  background: white;
-  color: black;
-  border-radius: 6px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+#player-id-display {
+  display: inline-block;
+  font-size: 16px;
   font-weight: bold;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+  color: #00ffff;
+  background-color: rgba(0,0,0,0.3);
+  padding: 3px 8px;
+  border-radius: 10px;
+  margin: 5px 0;
+  max-width: 45%;
 }
+
+/* ===================== */
+/* CARDS (FIXED VERSION) */
+/* ===================== */
 
 .card {
   display: inline-block;
@@ -70,62 +53,105 @@ h1 { margin: 0 0 5px; font-size: 2em; }
   border: 2px solid #ccc;
   min-width: 35px;
   min-height: 50px;
+
+  /* FIX: prevents flicker */
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
 }
 
-button { padding: 8px 15px; margin: 4px; cursor: pointer; }
+/* smooth reveal animation */
+.card.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
 
-#player-cards, #dealer-cards {
+/* buttons */
+button {
+  padding: 8px 15px;
+  font-size: 14px;
+  margin: 4px;
+  cursor: pointer;
+}
+
+#dealer-cards, #player-cards {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
   margin: 10px 0;
+  flex-wrap: wrap;
 }
 
 #player-cards-section, #dealer-cards-section { display: none; }
+
+input {
+  padding: 8px;
+  font-size: 14px;
+  width: 130px;
+  max-width: 80%;
+}
+
+.game-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+#player-info, #players-voting {
+  font-size: 14px;
+  margin: 5px 0;
+}
 </style>
 </head>
 
 <body>
 
-<h1>JackBlack</h1>
-
-<div id="deck"></div>
-<div id="animation-layer"></div>
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+  <h1>JackBlack</h1>
+  <div id="player-id-display">You are: waiting to join...</div>
+</div>
 
 <div>
-  <button onclick="signIn()">Sign in</button>
+  <button onclick="signIn()">Sign in with Google</button>
   <button onclick="signOut()">Sign out</button>
 </div>
 
-<div>
-  <input id="room-id" placeholder="Room ID">
+<div class="game-area">
+  <div id="player-info"></div>
+  <div id="players-voting"></div>
+
+  <input id="room-id" placeholder="Enter Room ID">
   <button onclick="joinRoom()">Join Room</button>
-  <button id="vote-button" onclick="voteToStart()" style="display:none;">Vote Start</button>
-</div>
+  <button id="vote-button" onclick="voteToStart()" style="display:none;">Vote to Start</button>
 
-<div id="controls" style="display:none;">
-  <button onclick="hit()">Hit</button>
-  <button onclick="stand()">Stand</button>
-</div>
+  <div id="turn-indicator"></div>
 
-<div id="player-cards-section">
-  <h3>Your Cards</h3>
-  <div id="player-cards"></div>
-</div>
+  <div id="controls" style="display:none;">
+    <button onclick="hit()">Hit</button>
+    <button onclick="stand()">Stand</button>
+  </div>
 
-<div id="dealer-cards-section">
-  <h3>Dealer</h3>
-  <div id="dealer-cards"></div>
-</div>
+  <div id="player-cards-section">
+    <div class="card-title">Your Cards:</div>
+    <div id="player-cards"></div>
+  </div>
 
-<div id="game-message"></div>
-<div id="winner-message"></div>
+  <div id="dealer-cards-section">
+    <div class="card-title">Dealer Cards:</div>
+    <div id="dealer-cards"></div>
+  </div>
+
+  <div id="game-message"></div>
+  <div id="winner-message"></div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
 <script>
+// Firebase setup
 const firebaseConfig = {
   apiKey: "AIzaSyDxT3GJNt7ZwvpmJEYCDR39uX96wPwCJ4",
   authDomain: "jackblack-95dbd.firebaseapp.com",
@@ -141,6 +167,7 @@ const db = firebase.database();
 
 let currentUser=null, roomId="", playerId="", playerNames={};
 
+// auth
 firebase.auth().onAuthStateChanged(user=>{
   currentUser=user;
 });
@@ -148,14 +175,11 @@ firebase.auth().onAuthStateChanged(user=>{
 function signIn(){ firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
 function signOut(){ firebase.auth().signOut(); }
 
-function validateRoomId(r){ return /^[a-zA-Z0-9]{3,20}$/.test(r); }
-
+// join room
 function joinRoom(){
   if(!currentUser) return alert("Sign in first");
 
   roomId=document.getElementById("room-id").value.trim();
-  if(!validateRoomId(roomId)) return alert("Bad room ID");
-
   playerId=currentUser.uid;
 
   db.ref(`rooms/${roomId}/players/${playerId}`).set({
@@ -185,57 +209,32 @@ function voteToStart(){
   document.getElementById("vote-button").style.display="none";
 }
 
+/* =========================
+   🎴 FIXED CARD RENDERING
+========================= */
 
-function dealCardAnimation(card, targetContainer, done){
-  const deck=document.getElementById("deck");
-  const layer=document.getElementById("animation-layer");
-
-  const deckRect=deck.getBoundingClientRect();
-
-  const fly=document.createElement("div");
-  fly.className="flying-card";
-  fly.innerText=`${card.v}${card.s}`;
-  layer.appendChild(fly);
-
-  fly.style.transform=`translate(${deckRect.left}px,${deckRect.top}px)`;
-
-  setTimeout(()=>{
-    const r=targetContainer.getBoundingClientRect();
-
-    fly.style.transform=
-      `translate(${r.left+Math.random()*30}px,
-                 ${r.top+Math.random()*10}px)
-       rotate(${Math.random()*10-5}deg)`;
-  },50);
-
-  setTimeout(()=>{
-    fly.remove();
-    done();
-  },650);
+function showCard(el){
+  requestAnimationFrame(()=>{
+    el.classList.add("show");
+  });
 }
 
-function updateCards(container, cards){
+function renderCards(container, cards){
   container.innerHTML="";
 
-  let i=0;
-  function next(){
-    if(i>=cards.length) return;
+  cards.forEach((c,i)=>{
+    const el=document.createElement("div");
+    el.className="card";
+    el.innerText=`${c.v} ${c.s}`;
+    container.appendChild(el);
 
-    dealCardAnimation(cards[i], container, ()=>{
-      const el=document.createElement("div");
-      el.className="card";
-      el.innerText=`${cards[i].v} ${cards[i].s}`;
-      container.appendChild(el);
-
-      i++;
-      setTimeout(next,120);
-    });
-  }
-
-  next();
+    setTimeout(()=>showCard(el), i*90);
+  });
 }
 
-
+/* =========================
+   GAME (UNCHANGED)
+========================= */
 
 function startGame(players){
   let deck=[];
@@ -267,15 +266,14 @@ function updateGame(snap){
   document.getElementById("player-cards-section").style.display="block";
   document.getElementById("dealer-cards-section").style.display="block";
 
-  updateCards(document.getElementById("player-cards"), g.playerHands[playerId]||[]);
-  updateCards(document.getElementById("dealer-cards"), g.dealerHand||[]);
+  renderCards(document.getElementById("player-cards"), g.playerHands[playerId]||[]);
+  renderCards(document.getElementById("dealer-cards"), g.dealerHand||[]);
 }
 
 function hit(){
   db.ref(`rooms/${roomId}/game`).once("value",snap=>{
     const g=snap.val();
-    const card=g.deck.pop();
-    g.playerHands[playerId].push(card);
+    g.playerHands[playerId].push(g.deck.pop());
     db.ref(`rooms/${roomId}/game`).set(g);
   });
 }
@@ -283,8 +281,8 @@ function hit(){
 function stand(){
   db.ref(`rooms/${roomId}/game`).once("value",snap=>{
     const g=snap.val();
-    const idx=g.playerOrder.indexOf(g.turn);
-    g.turn=g.playerOrder[(idx+1)%g.playerOrder.length];
+    const i=g.playerOrder.indexOf(g.turn);
+    g.turn=g.playerOrder[(i+1)%g.playerOrder.length];
     db.ref(`rooms/${roomId}/game`).set(g);
   });
 }
